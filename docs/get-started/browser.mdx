@@ -191,6 +191,8 @@ JavaScript alerts, confirmations and prompts appear as explicit blockers. The ag
 
 A page can stop responding, for example when a script on it is stuck in a loop. That affects only its own tab: other tabs keep working, the agent sees the tab marked as unresponsive, and **User settings → Browser** shows it as **Not responding**. The agent can close the tab or navigate it elsewhere, or ask you to close it in Chrome.
 
+On a Mac, Chrome closes no tab while one of its own menus is open, such as the menu a right-click opens on a page or the list of a `<select>` field. Agents can neither see nor close those menus. While one is open, an agent that tries to close a tab is told that Chrome hasn't closed it and asks you to press Esc in that Chrome, or click anywhere in it. Chrome then closes the tabs it held back by itself. Everything else, reading, clicking and new tabs, keeps working meanwhile.
+
 A tab that waits for a slow website is not shown as not responding. When a link starts a download that the website takes a while to prepare, or opens a page that is slow to load, the agent is told that the tab is waiting for the website. It waits for the download or the page and leaves the tab open meanwhile: closing the tab, or opening another page in it, before the download has started would cancel the download.
 
 Ask the agent to keep a deliverable tab or hand it over to you. New tabs are kept by default. Scratch tabs explicitly marked temporary can be closed when the task finishes or is cancelled; tabs you opened are never part of that cleanup. Work with uncertain outcomes stays available for inspection.
