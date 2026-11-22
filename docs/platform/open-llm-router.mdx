@@ -1,84 +1,99 @@
 ---
-title: "Open LLM Router apps"
-description: "Connect one of your Open LLM Router apps in Settings → Models, choose its models as your default, refresh it when the app changes, and revoke Octomerge's access."
+title: "Open LLM Router"
+description: "Use your Claude and ChatGPT subscriptions in Octomerge through Open LLM Router: connect it in Settings → Models, choose its models as your default, refresh it, and revoke Octomerge's access."
 ---
 
-[Open LLM Router](https://open-llm-router.r5d.app) keeps your model providers' API keys and subscriptions, and groups them into **apps**: each app offers models with their efforts and decides which of your accounts serves them. You can connect an app to Octomerge as one of your AI connections. Its models then appear in each chat's model menu and to agents, like those of any connection.
+[Open LLM Router](https://open-llm-router.r5d.app) lets you use your Claude and ChatGPT subscriptions in Octomerge. You sign in to your subscription accounts there, and Octomerge gets their models as one of your AI connections. They appear in each chat's model menu and to agents, like the models of any connection.
 
-Requests run through the app and use the quota or cost of its accounts. Your keys and subscriptions stay in Open LLM Router: Octomerge gets access to that one app, its models and requests through it, and never sees your other apps, accounts, keys or logs.
+Your subscriptions' sign-ins stay in Open LLM Router. Octomerge gets their models and sends requests through them, nothing else: it never sees your accounts, their usage or your logs.
 
 <Note>
-Open LLM Router apps are offered only where your installation is set up for Open LLM Router. Without it, **Settings → Models** offers no router apps. Apps connected before stay listed as not configured: their requests fail, and you can rename or delete them.
+Open LLM Router is offered only where your installation is set up for it. Without it, **Settings → Models** doesn't offer it. Connections made before stay listed as not configured: their requests fail, and you can rename or delete them.
 </Note>
 
-## Connect an app
+## What you need
 
-1. Open **Settings → Models** and choose **Add connection → Open LLM Router app**, then **Connect**.
-2. Open LLM Router opens. Sign in if it asks (with your Octomerge account, you are usually signed in already), choose the app and approve Octomerge's access to it. **Deny** connects nothing.
-3. Back in **Settings → Models**, a preview shows what the app offers. Nothing is saved yet: choose **Finish** to add the connection, or **Cancel** to revoke the access you just approved.
+- A Claude subscription (Pro or Max) or a ChatGPT subscription (Plus, Pro or Business), or both.
+- Docker on a computer that stays on, such as a home computer. Open LLM Router sends your subscriptions' requests through its **CLI gateway**, which runs in Docker on that computer. Open LLM Router shows the command and walks you through it.
 
-Approve within 10 minutes of choosing **Connect**, and finish the preview within 30 minutes; after that, connect again. A preview you closed without finishing waits on the page with a **Review** button until it expires.
+## Your accounts
 
-The setup checklist's **Model providers** step connects an app the same way: **Add providers** opens Open LLM Router in a window, or a tab on phones, and the checklist stays where it is. When you approve, the window closes and the checklist shows the preview. If your browser blocks the window, open Open LLM Router in a new tab from the link the step offers; you then finish in that tab.
+Open LLM Router's **Accounts** page has one Claude and one ChatGPT account bundle. Add as many accounts to each as you have:
+
+- **Claude** serves `claude-opus-5-5`, `claude-sonnet-5-5` and `claude-fable-5-2`.
+- **ChatGPT** serves `gpt-6.2-sol` and `gpt-6.2-astra`.
+
+Each model takes the efforts low, medium, high, xhigh and max, with high as its default.
+
+A request goes to the first account of its bundle that isn't out of usage. When that account runs out, the next one takes over, and an account that is back is used first again. The page shows each account's 5-hour and weekly usage and which account is in use and which is next. Drag an account to change the order. Each account has two switches, both off at first:
+
+- **Use its resets first** (ChatGPT): when the account runs out and has a usage reset left, Open LLM Router redeems it and keeps using the account.
+- **Credits when all are out**: once every account of the bundle is out, the account keeps taking requests on its credits.
+
+When every account is out and none uses credits, requests stop until the first account is back.
+
+## Connect
+
+1. Open **Settings → Models** and choose **Add connection → Open LLM Router**, then **Connect**. In the setup checklist's Models step, choose **Bring your own Claude and ChatGPT subscriptions**: Open LLM Router opens in a window, or a tab on phones, and the checklist stays where it is.
+2. Sign in to Open LLM Router with GitHub, Google or Apple. It signs you in through Octomerge, so you are usually signed in already. Your first sign-in creates your Open LLM Router account.
+3. Open LLM Router asks you to let Octomerge use your subscriptions and lists the models Octomerge gets. Without any account yet, sign in with Claude or ChatGPT right there: it first shows how to start the CLI gateway on your computer, then opens the provider's sign-in. Then choose **Approve**. **Deny** connects nothing.
+4. Back in Octomerge, a preview shows the models. Nothing is saved yet: choose **Finish** to add the connection, or **Cancel** to revoke the access you just approved.
+
+Approve within 10 minutes of choosing **Connect**, and finish the preview within 30 minutes; after that, connect again. A preview you closed without finishing waits on the page with a **Review** button until it expires. If your browser blocks the window, open Open LLM Router in a new tab from the link the step offers; you then finish in that tab.
 
 ## What the preview shows
 
-- The app's name and description, and **connected as** the Open LLM Router account that approved it.
-- **Models** that will be imported, each by its ID with the efforts it accepts and its default effort, its context window and output limit. A model that pins an effort, such as `mine-max`, runs at that effort and takes none of its own. Efforts the app's active account can't run now are listed as not available.
-- **Not imported**: models Octomerge leaves out, with the reason: the app can't run them now, their limits aren't known, or they aren't served over Chat Completions. Fix them in Open LLM Router and refresh later.
+- **Connected as**: the Open LLM Router account that approved.
+- **Models** that will be imported, each by its ID with the efforts it accepts and its default effort, its context window and output limit.
+- **Not imported**: models Octomerge leaves out, with the reason.
 
-When none of the app's models can be imported, the preview says so and offers only **Cancel**, with **Manage in router** to open the app in Open LLM Router.
-
-Octomerge imports exactly what the app offers: it doesn't invent models or efforts, and a model's efforts and default come from the app. To change them, change the app in Open LLM Router and refresh.
+When no model can be imported, because you have no Claude or ChatGPT account in Open LLM Router yet, the preview says so and offers only **Cancel**, with **Manage in router** to add one.
 
 ## Your default model
 
-The preview offers **Use *model* as my default**, for the app's own model at its default effort (or its first model). It is ticked when you have no default model yet, and unticked when you have one, so your default changes only when you tick it. Projects and branches keep their own defaults. Connecting an app again never changes defaults.
+The preview offers **Use *model* as my default** for the first model, Claude's when you have a Claude account, at its default effort. It is ticked when you have no default model yet, and unticked when you have one, so your default changes only when you tick it. Projects and branches keep their own defaults. Connecting again never changes defaults.
 
 ## Model IDs are unique
 
 Each model ID belongs to one of your connections, so a chat, a default or an agent always names one model.
 
-- Another Open LLM Router app can't import a model ID one of your connected apps already imports: its preview or refresh is refused until you rename the model or the app in Open LLM Router (**Manage in router**). An app's model IDs come from Open LLM Router and can't be renamed in Octomerge.
-- When an app brings an ID that one of your own keys' connections uses, the preview names that connection and offers to rename the key's model, for example to `claude-sonnet-4-6-2`. The renamed model keeps sending its old ID to its provider, so it works as before; your defaults that chose it follow the new ID. **Finish** waits until no ID clashes. Nothing is renamed or dropped without your confirmation.
-- A model ID you add to a connection yourself can't be one another connection uses either. The editor flags it as you type and offers a free ID; the model can still be sent to its provider under its own ID (**Sent to the provider as**).
+- A second Open LLM Router connection, of another Open LLM Router account, can't import the IDs the first one does: its preview is refused until you delete one of them. Open LLM Router's model IDs can't be renamed.
+- When one of your own keys' connections uses one of these IDs, the preview names that connection and offers to rename the key's model, for example to `claude-opus-5-5-2`. The renamed model keeps sending its old ID to its provider, so it works as before; your defaults that chose it follow the new ID. **Finish** waits until no ID clashes. Nothing is renamed or dropped without your confirmation.
+- A model ID you add to a connection yourself can't be one another connection uses either. The editor flags it as you type and offers a free ID.
 
-IDs that two connections already shared before this rule are flagged in the list, naming both connections. They keep working; saving either connection's models asks you to rename one.
+## Manage the connection
 
-## Manage a connected app
+The connection appears in **Settings → Models** with a **Subscriptions** badge and its status: **Connected**, **Reconnect needed**, **Disconnecting** or **Disconnected**. Enable it, make it the default and choose its default model as for any connection. Its **⋯** menu opens **Open LLM Router…**, which shows the account it was approved by, when Octomerge last read it and its models, with these actions:
 
-An app's connection appears in **Settings → Models** with an **Open LLM Router app** badge and its status: **Connected**, **Reconnect needed**, **Disconnecting** or **Disconnected**. Enable it, make it the default and choose its default model as for any connection. Its **⋯** menu opens **Open LLM Router app…**, which shows the app, the account it was approved by, when Octomerge last read it and its models, with these actions:
-
-- **Refresh** reads the app again and lists what changed: models added, removed or renamed, their efforts and limits, and the app's name. **Apply changes** updates the connection; **Keep current models** leaves it as it is. When nothing changed, it says the app is up to date and records when Octomerge last read it. Models keep their place across renames. A model a chat or default chose that the app no longer offers is refused when it runs, never swapped for another. Changes behind an unchanged model ID, such as which of your accounts serves it, are Open LLM Router's and need no refresh.
-- **Manage in router** opens the app in Open LLM Router, where its models, efforts and accounts are.
+- **Refresh** reads the models again and lists what changed, such as the ChatGPT models after you add your first ChatGPT account. **Apply changes** updates the connection; **Keep current models** leaves it as it is. A model a chat or default chose that is no longer offered is refused when it runs, never swapped for another.
+- **Manage in router** opens your accounts in Open LLM Router.
+- **Test model** sends one short prompt through Open LLM Router.
 - **Disconnect**, **Reconnect**, **Rename** and **Delete**: see below.
 
 The connection's base URL and headers belong to Open LLM Router, so it has no **Edit** form.
 
 ## Revoke access
 
-- **Disconnect** revokes Octomerge's access in Open LLM Router. Requests already running finish; new ones fail with **Reconnect Open LLM Router**, and nothing falls back to another connection. The connection stays, so chats keep their model choice: **Reconnect** and approve the same app to use it again. While Open LLM Router can't be reached, the connection shows **Disconnecting** and isn't used; Octomerge revokes it as soon as it can.
+- **Disconnect** revokes Octomerge's access in Open LLM Router. Requests already running finish; new ones fail with **Reconnect Open LLM Router**, and nothing falls back to another connection. The connection stays, so chats keep their model choice: **Reconnect** and approve again to use it. While Open LLM Router can't be reached, the connection shows **Disconnecting** and isn't used; Octomerge revokes it as soon as it can.
 - **Delete** revokes the access too, and removes the connection.
-- In Open LLM Router, the **Account** page's **Connected apps** lists Octomerge's access to each app; revoking it there shows the connection as **Reconnect needed** in Octomerge.
+- In Open LLM Router, **Account & API keys → Connected apps** lists Octomerge's access; revoking it there shows the connection as **Reconnect needed** in Octomerge.
 
-## Sign in and link accounts
+## Sign-in methods
 
-Open LLM Router signs you in with your Octomerge account (**Continue with Octomerge**). If you already used Open LLM Router with Google, link the two: sign in to Open LLM Router with Google, open its **Account** page and choose **Link Octomerge account** under **Sign-in methods**. Then your apps are there when you connect from Octomerge, and Octomerge opens Open LLM Router signed in.
+Open LLM Router signs you in with GitHub, Google or Apple through Octomerge. To sign in to the same Open LLM Router account another way, open **Account & API keys → Sign-in methods** and choose **Connect** next to the method. If that sign-in already opens another Open LLM Router account, delete that account first (sign in with it, then **Delete account**), then connect it.
 
 ## Delete your Open LLM Router account
 
-- **In Open LLM Router:** its **Account** page ends with **Delete account**, which deletes your router account and everything in it: apps, provider accounts with their keys and sign-ins, request logs, usage history, API keys and connected apps. Connections to it in Octomerge then show **Reconnect needed**.
-- **With your Octomerge account:** on octomerge.dev, **Settings → Delete account** deletes your Open LLM Router account too when you sign in to it with your Octomerge account. One that also signs in with Google stays, without its Octomerge sign-in. See [Deleting your account](/get-started/sign-in#deleting-your-account).
+- **In Open LLM Router:** **Account & API keys → Delete account** deletes your account and everything in it: your Claude and ChatGPT sign-ins, API keys, request logs and usage history, and every connected app's access. Your Claude and ChatGPT accounts themselves stay. Connections to it in Octomerge then show **Reconnect needed**.
+- **With your Octomerge account:** on octomerge.dev, **Settings → Delete account** deletes your Open LLM Router account too, when it signs in through your Octomerge account. If it also signs in another way, it stays and only loses that sign-in. See [Deleting your account](/get-started/sign-in#deleting-your-account).
 
 ## When a request fails
 
-A chat's agent stops with a notice when Open LLM Router refuses a request, and says what to do:
+A chat's agent stops, or waits, with a notice when Open LLM Router refuses a request, and says what to do:
 
-- **The app's account or key was refused by its provider**: fix the app's account or key in Open LLM Router (the connection's **Manage in router**), or choose another model, then **Resume**.
-- **The app's tunnel is offline**: the app serves a model through a tunnel on one of your computers; start it there, or choose another model.
-- **The app's endpoint is on its tunnel computer's network**, and the tunnel wasn't started to allow it: restart the tunnel with the command its **Tunnel** page in Open LLM Router shows.
-- **The app's endpoint can't be used as it is**: Open LLM Router doesn't connect to its address directly, it answered with a redirect, or it didn't answer like a model API (often a wrong base URL). Fix the endpoint in Open LLM Router (**Manage in router**), or choose another model.
-- **A model the app maps to left its account's catalogue**: update the app in Open LLM Router, or choose another model.
+- **A subscription's sign-in was refused by its provider**: sign in to that account again in Open LLM Router (the connection's **Manage in router**), or choose another model, then **Resume**.
+- **Open LLM Router's CLI gateway is offline**: start it on its computer, or choose another model. The session retries by itself.
+- **Every account that runs this model is out of usage**: the session retries by itself when the first account is back, or choose another model. In Open LLM Router you can add an account or turn on **Credits when all are out**.
 - **Reconnect Open LLM Router**: the connection was disconnected here or ended in Open LLM Router; reconnect it from its menu, or choose another model.
 
-**Test model** in an app's connection and **Refresh** name the same causes.
+**Test model** and **Refresh** name the same causes.
