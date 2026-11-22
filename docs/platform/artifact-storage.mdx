@@ -1,0 +1,54 @@
+---
+title: 'Artifact storage'
+description: 'Upload large attachments, resume transfers, and work with the files in a conversation''s artifacts folder.'
+---
+
+Each conversation has an artifacts folder, `$R5D_ROOT/artifacts/<conversation-id>/` (the agent writes it as `$R5D_ROOT/artifacts/$R5D_SESSION_ID/`), on its worker. Attachments you send, browser downloads, page exports, screenshots and images the agent reads are saved there. They are **ordinary files on the worker that wrote them**: you and the agent can create, overwrite, rename and delete them with the shell, a terminal or the file tools, like any other file. Octomerge does not keep a central copy of their contents, a checksum or any other record of them once they are written, apart from the copy of each image and attachment it sends to the agent's model (below).
+
+What that means in practice:
+
+- `ls`, `read`, `grep` and `find` show the folder as it is on disk now; `write` and `edit` work in it.
+- Deleting or changing a file never blocks shells, terminals or other work in the conversation.
+- Octomerge keeps the images and attachments the agent's model received with the conversation, as the model received them (a large image fitted within the model's size limits), for as long as the conversation exists. The model keeps seeing them until its context is compacted ([long conversations](/platform/workspace-chats#long-conversations)), and the transcript and **Viewed images…** show those images, also when the file was deleted or changed or its worker is offline. After a compaction the agent reads again the images it still needs, from their files.
+- Other previews and file links read the current file. A file that was deleted or is on a disconnected worker shows as unavailable, naming the worker; the rest of the conversation keeps working.
+- Switching workers does not move the folder's files. They stay on the worker that wrote them; copy one yourself (for example with `scp`) or send it again if another worker needs it.
+
+File links in agent messages are [worker files](/platform/workspace-chats) too: they open the file as it is now on the worker the message ran on, in any folder under the conversation's artifacts directory. The workspace does not synchronize artifacts, so a link to one needs that worker connected; no other worker's file of the same name stands in for it. Link an artifact as `$R5D_ROOT/artifacts/<conversation-id>/<file>`: a relative link such as `artifacts/<conversation-id>/<file>` starts from the agent's working directory, which in a project conversation is the branch's checkout, not the workspace root.
+
+## Uploading
+
+Attach files as usual and send the message. The composer shows an acknowledged-byte progress bar on each pending file, transfer rate and estimated time remaining, and a **Cancel upload** button. Files are sent in bounded chunks; the 512 KiB chunk budget is not a total file-size limit. Up to 32 files may be sent together. Available destination disk, browser capabilities and connectivity still constrain transfers. Large text files remain attachments rather than being read entirely into the text preview.
+
+A failed send retains local pending files. Retry to resume the same transfer rather than starting another copy. When browser draft storage and session storage are available, the same tab can restore its pending file and resume after a reload. Closing the tab or clearing browser storage can lose that resume information. Reselecting a file creates a new draft identity, not an automatic resume of an older transfer.
+
+Cancellation pauses the transfer and retains acknowledged partial bytes for resume. If the worker is unavailable, cancellation cannot be confirmed until it reconnects. Cancelling a later file does not delete earlier completed files. A finished upload replaces a file of the same name in the artifacts folder, as copying a file over another would.
+
+## Browser transfers
+
+Completed `otti-browser` downloads stream to the selected worker; file uploads stream to the browser from the approved workbench or the conversation's artifacts folder. There is no total transfer-size ceiling. Preview and model-reading budgets still apply separately.
+
+Long downloads, upload staging and exports run as conversation-owned background transfers. Small transfers may finish within the initial tool call; otherwise the agent receives an operation handle and can continue working. Use `transfer_poll` to check the same operation and obtain its result, or `transfer_cancel` to stop it while retaining acknowledged partial bytes. Completion or failure notifies the conversation. To resume a failed or cancelled transfer, the agent can call `transfer_poll` with the original `operationId` and `resume: true`; retained offsets and the original inputs are reused.
+
+A completed transfer's result records what was transferred when it finished. It does not say whether those files still exist: they may have been changed or deleted since. Resuming a completed transfer returns that recorded result and does not create its files again; to create them again, the agent runs the original tool again.
+
+The command line also supports:
+
+```sh
+otti ps list
+otti transfer list <session-id>
+otti transfer cancel <session-id> <operation-id>
+```
+
+The human-readable process list includes active transfers. Use `transfer list` for transfer-specific status and terminal results, including with `--json`.
+
+Chat shows the filename, source and destination, acknowledged bytes, rate and estimated remaining time. Progress is restored after reloading the page. Cancellation is also available on a running transfer in chat. Progress counts bytes acknowledged by the destination, not merely sent bytes; checksum verification and publication can still take time after all bytes arrive.
+
+Update both `otti-browser` and `otti-worker` for larger negotiated download chunks. New clients support up to 8 MiB per chunk; existing clients retain their 2 MiB or 512 KiB limits. Chunk size is a bounded transport setting, not a file-size limit or a guarantee of transfer speed.
+
+A connection interruption can resume staging while its original browser runtime and upload target remain valid. After a browser restart or expired staging, the old upload is refused: inspect the page again and explicitly authorize a new upload. Octomerge never silently retargets the old upload or automatically replays a website submission. Already-attached backing files are retained when the browser client disconnects; orphan staging may require user-managed cleanup.
+
+## Availability and backups
+
+Keep the worker that holds a file connected for its previews and file links. If it is offline, the preview or error names the worker; reconnect it. If its disk is lost, restore your own backup. Conversation metadata, workspace synchronization and Git history are **not artifact backups**. Back up the worker's artifact directories with your own backup process. Do not assume a browser download, draft storage, another worker or Octomerge's central database contains a recovery copy.
+
+Files uploaded before worker-owned storage keep a read-only central copy. Previews and the model fall back to it when the worker has no file of that name; it is never copied to a worker, so to use such a file in a shell, download it from its preview and send it again. Model image/text preview limits are independent of transfer limits and still apply.

@@ -1,0 +1,34 @@
+---
+title: "Usage and limits"
+description: "What your account holds and runs against its limits: your workspace's files, storage and checkouts, your archive, and your agents running at once."
+---
+
+**Settings → Usage** shows what your account holds and runs against its limits, with the share of each limit in use. It updates by itself while it is open. A limit comes from your plan, from an administrator, or from Octomerge's defaults, and the page says which. The Standard plan and a team's [Team plan](/platform/teams#the-team-plan) give the defaults below; the Pro plan gives more.
+
+## Workspace
+
+Your workspace is the files your workers synchronize: every branch's checkout, and your account's own files, such as your instructions, skills, plans and memory. Files a checkout ignores (such as `node_modules/` and build output) never leave their worker and don't count, and neither do archived branches.
+
+| Limit | Default | Pro plan |
+| --- | --- | --- |
+| Files: regular files and symbolic links | 200,000 | 500,000 |
+| Storage: the size of those files | 10 GiB | 50 GiB |
+| Checkouts: one per branch | 5,000 | 5,000 |
+
+Storage counts a file once for each place it is in: two branches that hold the same file count it twice. Sizes are binary (1 GiB is 1,024 MiB).
+
+From 80% of a limit the page warns you. Only growth past a limit is refused: once your workspace is full, a worker with new files stops for review (a workspace remediation chat explains what it holds back), and new branches can't be created, until the workspace is under its limit again. Editing and deleting files, and archiving, keep working.
+
+### What uses your workspace
+
+Under **What uses your workspace**, each project lists what its branches hold together, largest first, and your account's own files follow. Open a project to see each of its branches, with **Primary**, **Merged** (into the primary branch) and **Idle** (no conversation for 30 days) next to their names. A branch's **⋯** menu opens its files, or archives it: [archiving](/platform/archiving) takes the branch off your workers and out of your workspace limits, and keeps it on Octomerge until you unarchive it. The primary branch is archived only with its project.
+
+`otti workspace status` shows the same totals against your limits.
+
+## Archive
+
+Archived branches count toward your archive quota instead of your workspace: 50 GiB of archived files (by size), 250 GiB on the Pro plan. Archiving more than the quota holds is refused; to make room, delete archived branches you no longer need, in **Archived** (under **More** in the sidebar) or with `otti -p PROJECT delete branch BRANCH --confirm`.
+
+## Agents at once
+
+Your account runs a limited number of agents at the same time: 10 by default, 25 on the Pro plan. When your limit is reached, new prompts, wakes and sub-agents wait in a queue and start by themselves as your runs end; the page shows how many wait. An Octomerge server also limits how many agents run at once for all of its accounts together ([Agents running at once](/get-started/add-worker#agents-running-at-once)).

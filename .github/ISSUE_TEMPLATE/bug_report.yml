@@ -1,0 +1,58 @@
+name: Bug report
+description: Something in Octomerge or its manual doesn't work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. Issues are public: leave out secrets, tokens, private repository contents and anything else you wouldn't post publicly.
+
+        A security vulnerability doesn't belong here: email contact@octomerge.dev instead ([SECURITY.md](https://github.com/octomergehq/octomerge/blob/main/SECURITY.md)).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The shortest way to see the problem, if you know one.
+      placeholder: |
+        1.
+        2.
+        3.
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      description: Choose every part that's involved.
+      multiple: true
+      options:
+        - The app in a browser
+        - An agent in a conversation
+        - otti (the command line)
+        - otti-worker (a worker)
+        - otti-browser (the browser service)
+        - otti-macos-vm (a macOS VM)
+        - The manual
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: For a command-line tool, the output of `otti --version`; for a worker, its version in Settings → Workers.
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system and browser
+      placeholder: macOS 26.1, Chrome 158
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Error messages, logs or screenshots, with secrets removed.

@@ -1,0 +1,146 @@
+---
+title: "Run the browser on a Linux server"
+description: "Run otti-browser with Google Chrome in a Docker container on a Linux server, sign it in once, and use its tabs from any device."
+---
+
+The browser image runs `otti-browser` with Google Chrome on a virtual display, in a Docker container on a Linux server. Agents use it like the [browser on your Mac](/get-started/browser), with the sign-ins you give it. Nobody sees its screen: you see and use a tab with **Take over remotely**, from any device ([Remote takeover](/get-started/browser#remote-takeover)). Its sign-in, Chrome's profiles and their site sign-ins live on a volume, so they survive restarts and new images.
+
+The image is `ghcr.io/ricsam/otti-browser`, for **linux/amd64** (x86-64 servers). It holds `otti-browser` of one version of Octomerge's CLIs and Google Chrome stable, and comes in two tags for each version:
+
+| Tag | |
+| --- | --- |
+| `ghcr.io/ricsam/otti-browser:<version>` | The newest Chrome for that version. When Google releases a new Chrome stable, Octomerge publishes the image with it within a day, under this tag. |
+| `ghcr.io/ricsam/otti-browser:<version>-chrome<chrome version>` | One image with one Chrome, such as `…-chrome158.0.8127.36`, which never changes. |
+
+Use the version your environment runs: **Settings → Browser** shows it in its install command, `@octomerge/otti-browser@<version>`.
+
+A browser holds the sign-ins of the sites you use in it, and agents act there with them: run it only on a server you trust, administered by people you trust.
+
+## Before you start
+
+- Docker 20.10 or newer, on a Linux kernel that lets unprivileged users create user namespaces (most distributions do).
+- About 2 GB of memory and 2 CPUs for Chrome with a few tabs.
+- Chrome's seccomp profile, which the container must run with ([Chrome's sandbox](#chromes-sandbox)). It is in the image:
+
+```bash
+docker run --rm --entrypoint cat ghcr.io/ricsam/otti-browser:<version> \
+  /usr/local/share/r5d-browser/chrome-seccomp.json > chrome-seccomp.json
+```
+
+## Sign it in
+
+Create the volume and sign it in once, in a container that ends when the sign-in is done. **Settings → Browser** shows the sign-in command, `otti-browser auth` with your environment's `--base-url` and a one-time `--pair` token; run it in the image with the volume:
+
+```bash
+docker volume create my-browser-home
+docker run --rm -it -v my-browser-home:/home/r5d ghcr.io/ricsam/otti-browser:<version> \
+  otti-browser auth --base-url https://octomerge.dev --pair <token>
+```
+
+Then approve it on the page that showed the command: pick the code your terminal shows ([Approving on the page](/cli/otti#approving-on-the-page)). The sign-in asks for **Browser** access, which lets the machine connect a browser and nothing else. It is saved on the volume (`~/.config/r5d`).
+
+## Start it
+
+```bash
+docker run -d --name my-browser --hostname my-browser \
+  --restart unless-stopped --stop-timeout 60 \
+  --security-opt seccomp=chrome-seccomp.json \
+  --security-opt no-new-privileges --cap-drop ALL \
+  --shm-size 2g --memory 4g --cpus 2 \
+  -e R5D_BASE_URL=https://octomerge.dev \
+  -v my-browser-home:/home/r5d \
+  ghcr.io/ricsam/otti-browser:<version>
+```
+
+`docker logs -f my-browser` shows its log, which says `Connected to https://octomerge.dev`, and **Settings → Browser** shows the browser connected, on Linux. What the options do:
+
+- `--security-opt seccomp=chrome-seccomp.json`, `--security-opt no-new-privileges` and `--cap-drop ALL` are required: they keep Chrome's sandbox on with no other privilege ([Chrome's sandbox](#chromes-sandbox)).
+- `--hostname`: Chrome's profile names the machine it runs on. Give every container of this volume the same name; a container with another one stops and says that the profile is locked by another machine.
+- `--shm-size 2g`: Docker gives a container 64 MB of shared memory, too little for Chrome's pages.
+- `--stop-timeout 60`: on a stop, the client finishes the browser action it is doing and closes Chrome, so its profile stays consistent; that usually takes under a second.
+
+The container reads its settings from its environment:
+
+| Variable | |
+| --- | --- |
+| `R5D_BASE_URL` | Your environment's address, such as `https://octomerge.dev`. Required. |
+| `R5D_BROWSER_AUTO_UPDATE` | `0` keeps the image's `otti-browser`; `1` updates it. Unset: the choice saved on the volume, else on. |
+| `R5D_BROWSER_SCREEN` | The virtual display's size, `1600x1000x24` by default. Chrome's windows open 1050 pixels wide on it, as on a laptop's screen. |
+
+`docker restart my-browser`, or `docker stop` then `docker start`, keeps everything, and so does a new container of the same or a newer image on the same volume:
+
+```bash
+docker stop my-browser && docker rm my-browser
+docker pull ghcr.io/ricsam/otti-browser:<version>
+docker run -d --name my-browser --hostname my-browser … ghcr.io/ricsam/otti-browser:<version>   # the same options as above
+```
+
+**One container per volume.** Never run two containers on the same volume at once: stop the old one before you start the new one. Octomerge refuses a second connection of the same browser while the first is connected.
+
+## Docker Compose
+
+```yaml compose.yaml
+name: my-browser
+
+services:
+  browser:
+    image: ghcr.io/ricsam/otti-browser:<version>
+    hostname: my-browser
+    restart: unless-stopped
+    stop_grace_period: 60s
+    security_opt:
+      - seccomp=./chrome-seccomp.json
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    shm_size: 2gb
+    mem_limit: 4g
+    cpus: 2
+    environment:
+      R5D_BASE_URL: https://octomerge.dev
+    volumes:
+      - home:/home/r5d
+
+volumes:
+  home: {}
+```
+
+Keep `chrome-seccomp.json` beside the file. Sign the volume in once with `docker compose run --rm --no-deps browser otti-browser auth --base-url https://octomerge.dev --pair <token>`, then `docker compose up -d`, and `docker compose logs -f browser` for its log. `docker compose pull` and `docker compose up -d` bring a newer Chrome. `docker compose down -v` deletes the volume, and with it the browser's sign-in and every site's sign-in in Chrome.
+
+## Using it
+
+Agents open, read and use tabs there as in any browser: screenshots, clicks and typing, downloads and uploads, [isolated sessions](/get-started/browser#isolated-sessions), port forwards and [secret fills](/get-started/browser#filling-in-secrets) all work. What differs from a Mac:
+
+- **Tab links offer Take over remotely only.** There is no screen to bring a tab to the front on, so **Bring to front** isn't offered. A takeover passes your keyboard shortcuts as a Linux machine takes them: on a Mac, **Command** works as Control there.
+- **Sign in to sites in a takeover.** Open a tab link, take the tab over and sign in, from your computer or your phone. The sign-ins stay in the volume's Chrome profile.
+- **Chrome's own windows can't be answered.** A passkey prompt or an HTTP sign-in that Chrome asks for itself appears on the server's virtual display, where nobody can answer it: cancel the passkey prompt in the takeover and sign in another way, or reload the page.
+
+## Chrome's sandbox
+
+Chrome keeps its sandbox on in the container: the image never starts it with `--no-sandbox`, which would let a compromised page reach everything the browser can, your sign-ins included. Chrome's sandbox runs each page in user, PID and network namespaces of its own, and Docker's default seccomp profile refuses to create them, so Chrome would not start.
+
+`chrome-seccomp.json` is Docker's own default profile with three rules added, each with a comment: `clone` and `unshare` may create user, PID and network namespaces (mount, cgroup, UTS and IPC namespaces stay refused), and `chroot` is allowed, which Chrome's sandbox does inside its own namespace. The cost: processes in the container may create unprivileged user namespaces, which Docker's default refuses, the same kernel features any Linux desktop running Chrome uses. The container runs as an unprivileged user (uid 1000) with no capabilities and no setuid files, and Docker's AppArmor profile stays on.
+
+Without the profile, Chrome stops at its start, and the log says to run the container with it.
+
+## Updates
+
+**otti-browser** updates itself when your environment selects a new release: it downloads the release into the volume and restarts its own process, and Chrome stays open. `R5D_BROWSER_AUTO_UPDATE=0` keeps the image's version. A container of a newer image starts that image's version.
+
+**Chrome** doesn't update in a running container: it stays the version the image installed. When Google releases a newer Chrome stable, the log says so, once for each newer version:
+
+```text
+[otti-browser] Chrome 158.0.8127.36 is older than the newest Google Chrome stable, 159.0.8150.12, and misses its security fixes. …
+```
+
+Octomerge publishes the image of your version with the new Chrome within a day. Pull the tag again and start a new container on the same volume, as above; the sign-ins and the browser's state stay.
+
+## Stopping and removing it
+
+`docker stop my-browser` finishes the current browser action, closes Chrome and exits; the log says `Disconnected and closed Chrome.` A container killed outright (`docker kill`, the out-of-memory killer) leaves Chrome's profile lock behind: the next start on the volume, with the same `--hostname`, removes it and starts Chrome.
+
+To remove the browser: `docker stop my-browser && docker rm my-browser`, then `docker volume rm my-browser-home`, which deletes its sign-in, Chrome's profiles and every site's sign-in in them. Its entry in **Settings → Browser** stays, disconnected.
+
+## When it can't sign in: exit code 78
+
+Without a sign-in on the volume, the container says how to sign in and stops with exit code **78**, and so does a start whose sign-in Octomerge refuses, for example one you revoked under **Settings → CLI & API → Authorized devices** (a browser that is running when you revoke it keeps running, retries every 15 seconds and says so in its log). With `--restart unless-stopped`, Docker starts a stopped one again and again (`docker ps` shows `Restarting (78)`), and each start's log says why. Stop it with `docker update --restart=no my-browser` and `docker stop my-browser`, sign the volume in again as in [Sign it in](#sign-it-in), then `docker start my-browser`.

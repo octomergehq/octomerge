@@ -1,0 +1,71 @@
+---
+title: "Issue tracker integrations"
+description: "Start Octomerge work from GitHub issues and pull requests or from Threadline, and follow it there."
+---
+
+Octomerge's integrations live in your issue tracker. They start work with a [launch link](/platform/launch-links), which opens a dialog in your signed-in Octomerge, and **nothing starts until you confirm it**. They follow the work through your [team](/platform/teams)'s read-only API key and event feed, so they only see the sessions you share with the team, and they can never act in Octomerge.
+
+Agents keep reading and updating issues the way they already do: with the tracker's command line tool, such as `gh`, or its MCP server.
+
+## GitHub
+
+Octomerge's GitHub App answers commands in issues and pull requests with launch links, and shows the status of the shared sessions that work on them.
+
+### Install and connect
+
+1. Install the app, **Octomerge agents**, on your account or organization, for the repositories you want: [github.com/apps/octomerge-agents](https://github.com/apps/octomerge-agents). It asks to read and write issues and pull requests, to read their comments and to comment; and to read an organization's members, to check who connects it.
+2. GitHub then opens the app's setup page. Sign in with GitHub. Only the account's owner, or an owner of the organization, can connect it.
+3. Connect the installation to an Octomerge team. You need the team's URL name and a **team API key**: a team admin creates one on the team's **Integrations** page (`https://octomerge.dev/t/<team>/integrations`).
+
+That's all the setup asks. Whether and how a session is shared with the team is decided in Octomerge's dialog, each time someone starts one from a link.
+
+To change the team later, open [r5d-github.r5d.app/setup](https://r5d-github.r5d.app/setup).
+
+### Start work from an issue or a pull request
+
+Comment `/otti implement` on an issue, or `/otti work on` on a pull request. The app replies with a launch link. Open it, and Octomerge's dialog shows:
+
+- the repository, and your project for it (or an offer to add one);
+- for an issue, a proposed new branch `issue/<number>-<title>` from the default branch (you can work on an existing branch, such as the default branch, instead); for a pull request, its branch: yours in Octomerge, or a new one created from GitHub's, with the same name, so the session's pushes go to the pull request. No branch is created until you choose **Start session**;
+- the issue or pull request as a work item, with a snapshot of its description and latest comments: **View issue** shows it, and **Copy issue** copies it to paste into the first message;
+- the first message, `Implement <issue URL>` (`Continue work on <pull request URL>` for a pull request), for you to edit;
+- sharing with the installation's team, all sessions on the branch, preselected. You can share the session another way or not at all. When the branch or the project is already shared with a team, the dialog shows that share instead.
+
+Only the repository's owner, members and collaborators can use the commands; the app ignores anyone else's. Pull requests from forks aren't supported.
+
+You can also put a link by hand in a comment, a template or anywhere else:
+
+```text
+https://r5d-github.r5d.app/launch?repo=acme/api&issue=42
+https://r5d-github.r5d.app/launch?repo=acme/api&pr=7
+```
+
+The app reads the issue when you open the link, so the snapshot is always current. For a private repository, it first asks you to sign in with GitHub, and opens Octomerge only when GitHub confirms that you can read the repository.
+
+### Follow the work on GitHub
+
+While a session is shared with the team, the issue or pull request it works on has a comment from the app with its status: starting, running, waiting for input, finished, failed or stopped. A session that isn't shared with the installation's team gets no comment. The comment is edited as the status changes, and links the read-only session page and the branch's team page for the team's members. When the share is revoked, the comment says so and stops changing.
+
+The app finds the sessions by their work items' URLs, so this also works for a session that wasn't started from the app: an agent can show an issue on its session with `otti session work-items add --url https://github.com/acme/api/issues/42 --label acme/api#42 …` ([work items](/platform/launch-links#work-items-on-sessions)), and once the session is shared with the team, the issue gets its comment.
+
+When a pull request is opened for a shared branch, the app comments on it once with a link to the branch's team page, where reviewers can follow every session shared with the team on that branch.
+
+## Threadline
+
+[Threadline](https://github.com/ricsam/issue-tracker) has an Octomerge plugin (its ID, in Threadline's CLI and MCP tools, is `r5d`).
+
+1. A Threadline administrator enables it in Threadline's workspace settings (**Plugins**), with Octomerge's address, the team's URL name and a team API key, what to share, and for each Threadline project the git remote and default branch it works on.
+2. **Implement with Octomerge** on an issue opens Octomerge's dialog with the project's repository, a new branch `issue/<number>-<title>`, the issue with its description and comments as a snapshot, and the team share.
+3. Board cards and issues show the status of the shared sessions working on them, with links to the sessions and their pull requests.
+
+Threadline also has an MCP endpoint for agents, so they can read an issue and its comments, comment, close it and move its card. Create a personal API key in Threadline (**API access**; read and write, so agents can change issues), then in Octomerge open **Settings → MCP servers**, add `https://<your Threadline>/mcp` and use the key as its bearer token. Threadline keys expire, after at most a year: replace the token in Octomerge before then.
+
+### Link a session to an issue
+
+A session you didn't start from Threadline can show on an issue too. Ask its agent to work on the issue; with Threadline's MCP server it links its own session:
+
+1. It shares its session with the team the plugin follows: `otti share session --team <team>`.
+2. It calls Threadline's MCP tool `r5d_link_add` with the issue's number and its session's ID.
+3. It shows the issue on its session with the work item `r5d_link_add` returns: `otti session work-items add --url <url> --label <label> --short-label <short label> --title <title> --icon <icon>`.
+
+The issue then shows a badge for the session and its subagents, and the session shows the issue, for example `!358`. Your [account instructions](/platform/agent-instructions-and-skills) can tell agents to do this whenever you ask them to work on a Threadline issue.

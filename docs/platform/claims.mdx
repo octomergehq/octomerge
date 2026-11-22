@@ -1,0 +1,93 @@
+---
+title: "Coordination claims"
+description: "Let sessions take turns on a task, a checkout or a shared host resource."
+---
+
+When several sessions work on the same project, a claim records who is doing what. A claim is a named topic on one project branch, such as `checkout` or `db-migration`. One session holds it at a time. A session that tries to take a claim another session holds is refused, and told who holds it and until when.
+
+Claims are advisory. They coordinate the sessions that check them, but they don't lock files, block commands or sandbox anything. Agents use claims through `otti` in their shell, and you can use them from your terminal too.
+
+## Take, check, renew and release
+
+```bash
+otti session claim db-migration --ttl 20m --note "Applying migration 0142"
+otti session claim db-migration --status
+otti session claim db-migration --renew --ttl 20m
+otti session claim db-migration --release
+otti session claims
+```
+
+Taking a claim either succeeds or exits non-zero. When another session holds the topic, the output names that session, the branch it is native to, the claim's expiry and its note, and nothing changes. Taking a topic again while you still hold it renews it.
+
+`--status` shows one topic, and `session claims` lists every claim on the branch. Both include expired and released claims, marked as such. Each entry shows the holder, the branch the holder works on, the claim's generation and its expiry. `--json` prints the same as structured data.
+
+A topic is free text of up to 120 characters, and a note up to 500. Write the note for the session that will be refused: what you are doing and when you expect to finish. The note stays with the claim while you hold it: a renewal keeps it, and taking the topic again with a new `--note` replaces it. When the topic is taken anew, by another session or after a release or expiry, the claim has the new holder's note, or none.
+
+**The acting session.** `otti` acts as the session `-s SESSION_ID` names, else as `R5D_SESSION_ID`. An agent's shell sets `R5D_SESSION_ID` to that agent's session, so the commands above work as written there; an agent can name another session with `-s`, as you can. From your terminal, choose the session with `-s SESSION_ID`, or set `R5D_SESSION_ID`. It must be one of your sessions. A claim belongs to that session, not to your account.
+
+## Expiry, renewal and generations
+
+A claim lasts for its `--ttl`, written as whole seconds (`--ttl 7200`) or with a suffix (`90s`, `30m` or `2h`). For example, `7200`, `7200s`, `120m` and `2h` all mean two hours. The CLI accepts values from 1 to 86400 seconds (24 hours); values below 60 seconds count as one minute. Without `--ttl`, a claim lasts 30 minutes. A renewal restarts the claim's lifetime from now: its own `--ttl`, or 30 minutes again without one, even if the claim was taken for longer. Renew before the claim expires, passing the same `--ttl` for longer work.
+
+Once a claim has expired, any session can take it. `--renew` on an expired claim fails with `expired`; take the claim again instead. Stopping a session does not release its claims; they last until they expire. To end a stopped session's claim sooner, release it yourself as that session: `otti -s SESSION_ID session claim TOPIC --release`, adding `-p` and `--branch` for a claim on another branch. A deleted session's claims last until they expire.
+
+Each time a topic is taken anew (by another session, or again after a release or expiry), its generation increases. `--renew` and `--release` only act on the generation this session holds. A late release from an earlier holder therefore cannot end a newer claim. `otti` looks up the generation itself; pass `--generation N` only to tie the command to a generation you observed.
+
+`--release` succeeds when this session holds the claim or was the last to hold it, and when the topic has never been claimed on the branch (for `checkout`, see the implicit hold below). It fails when another session holds the topic or was the last to hold it.
+
+## Wait for a claim
+
+Add `--notify` when taking a claim. If another session holds it, the call still fails, and it also registers this session to be woken when the claim frees up:
+
+- when the claim is released or expires;
+- for an implicit `checkout` hold, when every session native to that branch is idle.
+
+An agent then calls its `wait` tool, which ends with the wake reason `claim_released`. If the agent is busy instead, it reads the notice at its next step; an idle session starts a new run. Either way it must take the claim again. The claim is not reserved for it, and another waiting session may get it first. A registration wakes its session once. It lasts at most 24 hours, and ends when the session takes the claim.
+
+An agent runs only with its session's own connected worker. When you register a session that has none from your terminal (`-s SESSION_ID`), the output says so: the notice still reaches the session's transcript when the claim frees up, but its agent reads it only once you select a worker for it (`otti session set-worker SESSION_ID --worker WORKER`), which continues the session. A session whose worker is offline gets the notice when the worker reconnects.
+
+## The `checkout` topic
+
+`checkout` is reserved for writing tracked files in a branch's checkout.
+
+**On your own branch, the hold is implicit.** A session native to a branch holds `checkout` there without claiming it until the session is idle: while its agent runs, while input waits to start its next run, and while it is suspended in a `wait`, for a subagent, a command or a claim. `--status` lists that hold as `(native, running)`, or `queued`, `waiting` or `paused` (a run paused for recovery), and `held until the holder is idle (implicit)`. A session that is idle, stopped or waiting for your answer holds nothing. Nothing is stored for the hold, so it cannot be renewed or released. Without an explicit claim of its own, `--renew` and `--release` answer `held_implicitly` and exit non-zero.
+
+A session may still claim `checkout` on its own branch explicitly, to leave a note or to hold it once the session is idle, for example while a command it started keeps running. `--status` then lists both entries, the explicit claim first. `--renew` and `--release` act on the explicit claim, like any other claim.
+
+**In another checkout, claim it first.** Before writing in another branch's or project's checkout, for example one referenced as `@project/branch`, claim `checkout` there. Hold it until the write is done, then release it:
+
+```bash
+otti -p my-project --branch feature/login session claim checkout --ttl 15m --note "Regenerating the API client"
+# … write in that checkout …
+otti -p my-project --branch feature/login session claim checkout --release
+```
+
+`-p` (a project slug or ID) and `--branch` go together. They name a branch of one of your projects instead of the session's own branch. While a session native to that branch is busy, the claim is refused and names it. Message that session with `otti session prompt`, which also ends its `wait`, or claim with `--notify` and wait. Don't wait for a session that is waiting for you, such as the session that started yours as a subagent: it keeps its hold while it waits, so message it instead.
+
+Once you hold the claim, taking it again renews it, like `--renew`, even while a session native to that branch has become busy. Both answers then name that session on a `Native session busy:` line, since it may write in the same checkout.
+
+Claiming `checkout` does not fence or lock the checkout on any worker. It stops no command from writing there, and the claim's output says so on a `Fence:` line. Sessions native to that branch are told about it instead: while your claim lasts, `session start`, `session prompt` and `session status` for any of them print a `Warning:` line naming your session and its note, and their agents' instructions name your claim at every step. They are asked to coordinate with you before writing tracked files, so write a note that says what you are changing.
+
+## Shared host resources
+
+A claim covers one project branch. Two sessions on different branches that claim the same topic name do not exclude each other. To share something on a worker host, such as a port, a Docker daemon or a scratch directory:
+
+1. Agree on one explicit scope (`-p PROJECT --branch BRANCH`) that every participating session uses.
+2. Use a topic that names the worker, for example `build-host:port-4193` for port 4193 on the worker `build-host`.
+3. Hold the claim, renewing it, until cleanup is finished.
+
+## Outcomes
+
+Taking, renewing and releasing a claim print the outcome in words on an `Outcome:` line; `--json` gives its code in the `outcome` field. Every outcome that shows a claim names its holder the way `session claims` does: the session's ID, its name, and `(native)` or `(foreign: native to branch …)`. Only `acquired`, `renewed` and `released` exit zero, as does `missing` for `--release`.
+
+| `outcome` | Meaning |
+| --- | --- |
+| `acquired` | This session holds the claim now, with a new generation. |
+| `renewed` | The claim's expiry moved; the generation is unchanged. Taking a topic you hold gives this too. |
+| `held_by_other` | Another session holds the claim, and nothing was taken. With `--notify`, this session is also registered to be woken when it frees up. |
+| `not_holder` | Another session holds the claim, or held it last. |
+| `held_implicitly` | `checkout` only: this session holds it implicitly, as a busy session native to the branch, and has no explicit claim to renew or release. |
+| `stale_generation` | The claim was taken anew after the generation you passed. |
+| `expired` | The claim expired before the renewal; take it again. |
+| `missing` | There is no claim on the topic. |
+| `released` | The claim has ended. |

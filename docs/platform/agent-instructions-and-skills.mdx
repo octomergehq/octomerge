@@ -1,0 +1,72 @@
+---
+title: "AGENTS.md and skills"
+description: "Give agents standing instructions and reusable procedures across your account or in one project."
+---
+
+## Choose a scope
+
+| Scope | Instructions | Skills |
+| --- | --- | --- |
+| Account | `$R5D_ROOT/AGENTS.md` | `$R5D_ROOT/skills/<name>/SKILL.md` |
+| Project | `AGENTS.md` at the checkout root | `.agents/skills/<name>/SKILL.md` |
+
+Account files apply across your projects and workers. They synchronize with the rest of your account workspace, without a project commit. Project files belong to the project's Git repository: edits are ordinary uncommitted changes on that branch until you commit them. Existing project skills in `.claude/skills/` are also discovered; create new ones in `.agents/skills/`.
+
+## Write instructions
+
+Use **Settings → Instructions** to view and edit account instructions. For a branch, choose **Settings** in the branch's header (on a phone, in its menu), or **Branch settings** in the menu of one of its sessions in the sidebar, then **Instructions & skills**, to edit its root `AGENTS.md`, view nested instruction files, and see available account and project skills. Viewing and saving work even when no worker is online.
+
+Keep `AGENTS.md` focused on standing instructions, such as test commands, coding conventions, and project boundaries. More-specific instruction files override broader ones for the paths they cover: nested files override the project root, which overrides account instructions. Your explicit request takes precedence over all of them. Agents are told to read nested `AGENTS.md` files before working in those directories.
+
+Account instructions have a 100,000-character limit. Long project instruction files are bounded in the agent's initial instructions, with a notice telling the agent to read the rest.
+
+To see how much of the agent's context your instructions and skills use, or to leave them out of one conversation, hover the composer's context meter: see [What the agent's context holds](/platform/workspace-chats#what-the-agents-context-holds).
+
+You can also use the [CLI](/cli/otti#account-instructions-and-credentials):
+
+```bash
+otti account instructions get
+otti account instructions set --file AGENTS.md
+printf '' | otti account instructions set --stdin
+```
+
+These commands read and update the canonical account file, not a local project file. Empty input clears its content.
+
+## Create a skill
+
+Skills are reusable procedures. Open **Skills** from the sidebar's **More** tab to browse account skills and project skills on each project's default branch. A branch's **Settings → Instructions & skills** shows that branch's versions. Choose **New skill**, give it a name and description, and edit the generated `SKILL.md` template. You can also ask an agent to create a skill at either scope.
+
+A skill is a folder containing `SKILL.md`, with optional `scripts/`, `references/`, and `assets/` folders:
+
+```markdown
+---
+name: review-release
+description: Review a release candidate and its test results before publishing a release.
+---
+
+# Review a release
+
+1. Read the release notes and changed files.
+2. Run the project's checks.
+3. Summarize remaining risks before asking for approval.
+```
+
+Names use lowercase letters, digits, and single hyphens, with no leading or trailing hyphen, and are at most 64 characters. The `name` must match the folder; if omitted, the folder name is used. `description` is required and is at most 1,024 characters. It should explain what the skill does and when to use it. Keep the body under 500 lines and move supporting detail into referenced files.
+
+Agents look skills up instead of carrying a list of them: before a task, an agent runs `otti get skills`, which lists the skills its chat can use with their names, descriptions and paths, not their full text. When a task matches a skill, the agent reads its `SKILL.md` first and loads supporting files as needed. Adding, editing or deleting a skill therefore doesn't change what running agents were sent, so their prompt cache stays valid; an agent that already listed the skills sees a new one when it lists them again, for example when you name it. Invalid front matter is flagged in the browser and listed apart, with why, instead of with the skills to use. Account and project skills with the same name are both listed, with their scopes. Workspace chats get account skills; project chats and subagents also get their own project's skills. Workspace repair sessions receive instructions but no skills.
+
+You can run the same lookup yourself: `otti -s SESSION_ID get skills` lists a chat's skills, `otti -p PROJECT -b BRANCH get skills` a branch's, and `otti get skills` your account's.
+
+## Saves, synchronization, and conflicts
+
+A save in the UI or CLI reaches agents on their next model request for `AGENTS.md`, and the next time they list skills for a skill. An edit made on a worker reaches the other workers and Octomerge within seconds, once the worker has synchronized it; until then an agent can read the local file directly.
+
+Saves check the version you opened, and **Save** answers once the file is saved. If somebody, or an agent, changed the file since you opened it, nothing is saved and the editor keeps your draft: choose **Reload the current version** to start from it, or **Save my draft over it** to replace it with yours; Octomerge never silently overwrites a newer edit. If the answer to a save doesn't arrive, for example because the connection dropped, the editor keeps the save and offers **Retry save**, which asks for the same save again: it is applied at most once. Saving project files does not commit or push them to GitHub: use the branch's **Git** page for that.
+
+Every worker takes a save in within seconds, like any other change of the workspace. A worker that edited the same file and had not synchronized that edit yet merges the two line by line: edits of different lines are both kept, and edits of the same lines, or of lines next to each other, are a conflict, which stops that worker for a remediation that keeps both. Deleting a skill deletes its folder on every worker: the files a worker had synchronized go. A worker that was offline keeps what it did there meanwhile: a file it changed stops it for a conflict remediation, and a file it added is synchronized again.
+
+New account files outside project checkouts count toward the 5 MiB of new content a worker publishes without a review. Keep large assets elsewhere. Do not put secrets in instructions or skills; refer to configured account environment-variable names instead. Skills describe procedures, not additional permissions.
+
+Existing account instructions are moved into `AGENTS.md` during the installation upgrade. If that file already has different content, it is kept and the old instructions are preserved as `AGENTS.account-instructions.md` for you to merge.
+
+Explicit `$skill` invocation, catalogs, plugin skills, skill-defined permissions, and discovery of skills inside nested project directories are not supported. `CLAUDE.md` is not a fallback instruction filename.

@@ -1,0 +1,24 @@
+---
+title: "Persistence and recovery"
+description: "Understand durable history, synchronized files, and interrupted work."
+---
+
+Conversations, accepted input, and tool results live in the installation database. Canonical project content lives in its storage service. A conversation's working files and ongoing host commands belong to its independently supervised workspace keeper.
+
+| Data | Location |
+| --- | --- |
+| Conversations and accepted input | Installation database; the history of conversations idle for a while, in installation asset storage |
+| Conversation search index: messages, tool calls and errors, secrets redacted ([`otti search`](/cli/otti#search-conversations)) | Installation database, erased with its conversation |
+| Published project content | Canonical storage service |
+| Current working files and command output | Conversation workspace and keeper |
+| Saved attachments | Installation asset storage |
+| Private command credential files | Keeper-managed temporary files |
+| Application databases and external volumes | Your deployment destination |
+
+A conversation nobody has opened or run for a while can keep its history in slower storage. It stays in the sidebar as before, with its whole history: the first time you open it again, or an agent or `otti` reads it, it can take a moment (usually under a second, a few seconds for very long conversations) while its history comes back. If that storage cannot be read just then, the chat says its history is temporarily unavailable, and `otti` answers with the same message; try again a few minutes later. A message you send from a chat that is already open waits and is sent once the history is back. If the stored copy is missing or damaged, the chat says its history is unavailable. Searching conversations never brings a history back: their search entries stay in the database.
+
+A routine application release lets existing work remain with its owning generation while new work starts on the promoted generation. Reconnecting the UI reads accepted input and existing tool receipts; it does not repeat commands.
+
+If a host or process fails, the conversation can become blocked until the original receipt is reconciled. Inspect the actual effect before issuing a new command, especially for deployments or other external changes. A new runtime cannot resurrect a process lost with its host.
+
+Workspace synchronization keeps the workspace's current files, not earlier versions of them, and is not a backup of every external database or arbitrary host file. Commit what you want to keep to a project's history. Installation operators must retain independent database and storage backups and account for new writes before restoring an earlier snapshot.

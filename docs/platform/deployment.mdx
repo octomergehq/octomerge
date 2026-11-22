@@ -1,0 +1,31 @@
+---
+title: "Bring a deployment destination"
+description: "Deploy using the tools, credentials, and destinations available on your worker."
+---
+
+Deployment is optional. An agent can work on code without a cluster or hosted application. When you want to deploy, you
+choose the destination: a Docker host, a VPS, Kubernetes, or another service reachable from the selected worker.
+
+## Prepare access
+
+1. Install the destination's CLI and project tooling on the worker.
+2. Verify network access from that worker to the intended destination.
+3. Have the installation operator configure scoped account or project credential bundles for the intended execution environment.
+4. Describe the destination, intended account/context, namespace or application conventions, and deployment procedure in
+   account instructions or the project's `AGENTS.md`. Refer to credential names and file paths without including values.
+5. Ask the agent to inspect the destination and verify the intended target before making deployment changes.
+
+For Kubernetes, a kubeconfig can be delivered through a scoped credential bundle as a protected secret file
+whose path is exposed through `KUBECONFIG`. It should not be pasted into a chat, committed to a repository, or assembled by
+having an agent read a secret's value. Validate access with a read-only command such as `kubectl get namespaces` after
+choosing the intended context.
+
+## Networking, domains, registry access, and storage
+
+Your deployment provider determines ingress configuration, public addresses, TLS, available storage classes, quotas,
+and application persistence. There is no required Octomerge registry, Kubernetes runtime, storage class, or public hostname.
+Use the provider's supported configuration and back up your application data separately from workspace synchronization.
+
+Use [GitHub Container Registry](/platform/ghcr) to build and publish images. Worker push credentials,
+deployment pull credentials, and CI deployment access are separate concerns. Configure CI credentials or workload
+identity for your destination, and maintain their rotation and revocation through that provider.

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Octomerge documentation",
+  "description": "Connect your own machines and model access to an agent workspace, with optional deployment to services you choose.",
+  "colors": {
+    "primary": "#0891B2",
+    "light": "#22D3EE",
+    "dark": "#0E7490"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": [
+              "index",
+              "get-started/sign-in",
+              "get-started/add-worker",
+              "get-started/worker-service",
+              "get-started/worker-container",
+              "get-started/cloud-server",
+              "get-started/add-remote",
+              "get-started/macos-worker",
+              "get-started/browser",
+              "get-started/browser-container",
+              "get-started/mcp-servers"
+            ]
+          },
+          {
+            "group": "Command line",
+            "pages": [
+              "cli/otti",
+              "cli/api-client"
+            ]
+          },
+          {
+            "group": "Platform",
+            "pages": [
+              "platform/shell-environment",
+              "platform/deploy-targets",
+              "platform/git-remotes",
+              "platform/workspace-chats",
+              "platform/archiving",
+              "platform/usage",
+              "platform/open-llm-router",
+              "platform/claims",
+              "platform/agent-instructions-and-skills",
+              "platform/launch-links",
+              "platform/teams",
+              "platform/integrations",
+              "platform/persistence",
+              "platform/artifact-storage",
+              "platform/deployment",
+              "platform/ghcr"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Guides",
+        "icon": "map",
+        "directory": "card",
+        "groups": [
+          {
+            "group": "Guides",
+            "root": "guides/index",
+            "pages": [
+              "guides/boat-dev-worker"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "redirects": [
+    {
+      "source": "/cli/r5dctl",
+      "destination": "/cli/otti"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+---
+title: "Sign in"
+description: "Sign in with Google, Apple or GitHub, add another way to sign in to your account, connect GitHub for repository access, and delete your account."
+---
+
+On octomerge.dev you sign in with **Google**, **Apple** or **GitHub**, through Octomerge's sign-in service, auth.octomerge.dev. The three are equal: each only tells Octomerge who you are. Choose **Continue with Google**, **Continue with Apple** or **Continue with GitHub** on the first page, or **Sign in** in the top bar, which asks which one.
+
+The first time you sign in, Octomerge creates your account: you choose your **handle**, and on octomerge.dev the account joins the waitlist: expect an invite by email soon ([Signing up](/#signing-up)). An installation with other ways to sign in, such as a company's own sign-in, lists them beside these.
+
+auth.octomerge.dev keeps you signed in for seven days, so other apps that sign in with it don't ask again in that browser.
+
+## Signing in with Apple
+
+Apple asks whether to share your email address or to **Hide My Email**. With Hide My Email, Octomerge gets an address at `privaterelay.appleid.com` instead, and it is your account's email like any other: Apple forwards Octomerge's emails to you. Because that address says nothing about you, Octomerge suggests a handle from your name instead. Apple shares your name only the first time you sign in with it; without one, you type a handle, and it also names your account.
+
+## One account, several ways to sign in
+
+You can add Google, Apple or GitHub to your account, and then sign in with any of them into the same account:
+
+1. Open **Settings → Sign-in methods** (or **Sign-in methods** beside your name in **Settings**). It shows which of Google, Apple and GitHub your account signs in with.
+2. Choose **Connect** beside the method to add. If you last signed in more than ten minutes ago, auth.octomerge.dev, Octomerge's sign-in, first asks you to confirm it's you with a method you already have.
+3. Sign in with the method you're adding. You come back to **Sign-in methods**, which shows it connected.
+
+A method can be added only if it hasn't signed in to Octomerge before: a Google, Apple or GitHub account that is already its own account can't be added to another one, and **Sign-in methods** says so. If you made that other account by mistake and don't need it, [delete it](#deleting-your-account) first, then connect its method to the account you use. Methods you add stay; you can't remove them yourself yet.
+
+A method you add somewhere else, such as on auth.octomerge.dev itself or in another app that signs in with it, shows in **Sign-in methods** after you next sign in to Octomerge. auth.octomerge.dev also lists your methods, with the email of each.
+
+Your name and picture in Octomerge follow the method you signed up with: each time you sign in with it, Octomerge takes them from there. Signing in with a method you added leaves them as they are, and so does a sign-in that shares no name or picture (Apple shares no picture). Your email stays the one you signed up with.
+
+The first time you sign in with a method auth.octomerge.dev doesn't know, you go straight to choosing your handle. If you already have an account and signed in another way by mistake, choose **Already have an Octomerge account? Sign in to it instead** on that page. That frees the method, and after you sign in to your account, **Sign-in methods** opens, where you can add it. A sign-up you leave without choosing a handle frees its method too, within about half an hour. If you created a second account by mistake, [delete it](#deleting-your-account): that frees the method as well, and you can then add it to your account.
+
+### "Another Octomerge account already uses this email address"
+
+Octomerge never joins accounts by their email address. If you sign up with a method whose email another Octomerge account already has, Octomerge refuses the new account and frees that method again. If the other account is yours, choose **Sign in with another method** and sign in the way you usually do. **Sign-in methods** then opens, where you can add the method you tried.
+
+### "Too many sign-ins were started from your network"
+
+Octomerge limits how many sign-ins one network can start: 30 in 10 minutes, counted for everyone who shares its internet address, such as an office or a classroom behind one router. Past that, the page says how long to wait; then choose **Sign in again**. On octomerge.dev, more than 10 sign-ins started in 10 seconds from one address are also blocked for 10 seconds. While you choose your handle, checking handles and submitting are limited too, far above what typing needs.
+
+## GitHub repositories
+
+Signing in with GitHub only identifies you: it gives Octomerge no access to your repositories. Repository access is a separate grant, the same whichever way you sign in: **Connect GitHub repositories** in **Settings → Git**, or when you start a project from GitHub. It uses the GitHub account you're signed in to on github.com, which can be any GitHub account, and your workers use it for GitHub's container registry too ([GHCR](/platform/ghcr)). Once connected, **Settings → Git** shows the grant as **Connected**, with the GitHub account it belongs to; **Connect another GitHub account** replaces the grant with another account's.
+
+## Signing out
+
+**Log out** (in the sidebar's **More** tab and in **Settings → Sign-in sessions**) also ends your sign-in at auth.octomerge.dev in that browser, so the next sign-in goes to Google, Apple or GitHub again. **Sign out all devices** does the same and also ends your Octomerge sessions in every other browser. Neither touches your `otti` credentials or API keys, nor your sign-in at Google, Apple or GitHub itself.
+
+## Deleting your account
+
+**Settings → Delete account** deletes your account and everything in it, at once. It can't be undone. The page lists what goes with it:
+
+- your projects, with their branches, conversations, files and history at Octomerge (your repositories at GitHub and other Git hosts aren't touched);
+- your conversations in your workspace; running ones are stopped first;
+- your workspace's files, instructions and skills, secrets, model connections, MCP servers, the enrollments of your workers and browsers, and your `otti` devices and API keys;
+- your teams: a team only you are in is deleted, a team whose only admin you are gets its longest-standing other member as admin, and you leave the others;
+- on octomerge.dev, your [Open LLM Router](/platform/open-llm-router) account, when you sign in to it with your Octomerge account: it's deleted with everything in it (its apps, provider accounts, keys, logs and usage history). If it also signs in with Google, it stays and only loses its Octomerge sign-in. The page names the account.
+
+Choose **Delete account…** and type your handle to confirm. Deleting many projects can take a minute; the page shows what it is doing. If it stops before it's done (you close the page, or something fails), what was deleted stays deleted and your account stays: delete it again to finish. If Open LLM Router can't be reached, your account isn't deleted until it can: delete it again a few minutes later.
+
+Afterwards you're signed out, and auth.octomerge.dev forgets your sign-in, with every method you linked: each Google, Apple or GitHub account you used can sign up again or be added to another Octomerge account. Files on your own workers stay on them.
+
+Three things stop a deletion until you change them:
+
+- **A plan that still renews.** Cancel it in **Settings → Billing** first: deleting your account doesn't cancel it. A cancelled plan runs until the end of its period; deleting your account before then gives up the rest, without a refund.
+- **A team's [Team plan](/platform/teams#the-team-plan) that still renews, for a team only you are in** (the team goes with your account). Cancel it on the team's **Billing** tab first.
+- **Being the installation's only administrator.** Another account has to become an administrator first.
+
+Deleting needs a browser signed in to the account: `otti`, API keys and agents can't delete it.

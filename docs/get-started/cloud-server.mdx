@@ -1,0 +1,181 @@
+---
+title: "Start a worker on a cloud server"
+description: "Settings → Workers makes a cloud-init or Terraform/OpenTofu file that connects a new server as a worker on its first boot, with no sign-in on it."
+---
+
+A new cloud server can connect itself as a worker: no shell on it, no approval. In **Settings → Workers → Enrollment tokens**, enter the worker's label, choose what it connects as (**Worker** or **Remote**, as in [Enroll a machine with a token](/get-started/add-worker#enroll-a-machine-with-a-token)) and create a token. Then choose **Cloud server**, and:
+
+- a cloud: AWS, Google Cloud, Azure, DigitalOcean, Hetzner, Vultr, Akamai, Scaleway or OVHcloud;
+- a format: **cloud-init**, to paste where the cloud's console creates a server, or a **Terraform** or **OpenTofu** file that creates the server for you;
+- a region and a size. The cloud bills you for the server, not Octomerge.
+
+Settings lists a few common regions and sizes of each cloud, but any region and size the cloud offers works, x86 or Arm: choose another in the cloud's console, or with the file's `region` and `size` variables (`-var size=…`).
+
+The page writes the file around the token, in your browser: the token never goes back to Octomerge. Copy or download the file before you leave the page, since the token is shown only once. Every server runs Ubuntu 24.04. To run the worker in a container instead, choose **Container**, which writes the container files around the token the same way ([Run a worker in a container](/get-started/worker-container)). For a virtual machine that stops when you aren't using it, choose **boat.dev** ([Run a worker on a boat.dev sandbox](/guides/boat-dev-worker)).
+
+## What the server does on first boot
+
+1. It installs git, Docker (Ubuntu's `docker.io`, with Buildx and Compose), and Node.js 24 with npm from NodeSource's signed package repository.
+2. It adds the user `r5d`, with passwordless `sudo` and the `docker` group: the server is the worker's, so agents install what they need and build and run containers there.
+3. It installs Bun, at the version Octomerge pins and checked against its published checksum, into `/home/r5d/.bun`.
+4. As `r5d`, it installs the CLIs at your environment's version, with the same command **Settings → Workers** shows, then enrolls them with the token (`otti-worker auth --enroll`).
+5. It starts the worker as the systemd service `otti-worker`, which starts again on every boot. The service is the one in [Run the worker as a service](/get-started/worker-service#linux-systemd): the worker's [life vest](/get-started/add-worker#the-life-vest) resumes it when a signal stops it and starts it again when it exits or hangs, so you don't have to log in to the server to bring it back. systemd starts it again after any exit but a refused sign-in (exit code 78), and gives the worker 90 seconds to stop.
+
+The worker connects out to Octomerge, so the server needs no inbound port. It shows under **Your workers** a few minutes after the server starts. On the server, `/var/log/cloud-init-output.log` shows the first boot and `journalctl -u otti-worker` the worker.
+
+## The token
+
+The token works once, within an hour of its creation, and only for its label. Create the server within that hour; one that boots later can't enroll, so create a new token and file. An open token can be revoked in **Settings → Workers**.
+
+The token is in the server's user data, which the cloud keeps, and with Terraform or OpenTofu in `main.tf` (and, with some clouds' providers, in the state file beside it). Once the server has enrolled, it is spent: it can't enroll anything else. On the server, the first boot keeps it in a file only `root` can read and deletes that file once the server is enrolled, and nothing prints it to a log. The cloud's metadata service still serves the user data to the server, where agents, who have `sudo`, can read it: by then the token is spent.
+
+## SSH
+
+The server accepts no SSH password logins: its first boot sets cloud-init's `ssh_pwauth: false`. Some clouds, such as Hetzner, DigitalOcean and Vultr, give a server created without an SSH key a root password, which they email to you or show in their console; that password works only in the cloud's web console.
+
+To log in with SSH, give the server your public key when you create it: in the SSH key field of the cloud's console, or in `main.tf` with the provider's key setting below. SSH also needs port 22 open where the cloud's firewall blocks inbound connections, as on AWS and Azure; the worker itself needs no inbound port.
+
+| Cloud | Your key in `main.tf` |
+| --- | --- |
+| AWS | `key_name` on `aws_instance`: the name of an EC2 key pair |
+| Google Cloud | `"ssh-keys" = "<user>:<public key>"` in the instance's `metadata` |
+| Azure | the `ssh_public_key` variable, for the user `azureuser` |
+| DigitalOcean | `ssh_keys` on `digitalocean_droplet`: the keys' IDs or fingerprints |
+| Hetzner | `ssh_keys` on `hcloud_server`: the keys' names or IDs |
+| Vultr | `ssh_key_ids` on `vultr_instance` |
+| Akamai | the `ssh_public_key` variable, for `root` |
+| Scaleway | nothing: the server gets the SSH keys of your project |
+| OVHcloud | `key_pair` on `openstack_compute_instance_v2`: the name of a key pair |
+
+## cloud-init
+
+Create a server in the cloud's console with Ubuntu 24.04 and the region and size you chose, and paste the file as its user data:
+
+| Cloud | Where the console takes it |
+| --- | --- |
+| AWS | EC2 → Launch instance → Advanced details → User data |
+| Google Cloud | Compute Engine → Create instance → Advanced → Metadata, with the key `user-data` |
+| Azure | Virtual machines → Create → Advanced → Custom data |
+| DigitalOcean | Create Droplet → Advanced options → Add initialization scripts |
+| Hetzner | Add Server → Cloud config |
+| Vultr | Deploy → Additional features → Cloud-Init User-Data |
+| Akamai | Create Linode → Add User Data |
+| Scaleway | Create Instance → Advanced settings → Cloud-init |
+| OVHcloud | Public Cloud → Create an instance → Configure your instance → Post-installation script |
+
+The file is the same for every cloud. In outline, with the values Settings fills in as placeholders:
+
+```yaml
+#cloud-config
+package_update: true
+packages: [ca-certificates, curl, git, unzip, docker.io, docker-buildx, docker-compose-v2, nodejs]
+
+# Node.js 24 with npm, from NodeSource's signed apt repository.
+apt:
+  sources:
+    nodesource:
+      source: "deb [signed-by=$KEY_FILE] https://deb.nodesource.com/node_24.x nodistro main"
+      key: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
+        …
+
+# SSH takes keys only.
+ssh_pwauth: false
+
+users:
+  - default
+  - name: r5d
+    shell: /bin/bash
+    lock_passwd: true
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+
+write_files:
+  - path: /etc/systemd/system/otti-worker.service
+    content: |
+      [Service]
+      User=r5d
+      Environment=PATH=/home/r5d/.bun/bin:/usr/local/bin:/usr/bin:/bin
+      ExecStart=/home/r5d/.bun/bin/otti-worker start --label <label> --base-url <origin>
+      Restart=always
+      RestartPreventExitStatus=78
+      TimeoutStopSec=90
+      …
+  - path: /var/lib/r5d-setup/enroll-token
+    permissions: "0600"
+    content: "r5de_…"
+  - path: /var/lib/r5d-setup/first-boot.sh
+    permissions: "0700"
+    content: |
+      # Bun, the CLIs, the enrollment, then the service:
+      …
+      retry as_r5d bun install --global --backend=copyfile @octomerge/otti-worker@<version> @octomerge/otti@<version> --registry https://npm.octomerge.dev
+      retry as_r5d otti-worker auth --enroll "$(cat "$token_file")" --base-url "$origin"
+      systemctl enable --now --no-block otti-worker.service
+
+runcmd:
+  - [bash, /var/lib/r5d-setup/first-boot.sh]
+```
+
+A remote's file starts `otti-worker start --remote`. `cloud-init schema --config-file user-data.yaml` checks a file before you use it.
+
+## Terraform and OpenTofu
+
+The file is one `main.tf` for Terraform or OpenTofu: the provider, the server with what the cloud needs around it (on Azure a resource group of its own with a network and a public address, on Scaleway a public address), and the cloud-init document above as its user data. Its variables:
+
+| Variable | What |
+| --- | --- |
+| `label` | The server's name at the cloud: the worker's label, in the letters every cloud accepts. The worker connects with the label its token is for, whatever the server is called. |
+| `region` | The region, zone or location you chose. |
+| `size` | The size you chose. On AWS, Google Cloud and Azure an Arm size gets the Arm image. |
+| `project` | Google Cloud only: your project's ID. |
+| `ssh_public_key` | Azure and Akamai only, which require an SSH key: the public key file, `~/.ssh/id_ed25519.pub` by default. |
+
+Each provider reads your credentials as its tools do:
+
+| Cloud | Credentials |
+| --- | --- |
+| AWS | the aws CLI's: `aws configure`, `aws sso login` or `AWS_PROFILE`; the server goes into your default VPC |
+| Google Cloud | `gcloud auth application-default login`; the server goes into the project's default network |
+| Azure | `az login`, and `ARM_SUBSCRIPTION_ID` |
+| DigitalOcean | `DIGITALOCEAN_TOKEN` |
+| Hetzner | `HCLOUD_TOKEN`, a Read & Write API token of the Cloud project |
+| Vultr | `VULTR_API_KEY` |
+| Akamai | `LINODE_TOKEN` |
+| Scaleway | `SCW_ACCESS_KEY`, `SCW_SECRET_KEY` and `SCW_DEFAULT_PROJECT_ID` |
+| OVHcloud | the `OS_*` variables of the project's OpenStack RC file (`source openrc.sh`) |
+
+Save the file as `main.tf` in an empty directory, then run there, for example on Hetzner:
+
+```bash
+export HCLOUD_TOKEN=<your-project-api-token>
+tofu init
+tofu apply
+```
+
+With Terraform, run `terraform init` and `terraform apply` instead. `apply` shows the plan and asks before it creates anything; `-var size=<size>` or `-var region=<region>` changes a choice.
+
+## Delete the server
+
+With Terraform or OpenTofu, run `tofu destroy` (or `terraform destroy`) in the same directory: it reads the state file `apply` left there. A server created in the console is deleted there.
+
+Then revoke the worker's sign-in under **Settings → CLI & API → Authorized devices**, where it is listed with the badge **Only** and its label, such as **Only gpu-server**. The worker's retained work goes with the server's disk: let agents finish and publish their work first.
+
+## When the worker doesn't connect
+
+Log in to the server, with an SSH key you gave the cloud ([SSH](#ssh)) or in the cloud's web console, and look at:
+
+```bash
+sudo cloud-init status --long                # whether the first boot finished
+sudo tail -n 50 /var/log/cloud-init-output.log
+sudo journalctl -u otti-worker -n 50         # the worker's log
+```
+
+- **The token was refused** (expired, used or revoked): create a new token for the same label, then on the server enroll and start the worker by hand:
+
+  ```bash
+  sudo -u r5d -H /home/r5d/.bun/bin/otti-worker auth --enroll r5de_… --base-url <origin>
+  sudo systemctl enable --now otti-worker
+  ```
+
+- **The cloud refused the size or region:** not every region offers every size. Choose another in Settings, or change `-var size=…`.
+- **Nothing in the logs:** the server may not run cloud-init with this user data. Check that it runs Ubuntu 24.04 and that the file was pasted where the table above says.

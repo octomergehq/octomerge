@@ -1,0 +1,875 @@
+---
+title: "Conversations and workspaces"
+description: "Continue work with durable history and synchronized project files."
+---
+
+After signing in, you land on **New Chat**. To set up another project, choose **New project** at the end of the sidebar's list. Octomerge imports the repository's default branch itself, so creating a project does not need a connected worker; each of your workers receives the project the next time it synchronizes.
+
+## The sidebar
+
+The sidebar has three tabs, shown as icons at its top: the list of your sessions (the bell), **Projects** and **More**, with the **Settings** cog before **More** and **New chat** (**+**) at the end of the tab bar. Your browser remembers the tab you chose.
+
+- **The list** (the bell): your sessions, and the ones your teammates share with you, by project. The bell shows how many of your sessions are unseen.
+- **Projects**: every project of yours, one line each, which opens the project's page ([Projects](#projects)).
+- **More**: **All sessions**, **Skills**, **Scheduled jobs**, **Archived**, **Teams**, your account and settings, and your tags. A dot on its icon means a team invitation is waiting for you.
+
+The **Settings** cog opens your account settings directly, without changing the selected tab. You can also open settings from your account card in **More**.
+
+On a phone, the sidebar covers the whole screen. Open it with the menu button at the top left; opening a session or a page from it closes it, and **×** (or Escape on a keyboard) closes it without leaving the page. It keeps its place while closed: when you open it again, it shows the same tab, scrolled where you left it. When another session is unseen, the menu button shows a dot.
+
+On desktop, collapse the sidebar with the button at the left of its tab bar. Collapsed, it shows the same icons in a narrow column: select a tab's icon to expand the sidebar on that tab, the **Settings** cog to open settings without expanding it, or **+** for a new chat. Drag the sidebar's right edge to resize it. Your browser remembers the width, including after collapsing and reopening the sidebar. The width is limited to leave room for the main content and adapts to smaller windows without forgetting your choice. You can also focus the edge with Tab and use Left/Right arrow keys (Shift for larger steps), Home for the minimum, or End for the maximum. Double-click the edge to restore the default width.
+
+### The list
+
+The list shows your sessions under their projects, the most recently active first: a session moves up when it is created, when a message is sent to it or to one of its subagents, and when one of their agents starts or finishes a run. Renaming a session, changing its notification setting or moving it to another worker doesn't move it.
+
+A project is a row that opens and closes when you select it. Projects start closed, pinned ones too: open the ones you work in. Open, a project lists its five most recently active sessions, yours and your teammates', and **10 more** shows ten more; while they load, grey placeholder rows stand where they will appear. The session you have open, and the one you had open before it, stay in their project's list even when they aren't among its five, so switching between them moves no rows. Closed, it shows what it hides of your own sessions: the question icon when one of them asks you something, else a spinner while one works, else a dot when one is unseen. Your browser remembers which projects you opened; opening a session opens its project. **Workspace chats** are a group like a project, closed until you open it too, at the top of the list above your projects (only what you pin stays above them), and **New project** is the list's last row; archived projects are in [Projects](#projects). Projects keep the order you give them by dragging them or with **Move up or down** in their menu ([Order, paging and subagents](#order-paging-and-subagents)).
+
+Every session is one line: its status as its icon, its name, and after the name what the list doesn't say elsewhere:
+
+- its branch's mark: its pull request (or another host's review) as an icon and its label, such as **#418**, or **!12** for a GitLab merge request ([host kinds](/platform/git-remotes#host-kinds)), green while it is open, purple once merged, red when closed and grey for a draft or a review Octomerge only knows by its link, with a small amber dot while something on the branch isn't pushed; without a review, an amber **↑2** for commits the remote doesn't have (**↑** alone for uncommitted changes), or the merge icon once the branch is merged into the project's primary branch. In a project without a remote, a small amber dot means the branch has work that isn't in the primary branch. A red warning when deleting the branch failed (**Retry deletion…** is in the session's menu), and a small spinner while the branch is being created, archived or deleted. While a session of the branch works, what isn't pushed yet isn't marked;
+- on a teammate's session, its owner's initial, then their branch's pull request, coloured by its state, and nothing else of their branch: what they haven't pushed or merged is about their own checkout;
+- on a session whose subagents are hidden, while some of them work, wait or ask you something: how many of them do, at any depth, with a spinner while one of them is running, so a session whose own agent finished doesn't look finished while its subagents still work, and the question icon while one of them asks you, with a pulsing dot while another one runs. Select it to show the way to all of them ([Order, paging and subagents](#order-paging-and-subagents)).
+
+An unseen session has a dot before its icon, and the session you have open a tinted background. Done, stopped and idle sessions have a lighter name. A name that doesn't fit is cut at its end. Point at a session for a moment, or reach it with the keyboard, and its card shows what one line leaves out: the whole name, its status and since when, its branch, its project and the teams it is shared with, its branch's review with its state and title, what isn't pushed, how many commits the branch is behind the remote, new commits on the remote that Octomerge couldn't count (pull to get them, or merge or rebase in the branch's checkout if it has commits of its own), **Remote unavailable** with why and when the remote was last read, its subagents, running processes, its links and its tags. On a session with subagents, the card ends with their timeline: the session and its five latest subagents, from when the earliest of them started to now (**Fit**; or choose **24 h**, **2 d** or **7 d**, which your browser remembers), each as a bar from when it started to its last activity, its runs solid on it, in colour while it works, waits or asks you, with a dashed line at now; **Open in Timeline** shows the session with all its subagents in the **All sessions** table's **Timeline** (for your own sessions, and a teammate's in a repository you have a project for). On a phone there is no card: the session's top bar has the same. Rows are taller there for your finger, a row's menu button always shows, and **More** and the menus open from the bottom of the screen.
+
+When a session's branch is merged (its pull request merged, or its work is in the project's primary branch) and nothing on it is working, pointing at the session also shows **Archive** before its menu button, and the branch's mark steps aside. It opens the archive dialog, which says what goes along; Octomerge never archives a branch by itself. **Archived** suggests merged branches too ([Archiving](/platform/archiving)).
+
+A branch is not a row of its own. Its name is in its sessions' cards and top bars, and in the grouping by branch. **Code**, **Git**, **Shell**, **Branch settings**, **Open pull request** (or the host's word for its review, such as **Open merge request**), **Share…**, **Archive branch…** and **Delete branch…** are in the menu of each of its sessions, under the branch's name. After a project's sessions, **1 branch without a session** and **Archived and hidden** open the project's **Branches** page: every branch of the project, and what you archived or hid.
+
+Pin a session or a project with **Pin** in its menu to keep it at the top of the list, under **Pinned**, whatever the grouping. A pinned session names its project, and stays in its project's list too.
+
+#### Filtering and grouping the list
+
+The row above the list filters it and groups it:
+
+- **Unseen**, **Asking** and **Running**, with how many sessions each matches: your unseen sessions, the sessions that wait for an answer, and the sessions at work. Select one to show only those sessions; with several on, a session shows when it matches any of them. Their numbers don't change with the other filters.
+- **Whose** (when you are in a team): **Everyone**, **Mine**, or one of your teams, to show only that team's other members' sessions that are shared with it. With a team chosen, the list holds only your projects where that team has sessions, and ends with how many show, such as **4 sessions from others in Acme**; your own sessions, pinned ones included, and your projects' other rows are left out.
+- **More** (the filter icon): **Waiting**, **Stopped**, **Done** and **Draft**, your tags, and a name to look for, where you can also write a filter ([Writing a filter](#writing-a-filter)). Its icon shows how many of these are on.
+- At the end of the row, how the list is grouped and sorted (an icon where the sidebar is narrow): group by **Project**, **None**, **Branch** or **Status**, and sort by **Latest activity**, **Created** or **Name**.
+
+While a filter is on, the projects with matching sessions are open with all of them, the others are left out, and the list ends with how many sessions match, such as **2 of 12 sessions**, and **Mark all as read** while **Unseen** is on. Your browser remembers the filters and the grouping.
+
+- **None** lists every project's sessions together, under **Today**, **Yesterday** and **Earlier**, each naming its project at its end. **Show more** adds fifty more.
+- **Branch** lists a project's sessions under a heading for each of their branches, with the branch's mark, **+** for a new session on it and the branch's menu. An open project shows its five most recently active branches, each with its five latest sessions: **10 more** under a branch's sessions shows ten more of them, and **10 more branches** under the last branch ten more branches.
+- **Status** puts what needs you first: **Needs you** (your sessions that are unseen, ask you something or wait for you to resume them), **Waiting for their owner** (teammates' sessions that ask their owner), **Working**, then **Done and idle**. A session moves when its status changes.
+
+When the filter covers unseen sessions, drafts or what the agents do, the session you open stays in the list while it is open, though opening it marks it seen, sending its draft removes the draft, a message you send there starts it running and answering its question ends its asking; it leaves the list when you open another session.
+
+#### Teammates' sessions in the list
+
+When you are in a team, the sessions your teammates share with it in their project for a repository you have a project for too are in your project, among yours, by their activity ([Teams](/platform/teams#teammates-sessions-in-your-projects)). A teammate's session is the lightest row in the list, with a grey icon and its owner's initial; its card names its owner and says its status for you, such as **Priya Shah · waiting for Priya**. Selecting it opens it read-only on its team page. It is never unseen, and you can't pin or tag it. An open project's chip names the team that reads it or has sessions in it; select it to see which teams read what, to open a team, or to manage sharing. Someone in no team sees none of this.
+
+#### The keyboard
+
+The list is one stop in the Tab order. Up and Down move through its rows, and Home and End to its first and last. Right opens a closed project or a session's subagents, one level, or moves into them; Left closes them, or moves to the row they are in. Enter opens a session, and the menu key or Shift+F10 opens the row's menu.
+
+### Projects
+
+**Projects** lists every project of yours, one line each: its name, when you last worked in it (**now**, **12m**, **2h**, **3d**, then a date), and at its end what it holds of your own work: the question icon when one of its sessions asks you something, else a spinner while one works, else a dot when one is unseen. Select a project to open its page at **Sessions**, an archived one at what was put away; its line stays marked while a page of the project is open.
+
+Pinned projects come first, in their order under **Pinned** in the list. The others follow under **This week** and **Earlier**, the one you last worked in first: a session created, a message sent, or an agent starting or finishing a run counts. Projects you haven't worked in this week have a lighter name. **Recent** at the top sorts them by **Name** instead. **Archived projects** come last, closed until you open them, with **All archived work…**: an archived project opens its branches, and its menu has **Unarchive project…** and **Delete project…**. **New project** is the last line. Your browser remembers the order and whether the archived projects are open.
+
+To find a project, type part of its name in **Find a project** at the top, or press **/** to get there from anywhere that doesn't take text. The tab then lists the projects whose name holds what you typed, with the part that matched in bold, and how many of your projects match. A project's slug, its name in your account (such as `acme-storefront`), is searched too: a project found by it shows it after its name. Enter opens the first, Down moves to the projects and Escape clears the field.
+
+Pointing at a project shows **+**, a new chat in the project, and its menu (**⋯**, or a right-click):
+
+- **New chat**, as **+**;
+- **New session on**: the project's five latest branches, each starting a session on that branch at once, then the five newest branches [only on its remote](/platform/git-remotes#branches-only-on-the-remote), each added to Octomerge with a new session on it, with **All branches…** (the project's **Branches** page) and **On a new branch…**;
+- **New branch…**, **Sessions**, **Branches** and **Settings**;
+- **Pin** or **Unpin**, and **Share…**;
+- **Archive project…** and **Delete project…**.
+
+On a phone, **+** and the menu button always show. The keyboard works as in the list: Tab reaches the projects, Up and Down move through them, Enter opens one and the menu key or Shift+F10 opens its menu.
+
+### The chat's top bar
+
+A project chat has the branch's header at its top, with the chat's name and **project / branch** below it; a workspace chat shows **Workspace · worker** instead. See [A branch's header and pages](#a-branchs-header-and-pages).
+
+### Previewing chats
+
+To read through your sessions without opening them one by one, choose **Preview** in a session's menu in the list: the preview starts at that session and goes through your sessions as the list shows them, in the same order: with your filters, grouping and **10 more** as they are, without the subagents listed under them and without your teammates' sessions (open those in their team). Its top bar and menu are the same as when you open the chat, with **×** instead of the sidebar button on phones. The menu also has **Go to session**. Select **Next** and **Previous** at the bottom, or press the right and left arrow keys, to go to the next and previous chat. Each chat shows its latest turns as the chat does, and keeps updating while its agent works; **Show earlier** shows more of it. The preview only reads: to answer a question or send a message, select **Go to session** in its menu. **Search conversation** searches the previewed chat without leaving the preview; selecting a result shows the message and nearby history, and **Return to latest** returns to its live end. Closing the search also returns to the live end. Escape, or **×**, closes the preview and returns you to where you were; the page behind it doesn't change.
+
+The preview keeps the chats and the order the list had when you opened it, so marking a chat read, tagging it or new activity never moves or skips a chat while you read. When the list shows more sessions meanwhile, the bottom bar says how many; select **Update** to add them, staying on the chat you are reading. A chat you delete from the preview's menu leaves the preview, which shows the next one. A chat shown in the preview for a moment counts as seen, as when you open it.
+
+### Chat names
+
+A new chat is named after the start of its first message, up to 80 characters. Once its agent understands the task (after reading the issue or link the message points to, for example), it gives the chat a name that says what the work is, such as **Fix login redirect loop**: at most about 40 characters, starting with the words that tell it apart from your other chats, since the sidebar shows a name from its start. It renames it if the work changes substantially. The transcript shows **Named the conversation** with the name. Subagents and workspace remediation agents name their own chats the same way. A chat started from a launch link with work items is named after them, such as **#42 Fix login**; its agent renames it only when that name doesn't say what the work is.
+
+A name you give a chat (**Rename** below, or a name you give it when you create or fork it) is yours: agents keep it, and say **name kept** in the transcript if they try to rename it. Ask the agent to rename the chat, and it will. Chats created before agents named chats keep their names the same way.
+
+### The chat menu
+
+Every session in the list has a menu (**⋯**); the chat's top bar has the same menu. On a phone it is always shown; on desktop it appears when you point at the row or reach it with the keyboard. A choice that can't be made now says why under it, such as **Delete branch…**: "The session is working. Stop it first." The menu has:
+
+- **Rename**: edit the name in place (in the top bar, in a dialog);
+- **Pin** or **Unpin**: keep the chat at the top of the list (project chats);
+- **Tags…**: add or remove tags (see below);
+- **Mark as unread** or **Mark as read**;
+- **Preview** (in the list): read through your sessions from this one (see [Previewing chats](#previewing-chats));
+- **Sub-agents** with their number, when it has any: all of them at any depth, finished ones included, each under the subagent that started it, with how many are at work. Each shows its status (a check once it finished), its name and, when it works on another branch or in another project, where; select one to open it. **Open in All sessions**, at the end, shows the chat with all its subagents in the **All sessions** table, to search, filter, sort and select them (see [A project's sessions](#a-projects-sessions)). On a phone, **Sub-agents** opens the list over the page;
+- **Compact context…**: compact the conversation's context now instead of when it fills up, for example when its work moved on to something new, with optional instructions that are added to the usual summary request (see [Long conversations](#long-conversations)). It is disabled while the chat is compacting, and chats of an archived branch don't have it;
+- **Fork conversation**: copy the conversation into a new chat and open it;
+- **New session in same branch** (project chats): create an empty session on this chat's branch and open it. It starts with the normal model and worker defaults, not the source chat's conversation or overrides. Workspace chats have no branch, so they don't show this option;
+- **Detach from parent…** (subagents): make the subagent a chat of its own that you talk to directly, after you confirm (see [subagents](#order-paging-and-subagents) below). It can't be attached again;
+- **View text**: read the conversation as plain text in a new tab;
+- **Viewed images…**: browse images from the chat's recorded history, including file reads, browser screenshots, MCP images, and image attachments. Select a thumbnail to enlarge it; use the arrow buttons or left/right keys to browse, and **All images** or Escape to return to the gallery. **Load more images** includes older history without scrolling the conversation; **Refresh** checks for new images and retries previews that were unavailable. An image the agent viewed several times with the same contents shows once, with how many times it was viewed. Images show as the agent's model received them: Octomerge keeps that copy with the chat, so it shows even when the file was changed or deleted or its worker is offline, and a large image the model received downscaled has **Open original** for the full-size file on its worker. An image marked **Not seen by the model** was left out of the model's requests: it didn't fit the image budget of the agent's context, or it couldn't be loaded. Images from before Octomerge kept these copies show their original files as they are now on their worker, when it is connected. Previews are private to you and the teams you share the chat with. Your browser caches the images Octomerge kept, so browsing back and forth, reopening the gallery or reloading the page doesn't download them again; logging out doesn't remove them from that cache;
+- **Notify me on completion** (see [Email notifications](#email-notifications));
+- **Search conversation** (in the chat or preview's top bar): search its full history;
+- **Expand all tool work** (in the chat or preview's top bar): open every run of tool work and every tool call in the transcript, for example to follow an agent's work in detail. Your browser remembers it for all chats until you choose it again;
+- under the name of the chat's branch (project chats): **Code**, **Git** and **Shell**, which open the branch's pages, **Branch settings**, **Share…** to share the chat, its branch or its project with a team (teams can't read workspace chats; on phones it says who can read the chat), **Archive branch…** and **Delete branch…**. Their dialogs say how many sessions go along with the branch. After a deletion failed, **Retry deletion…** takes the place of **Delete branch…**;
+- **Delete session…**: delete the chat for good, after you confirm. Within minutes Octomerge erases what it stored: its messages, tool results, images and files, and its record of the agent's work. Forks of the chat and its subagents are separate chats and stay. Files the agent saved on your workers (its artifacts folder) stay there; delete them on the worker if you no longer need them. A deleted chat can't be restored. Deleting a branch or a project deletes its chats in the same way.
+
+Subagents have no **Tags…** and no **Mark as unread**: their results reach the chat that started them.
+
+A project's menu (**⋯** on its row) has **New chat**, **New branch…**, **Sessions** (the project's **Sessions** page, with all its sessions), **Manage in All sessions** (the **All sessions** table showing the project's sessions, to tag, mark or delete several at once), **Branches** (the project's **Branches** page) and **Settings**; **Pin**, **Share…** and **Move up or down**; then **Archive project…** and **Delete project…**. Its **+** starts a new chat in the project. A teammate's session's menu has none of its owner's actions: **Open in** each of your teams that reads it, **Create my branch…** (a branch of your own from the remote branch of that name; it says so while your teammate hasn't pushed the branch), and **Hide from my sidebar**, which takes your teammates' sessions on that branch out of your list (the project's **Branches** page lists the branches you hid, to show them again). A team's admins, and the members whose own work on the branch the team reads, also find **Archive for the team…** and **Remove from the team…** there ([Teams](/platform/teams)).
+
+### Unseen chats
+
+A chat is unseen when its agent finished a run since you last looked at it, including a run that ended while a question or a request for environment values waits for you. It shows a dot before its icon in the sidebar's list, and the bell counts it. A chat whose agent is still running shows its spinner instead (or the question icon, when its agent asked you something, or the draft icon, when you saved a [draft](#drafts) there), and a run you stopped yourself doesn't make it unseen. Only main chats become unseen: when a subagent finishes, the chat that started it is told, runs, and becomes unseen when that run ends.
+
+A chat is seen while it is open and on screen: when you open it, when its run ends while you are looking at it, and when you come back to it (the page becomes visible again, or you close the phone's sidebar over it). A chat you read in the preview is seen the same way, once it has shown for a moment; the open chat behind the preview isn't seen meanwhile. What you have seen is saved to your account, so your other devices clear the mark too. Use **Mark as unread** or **Mark as read** in a chat's menu, and **Mark all as read** at the end of the list while its **Unseen** filter is on. Team members reading a chat you shared don't change what is unseen for you.
+
+### Tags
+
+Tag chats with short names to find them again, for example `bug-fix` or `ios`. Choose **Tags…** in a chat's menu: search your tags and check or uncheck them, or type a new name and press Enter to create it and add it to the chat. A new tag gets a colour from its name; pick another one below the name before you create it. Names are lower case: letters, digits and dashes between them, up to 32 characters. What you type is adjusted as you type: `Bug Fix` becomes `bug-fix`. A name can't start or end with a dash or have two in a row. On a phone, the dialog opens from the bottom of the screen.
+
+A chat's tags show in its card in the sidebar's list, by name and colour, and **More** in the list's head filters by them. Under **More → Tags**, rename a tag, change its colour or delete it; deleting a tag removes it from its chats. Tags are yours alone: team members and team pages never show them.
+
+### Writing a filter
+
+Under **More** in the list's head, the **Name** field finds the sessions whose name or tags contain what you type, in any case, and takes a filter too. A filter covers all your sessions, not only the ones shown, and matches a session by its name (a teammate's by its name and what its agents do). `sidebar bug` finds the sessions whose name or tags contain both `sidebar` and `bug`, and `"fix the bug"`, in quotes, the exact phrase. A phrase also finds a tag with dashes in place of its spaces: `"bug fix"` finds `bug-fix`. Words combine with these filters, for example `ios not #done`:
+
+- `#done`: chats tagged `done`.
+- `unseen` or `seen`: unseen or seen chats.
+- `draft`: chats where you saved a [draft](#drafts), in the chat or one of its subagents.
+- What the agents do: a conversation matches when its agent, or one of its subagents, does it.
+  - `asking`: it asked you something you haven't answered yet, whatever it does meanwhile.
+  - `running`: it is working, starting or stopping, or recovering interrupted work.
+  - `waiting`: it waits to continue by itself, such as for a timer, its subagents, the model provider or its worker.
+  - `stopped`: it stopped before finishing: you stopped it, its model failed, or its recovery waits for you.
+  - `done`: its agent finished its task and asks you nothing. Only the chat's own agent counts, not its subagents'.
+- `not #done`, `-#done` or `!#done`: chats without the tag. `not` goes before any word or filter: `not running`, `-bug`.
+- `ios android` or `ios and android`: chats that match both.
+- `ios or android`: chats that match either, such as `asking or stopped`.
+- Parentheses group: `(#ios or #android) not #done`. Without them, `not` applies first, then `and`, then `or`: `#ios or #android not #done` means `#ios or (#android and not #done)`.
+
+To search for `unseen`, `seen`, `draft`, `asking`, `running`, `waiting`, `stopped`, `done`, `and`, `or` or `not` as a word, put it in quotes: `"running"`. The list follows what you type after a short pause. A mistake, such as a `(` without its `)`, is shown under the field, and the list keeps the last filter that worked. The **?** button lists these forms. What you write adds to the head's filters with `and`; **Clear** in **More** clears its filters and the field.
+
+### Working on several chats at once
+
+The list has no selection: a session's row is a link, so Cmd-click (Ctrl-click on Windows and Linux) or middle-click opens the chat in a new tab, and Shift-click in a new window, as with any link. To act on several sessions at once, use the **All sessions** table or a project's **Sessions** page ([A project's sessions](#a-projects-sessions)), where you can check sessions and tag them, mark them as read or unread, or delete them. **Manage in All sessions** in a project's menu opens **All sessions** showing that project's sessions.
+
+To delete branches, use **Delete branch…** in a session's menu, or the project's **Branches** page, where you can check several. If a step of a branch's deletion fails, its sessions show a red warning with the reason; **Retry deletion…** in their menu finishes it.
+
+Deleting a branch deletes its checkout on every worker, within seconds, or when the worker reconnects (a worker stopped for a workspace remediation deletes it once the remediation is confirmed, or at once if every problem that stopped the worker was in that checkout): the whole directory, with ignored files such as `node_modules/` and `.env`, and changes and commits on that worker that never reached Octomerge. Nothing of it is kept on the workers, so push or synchronize what you want to keep before you delete a branch.
+
+### Order, paging and subagents
+
+Projects follow your latest activity in them (a session created, a message sent, or an agent starting or finishing a run, in any of their sessions) unless you place them: drag a project's row, or use **Move up or down** in its menu, to keep it in a chosen position. Only projects you move keep a manual position; the others continue to move with activity around them, and a later move can displace an earlier one. **Sort by activity** under **Move up or down** releases a moved project's position. Positions are saved to your account, and pinned and unpinned projects are ordered independently. Sessions follow the order chosen at the end of the list's head: their latest activity, when they were created, or their name.
+
+A project lists its five latest sessions, and **10 more** under them shows ten more; grouped by branch, each branch lists five and has its own **10 more**, and **10 more branches** shows ten more of the project's branches. Without groups or by status, the list shows fifty sessions and **Show more** fifty more. While a filter is on, a project lists up to a hundred of its matches. The session you open is always listed, however far down its project it is.
+
+Chats that an agent starts as subagents are listed under the chat that started them, as a tree: a chat with subagents has an arrow before its icon, which shows or hides them, each on a line from the icon of the chat that started it. Alt-click (Option-click on a Mac) the arrow to show or hide every level under it. A chat shows its five most recently active subagents, finished ones too, in the order of their latest activity or that of a subagent under them, and **10 more** under them shows ten more; a subagent with subagents of its own shows them the same way. Subagents that work, wait or ask you something, or have one under them that does, always show, also beyond the five. While a chat's subagents are hidden, its row shows how many of them work at any depth (see [The list](#the-list)); select that mark to show the way to all of them. Your browser remembers which subagents you showed. The chat's menu has all of them under **Sub-agents**, which counts and lists them, and so does its top bar. A subagent you open is shown under the chat that started it, and the chats above it open for it. While a filter is on, a subagent the filter matches through is shown under its chat, with the way to it. A subagent shows its branch's mark only when it works on another branch than the chat that started it. An open subagent's header shows **Subagent of** its parent chat; select it to return. A main chat's header has a subagents menu for opening them, all of them at any depth, listed as under **Sub-agents** in the chat menu. On a phone, both are in the chat menu (**⋮**), where **Sub-agents** opens the list over the page. If a parent chat is deleted, its subagents are listed as ordinary chats. Links to subagent chats keep working.
+
+An agent can also start a subagent in another of your projects, including from a workspace chat. It works in that project's checkout, on the same worker as the chat that started it, and it can only reach projects in your account. The subagent card in the chat, its finish notice, and the subagent's card in the list name its project and branch; the list shows it under the chat that started it, in that chat's project. When it finishes, the chat that started it is notified like for any other subagent.
+
+A subagent that works in its own branch, or in another project, can move itself to another of your workers, for example to test something on a Mac; one that shares the checkout of the chat that started it moves only with that chat. The chat that started it can still message or stop it there, and the subagent can message that chat. Agents reach any of your chats on any worker with `otti`, as you do ([Agents use otti like you](/cli/otti#agents-use-otti-like-you)): a message names the worker its recipient runs on, and naming another worker moves the recipient there first.
+
+The finish notice includes the subagent's final assistant response from that run, labeled as the child's report—not independent verification of its claims or workspace changes. Reports of up to 8,000 Unicode characters (code points) are included in full. Longer reports include the first 8,000 characters, an explicit truncation marker, and a copyable `otti conversation inspect-node SESSION_ID NODE_ID` command for the complete original message. Only the notification copy is shortened; the child's transcript keeps the full response. If the run completes, stops, or fails without a final response, the notice says so rather than substituting progress or a previous run's answer.
+
+To take a subagent's work over and talk to it yourself, choose **Detach from parent…** in its chat menu: in its top bar, or on its row under the chat that started it. The subagent becomes a chat of its own. Its turns and questions no longer wake or reach the chat that started it, its questions go only to you, and the list shows it on its own, where it can be unseen and tagged like any other chat. The chat that started it is told once if it is working at that moment, so that it stops waiting for the subagent; an idle chat isn't woken for it. The subagent's agent is told that it works with you now. Its conversation, branch, worker and its own subagents stay as they are, and a subagent that shares the checkout of the chat that started it still moves with that chat, as a fork does. A team that could read it as part of the chat that started it keeps reading it, through a share of its own, which **Share…** lists and can revoke. A detached chat can't be attached again. An agent detaches its own subagents with `otti session detach` ([Start and continue a conversation](/cli/otti#start-and-continue-a-conversation)), for example when you tell the chat that started a subagent that you take that work over from here.
+
+Select **New chat** (**+**) in the sidebar's tab bar, choose a project and branch, select a ready worker, and write your first prompt. Both menus have search and list your most recently active projects and branches first, based on their latest conversation activity; branches without chats use their creation time. The search field is focused when either menu opens. Type to filter, then choose with the arrow keys and Enter or click a result. Your browser remembers the last project and branch. Without a saved choice, the most recent project is preselected, with `main` when available or its first available branch. Your eligible default worker is preselected; choosing another here applies only to this chat.
+
+Choose **Create new branch…** at the bottom of the branch menu to start the chat on a new branch without leaving your draft. If you have written a prompt, the menu offers a branch named after its opening words instead, such as **New branch (enable-sign-in-with-apple)** for "Enable Sign in with Apple": as many whole words as fit in 45 characters, in lower case with hyphens between them, with a suffix such as `-2` when the name is already used in the project or by a message still in New Chat's queue. Choosing it prefills the editable branch-name field, which takes any name Octomerge accepts for a branch, such as `release/2.4.0` or `feat#12` ([branch names](/cli/otti#branch-names)), and says under it what is wrong with a name it can't take. The dialog starts from the selected branch and lets you bring its published uncommitted changes, start clean from its last commit, or use a repository branch. **Use this branch** selects the new branch, marked **(new)**, without creating it: it is created when you send, as the first step of your message's queue entry (below). Canceling leaves your draft and previous selection intact.
+
+The new-chat composer is the same composer as in an existing chat, with the same attachment upload, paste, drag-and-drop, and model and effort controls. Files stay local until you send. Sending hands the message to a queue under the composer and clears the composer, so you can start the next chat right away; you stay on **New Chat**. Each queued message keeps what you chose for it (project, branch, worker, model and files), whatever you select for the next one, and shows its progress: **Creating branch** (for a new branch), **Creating chat**, **Waiting for worker** (while its worker is disconnected or starting; it continues once the worker is ready), **Transferring files** (when it has files), and **Sending message**. Once the chat has its files, the message is saved there as the chat's [draft](#drafts) and then sent, so a message that can't be sent waits in its chat as well. When it is sent, its slot becomes a link to the chat. A step that fails stops the message there with the reason and **Retry**, which continues from that step without creating anything twice; **Open chat** shows a chat it already created. **Remove** deletes a queued message and its files from this browser; what it already created stays. The queue is kept in this browser: it continues after a reload, while you use other pages, and in another tab of the same browser. You can also start a chat with a project's **+** in the sidebar, or with **New session in same branch** in a chat's menu. Follow model responses and tool results as they arrive. Follow-up input joins the running agent without creating a second execution owner.
+
+In both places, your browser keeps an unsent draft, including its attached files, when you reload or leave the page. The new-chat draft stays when you switch project or branch. In an open chat, if sending fails, the draft and its files stay and a dismissible message explains why; send again to retry. Retrying an unchanged draft sends the same message once, and an open chat also sends a message again by itself while Octomerge hasn't answered it, for example after a lost connection, and the message about the failed send goes away once Octomerge accepts it. A message Octomerge refused, for example for a worker that isn't connected, isn't sent again by itself: change it if needed and send it again. To keep a message on every device without sending it, save it as a draft: see [Drafts](#drafts).
+
+Every file uploaded with a message is attached to that message, even if you remove its reference from the prompt. Selecting several files inserts their references on separate lines. In the prompt, each reference to a file of the conversation, such as `[$R5D_ROOT/artifacts/$R5D_SESSION_ID/findings.md]`, shows as a chip **findings.md ×**: select its name to preview the file, or **×** for **Remove reference** (only that reference goes; the file stays attached) or **Delete file and reference** (a file not uploaded yet is dropped; an uploaded one is deleted from its worker right away, also for messages that already show it). Removing a file from the attachment bar removes its references from the text too. Sent messages show their references as chips you can select to preview the file. References are ordinary text for the agent to interpret; typing one does not attach a file.
+
+The **Files** tab reads the conversation's workspace. **Terminal** runs a command in that same workspace, **Preview** opens the registered application, and **Attachments** lists saved conversation assets. Historical workspace conversations also remain available in the sidebar.
+
+The branch **Code** viewer is read-only. Select a file in the tree to preview it; Python (`.py`, `.pyw`, `.pyi`) has syntax highlighting. Markdown (`.md`, `.markdown`, `.mdx`) opens rendered, with **Source** to view the original text and **Preview** to switch back. MDX components and scripts are not executed. Markdown above 100,000 characters or 2,000 lines opens as source to keep the viewer responsive.
+
+Use **Download file** for the original file, including unsupported formats. Text previews require UTF-8 and show at most the first 1 MiB, with a notice when truncated. Empty files are labeled. If a preview fails, use **Retry preview** or download it; if syntax highlighting cannot load, the source remains readable as plain text. **Refresh files** reloads the tree and selected preview.
+
+Conversation history and input acceptance live in the installation database. Project content lives in its independent storage service, and the workspace keeper supervises ongoing host tools. During routine releases, existing work stays with its owning generation while new work starts on the promoted generation.
+
+When a new version of Octomerge is released, an open tab shows **New version available** with a **Reload** button, and reloads by itself once you are not in the middle of something: no response is in progress in the chat on screen, nothing is being sent or uploaded, you have no unsaved edits, you have not typed, clicked or scrolled for a few seconds, and no dialog or menu is open. A tab you are reading in, scrolled back through a conversation, waits until you return to the latest messages. The reload keeps the page and its scroll position, and your drafts come back.
+
+Type `@` in the chat input to reference another workspace project. Select a project, then a branch, using the arrow keys and Enter or Tab, or click a suggestion. Escape closes the suggestions. You can also type a full reference such as `@ricsam/ai-gateway/main` directly; branch names containing slashes are supported. The agent resolves the reference to that branch’s checkout on the conversation’s selected worker. Referencing a project does not switch workers or create a missing checkout.
+
+Press the Up arrow in an empty chat input to bring back your previous message. Keep pressing Up for earlier messages and Down for later ones; Down after the most recent message empties the input again. As soon as you edit the text, it becomes an ordinary draft and the arrow keys move the cursor again. Recalled messages bring back their text only, not their attached files, and are not saved as a draft until you edit them. The history holds your own messages in the conversation, including messages this browser sent that are still queued; in **New Chat** it holds the first messages of chats you started from this browser.
+
+When the agent works from a plan, it shows you the plan: a checklist Markdown file in the workspace (an H1 title and a `## Tasks` section of `- [ ] task-id: Description` lines), anywhere in the synchronized workspace, such as `$R5D_ROOT/plans/<project>/<name>.md` or a file in the project. A plan banner above the chat input then shows its title and how many tasks are done; while the agent works, it also names the task in progress. Select the banner to see each task, and **Open plan** to read the whole file. The banner stays, collapsed, after the agent finishes, until the agent shows another plan or stops showing one.
+
+The banner shows the workspace's synchronized copy of the file, so it always matches what the workspace holds. Changes appear within seconds of the worker writing them: a new plan first says it is waiting for the workspace to sync, and a checked task shows as done once the sync carries it. If the synchronized file is no longer a valid plan, the banner says why.
+
+When the agent is busy, the prompt's delivery picker offers **Queue**, **Steer**, and **Force**. Your account remembers whether you last chose **Queue** or **Steer**, across sends, reloads and conversations, in every browser and on every device; **Queue** is the default until you choose otherwise. A tab that is already open offers your latest choice when you return to it. **Force**, which aborts the current tool round, applies only to the message you choose it for: after that message the picker is back on your **Queue** or **Steer**. Retrying an unconfirmed message keeps that message's original delivery mode. A new or idle conversation still starts normally.
+
+Queued messages keep a compact preview and show when they were queued in your local time. Hover over the timestamp or select **View full message** to see the full date, time and time zone. The original queue time stays the same when you edit the message or change delivery mode. The full-message dialog lets you read the entire message without changing or sending it. **Queue** waits for the current turn to finish; **Steer** joins the next model request. A wait is part of the turn: while the agent waits, for example for its subagents, a queued message waits until the whole turn ends, which can take hours, and **Steer** reaches the agent now. The agent is told that queued messages wait for it, and who sent them, each time it resumes from a wait. **Force now** interrupts the current tool round and continues from that message. To change a queued message, choose **Edit** in its menu: see [Edit a message](#edit-a-message).
+
+**Stop** ends the agent's work, not the commands it started. Servers, workers, builds and other processes keep running, as they do when the model provider fails and the chat stops by itself. A compact banner above the chat input shows how many processes are running. Select it to open the process list, then select a command for its details and live output. Select a **Command**, **stdout**, or **stderr** preview to read it in full; the Back button returns one level. With just one process, the banner shows its description and command preview and opens its details directly. The viewer fills the screen on mobile. Use **Stop** on a process or **Stop all** in the list and confirm to end them, or ask the agent to after you resume. A stopped process gets SIGTERM (a terminal gets a hangup) and 10 seconds to shut down before it is killed, so it can release its locks and save its state.
+
+A stopped chat stays stopped until you send it a message or select **Resume**. The same holds for the subagents the Stop reached: those still working, and any subagent between the chat and them. Nothing that happens meanwhile restarts them. A subagent finishing, a command exiting, a transfer completing and other notices are kept, and the agent reads them first when it continues. They don't stop you from going back with **Continue from here** or **Edit message**: the agent reads them when it continues from the point you chose. A message from another agent, such as the chat that started a subagent, continues it like yours does.
+
+**Resume** continues on the model and the worker its banner shows: **Resume with** a model and a worker chip, which start as the chat input's choice and follow it. To continue on another model, for example when the model provider failed or is rate limited, or on another worker, choose them in the banner (or in the chat input, which the banner follows until you choose there); **Retry interrupted actions?** shows the same chips. The chosen model is the chat's from then on, as if you had sent a message with it. Resuming on another worker moves the chat there before the agent continues, as a message to another worker does ([Moving a chat to another worker](#moving-a-chat-to-another-worker)), and the banner says so. While the move runs, the chat shows it above the chat input and takes no messages; it finishes by itself, also when you close the page. A worker that is not connected, still starting, not responding or under workspace remediation is refused at once with the reason; choose another, or try again once it is ready. An agent that asks to switch to such a worker instead waits for it, and moves once it is ready, also when the worker goes away while the chat moves to it. While messages are queued, **Resume** continues with them, each on the model and worker it was sent with, and the banner says so instead of showing chips: edit a queued message to change them. **Reconcile and resume** always continues on the chat's own model and worker.
+
+A main chat's **Stop** stops it and its subagents at once. In a subagent's chat, **Stop** first asks what to stop:
+
+- **Stop all** stops the whole job: the conversation the subagent belongs to, listed from its main chat down with what each agent is doing. Every agent still working on it stops.
+- **Stop this agent** stops only this subagent and its own subagents. The chat that started it is told, with your reason if you write one, and decides what to do next.
+
+File transfers that an agent starts in the background (browser downloads and uploads, page exports and file copies between workers) are listed above the chat input while they run, with their progress, the time left and **Cancel**. Select a transfer's file name to jump to the tool call that started it. The call's row in the transcript shows the transfer's progress until it ends, and then its result; when it ends, the transcript notes **Transfer completed** (or failed, or cancelled) with the file's name.
+
+A browser download the agent copied into the chat's files, a page it exported, and a file it uploaded to a page in the browser show by the file's own name, such as **Copied browser download** `notes.md` **· 1.2 KB** or **Uploaded files to browser** `avatar.png` **· 46.0 KB**. **Preview** beside the row, on its **Transfer completed** note, when the agent checks the transfer, and in the call and its result opens the file in the chat, as a file link does: pictures, recordings and videos, text and code ([previews](#reading-a-conversation)). A file no preview shows, such as a PDF, an archive or a file over 8 MiB, has **Download** there instead. A file the agent uploaded from a remote has neither. Where a file is (its path, its worker and its checksum), the transfer's ID and the raw result are under **Transfer details**, and what the platform told the agent about the transfer under **Message to the agent** on its note. The agent's list of the browser's downloads shows each file with its size and when it was saved, and the events it reads from a tab name the downloads a page started, completed or failed. Those files are in the browser's own downloads folder on your Mac until the agent copies one.
+
+## A branch's header and pages
+
+Every page of a branch has the same header at its top: a chat on the branch, the branch's **Code**, **Git**, **Shell** and **Settings** pages, and the [branch page](#the-branch-page).
+
+- **Its title.** On a chat, the chat's name, with **project / branch** below it: select the project to open the [project's page](#a-projects-page), or the branch to open the branch page. On the branch's other pages, the branch's name, with the project (select it for the project's page) and the remote's host (or **no remote**) below it. A long branch name gives up its namespace first (`issue/acme/806-teammates-sh` becomes `…/806-teammates-sh`); point at it for the whole name.
+- **The branch's review.** Its pull request as GitHub has it, with its state: **Open**, **Draft**, **Merged** or **Closed**. Select it for its title, the branch it merges into, when Octomerge last checked it, **Open on GitHub** and **Copy link**. On another host, or before Octomerge has found one, a pull request (or another host's review) that a session linked as a work item with the pull request icon (`otti session work-items add`), labelled and named as its host does once Octomerge knows the host's [kind](/platform/git-remotes#host-kinds), such as **Merge request !12**: select it for its title, which session linked it, **Open** and **Copy link**; Octomerge doesn't know its state on that host. A branch without one, other than the project's primary branch, has a dashed review mark instead: select it for what Octomerge knows of the branch, such as whether it is pushed and whether it has commits that aren't in the primary branch, and, on a project whose remote is a GitHub repository (where your Octomerge offers GitHub), **Create pull request** with a title you can edit (the chat's name to start with). It opens the pull request into the project's primary branch, or shows the one already open; it is unavailable while the branch isn't on GitHub yet, and an archived branch, or one the project no longer has, doesn't offer it. A project without a remote has neither.
+- **Links.** On a chat its work items, on the branch's other pages those of all its sessions. Up to three show as themselves; more show as one chip, such as **20 links**, that opens their list, with a filter from ten links on. The link that is the branch's review shows only as the review.
+- **On the right:** a chat's subagents (how many at any depth, opening their list, finished ones included, each under the subagent that started it); the branch's views, **Git**, **Shell**, **Code** and **Settings**, after **Sessions** with how many sessions the branch has on the branch's own pages; **New chat** on the branch's own pages; **Shared** while a team can read it, which opens the share dialog; and the menu (**⋮**). The menu ends with the branch's actions, **Open pull request** when it has one, **Share…**, **Archive branch…** and **Delete branch…**, each saying why when it can't be done now, such as while a session on the branch is working; on a chat, the chat's actions come before them. An archived branch's pages have **Unarchive…** and **Delete branch…** instead.
+- **Git says the branch's git state.** **↑2** for commits the remote doesn't have (on a branch that isn't on the remote yet, its commits that aren't in the project's primary branch), **↓3** for commits the remote has that the branch doesn't, both on a branch that has diverged, and **↓** alone for new commits on the remote that Octomerge couldn't count yet (pushed from elsewhere, or from a host that can't send them without their files); then the synced changes, such as **+148 −9**. A grey dot on its icon says that what it shows may be out of date: Octomerge couldn't read the remote, or the changes may be stale. With nothing to say it shows **Git**. Point at it for all of it in words, such as "4 files changed, 148 added, 9 removed; 2 commits not pushed", or "the remote has no branch of this name yet" for a new branch; the **Git** view says the same at its top, where **Push** and **Pull** are. Octomerge reads the remote when the header opens, after a session's turn ends, after **Push** and **Pull**, and from time to time; the header, the list and the **Git** page always say the same.
+
+On a chat, the views open beside it: **Git** is the branch's synced changes, with Compare, History, **Commit**, **Push** and **Pull**; **Shell** a terminal on the chat's worker; **Code** the branch's files; **Settings** the branch's settings. The open one is marked in the header. Select it again, or **×** at the top of the panel, to close the panel, or another view to show that one instead. Escape belongs to the view, as a terminal needs it, and doesn't close the panel. **Expand** (⤢) at the top of the panel opens the view's page, with the file open in Code or the section open in Settings; Back returns to the chat with the panel as it was, and so does reloading the chat. Closing **Shell** and opening it again, or expanding it, shows the same shell. Drag a panel's left edge to give it more or less of the window, or focus the edge and use the arrow keys; double-click it to share the window evenly again. This browser remembers the width of each view's panel.
+
+A panel is at least 360 pixels wide and the chat keeps 480, so the views open beside a chat where the page beside the sidebar has that much room: in a window about 1130 pixels wide or wider with the sidebar at its usual width, and in a narrower one with the sidebar collapsed. Where it hasn't, each view opens its page instead, and a panel that was open closes; a file you were reading moves to a dialog. On the branch's own pages the views go from page to page, and the page shown is marked.
+
+Where the window is narrow, the views show their icons only, with **Git** keeping its numbers; then the links fold into one chip; then **Shared** and **New chat** lose their words; in the end the header shows only the title and the menu, which then holds the marks and the views. Point at a mark for what it says in words.
+
+On a phone, the header shows the menu button for the sidebar, the title with what is below it, and the menu (**⋮**). The menu starts with the marks: the parent chat of a subagent, the subagents (select their summary to expand the list; it starts collapsed each time you open the menu), the review and the links, then the branch's views, each opening its page, with **Git** saying the branch's git state in words. On a shared chat, **Share…** says who can read it.
+
+On an archived branch the header keeps its views: **Git** is read-only, and **Shell** says that the branch has no checkout on any worker. A teammate's session that you read has the same header without the branch's views: below its name, the project, the branch and whose session it is, and its **Read-only** button where **Shared** would be ([Teams](/platform/teams#reading-a-shared-session)). A workspace chat has no branch and no views; the files it links open beside it.
+
+### The branch page
+
+**Sessions** in the header opens the branch page, which shows the branch at a glance: its sessions, yours and your teammates', newest first, in the same rows as the sidebar, with their subagents as the same tree (point at one for its card); its review, with **Create pull request** where the header has it; whether it is pushed, behind the remote or has new commits there, and whether it has commits that aren't in the project's primary branch; who reads it: the teams that read your work on it (every session of the project or of the branch, or how many of your sessions there) and your teammates with sessions on it, with the teams you read them through; and what you can do with it: **Archive branch…** or **Unarchive…**, **Delete branch…**, and, for a team you may act for, archiving or removing it for the team. **New chat** starts a chat on the branch. A branch's permanent team page shows the same for the team's members.
+
+## A project's page
+
+A project's page has its sessions, its branches and its settings. Select the project's name in a branch's or a chat's header, or the project in **Projects**, to open it; it opens at **Sessions**. Its header is the same over all three:
+
+- **Its title.** The project's name, with its remote below it: the host and the repository's path, such as `github.com/acme/api` (select it to open the repository on GitHub or GitLab), or **No remote**; then who reads the project: **shared with** the teams that read all of it, and the teams that read some of its branches or sessions (point at it for which).
+- **On the right:** the project's views, **Sessions**, **Branches** with how many branches the project has, and **Settings**, the one shown marked; **New chat**, which opens a new chat with the project chosen; and the menu (**⋮**) with **Pin** or **Unpin**, **Share…** (which says who reads the project), **Archive project…** and **Delete project…**.
+
+Where the window is narrow, the views show their icons only, then **New chat** loses its word, and in the end the header shows only the title and the menu, which then starts with the three views and **New chat**. On a phone, the header shows the menu button for the sidebar, the project's name with its remote below it, and that menu.
+
+### A project's sessions
+
+A project's **Sessions** page lists every session that works in the project: your sessions and your teammates' shared ones, subagents included, whichever project's session started them. **All sessions**, in the sidebar's **More** tab and at the end of a project's **Sessions** toolbar, is the same across all your projects and your workspace chats, with a **Project** column.
+
+Subagents are listed under the session that started them, as a tree. A session with subagents has an arrow before its status and shows how many it has at any depth after its name, in the sidebar's colours: select either to open or close its subagents, and **Alt**-select (**Option** on a Mac) to open or close every level below it. Groups start closed and your browser remembers the ones you opened. A long group lists its first subagents, with **Show more** for the rest. A subagent whose parent isn't on the page (it works in another project, or the session that started it is gone) is a row of its own and names that session under its name. A session sits by the latest activity of it or any of its subagents, so a conversation whose subagent works now comes up, and its time says when.
+
+Three views, chosen in the toolbar:
+
+- **Table**: every column. Each row is one session: its status, its name, its status in words (a teammate's with whose it is), its branch (select it to open the branch page), its branch's pull request or git mark, its tags, when it was created and when it or a subagent under it was last active. What a subagent shares with the session above it (project, branch, pull request) is quieter; where it works elsewhere, it shows as any other. The arrows next to **Name** open or close every group of the sessions listed. **All** and **Sub-agents** choose which sessions it shows: all of them, as the tree, or only subagents, as a flat list that names under each one the session that started it.
+- **Tree**: the same sessions as an outline, without columns: each subagent hangs on a line from the session that started it, and each row says only what is new about it (its project, a branch other than the main one, a pull request its parent doesn't have, tags), with its time at the end. **Order** sets how it is sorted.
+- **Timeline**: the tree's sessions beside a time axis. Each session is a bar from when it started to when it was last active: its runs are solid, the time it waited between them is a thin line, and it is coloured while it runs (cyan), waits (amber) or asks you something (violet). A closed group shows how far its subagents reach as a faint band. Choose **24 h**, **2 d**, **7 d** or **Fit** (from the earliest session shown); point at a bar for its runs and how long they took. On a phone the Timeline shows as the Tree.
+
+Select a row to open the session; point at it for its card, or use its menu. Where the page is narrow, beside a wide sidebar, the Table's columns give way and the branch moves under the session's name.
+
+- **Search** finds sessions whose name, branch or tags (and, in **All sessions**, project) contain every word you type. The sessions found show where they are in the tree, under the sessions above them, which are dimmed and open by themselves; the groups you opened come back when you clear the search. **n of m sessions** counts the sessions found.
+- **Unseen**, **Asking** and **Running** show how many sessions are unseen, wait for your answer or are at work; select one to filter by it. Filters show their sessions in the tree the same way.
+- **Whose** (when you are in a team) works as it does in the sidebar.
+- **Filter** adds a filter: **Status** (with how many sessions each status has), **Unseen**, **Draft**, **Tag**, **Project** (in **All sessions**), **Branch**, **Last active** or **Created**. Each filter shows as a chip, such as **Status is Running or Asking**; select it to change it, turn it around (**is not**), or remove it. With two filters or more, the switch after them chooses whether sessions must match all of them (**and**) or any of them (**or**); the word between two chips switches it too.
+- **Open in All sessions** in a chat's subagents menu (in its top bar, or **Sub-agents** in its menu) shows the chat with all its subagents, at any depth and in any project, every level open, as the chip **Fix login redirect loop and its sub-agents** (with your chat's name). Turn it around to see everything else.
+- In the Table, select a column's name (**Name**, **Status**, **Project**, **Branch**, **Created**, **Active**) to order the table by it, and again for the other way; the Tree and the Timeline have **Order**. Subagents are ordered the same way within their group, and never leave it.
+- Check sessions to act on several at once: **Mark as seen**, **Mark as unread**, **Tags…** or **Delete…**. Shift checks every session from the one you checked last, and the checkbox above the table checks every one of yours it shows (while you search, only those found). You can't check a teammate's session: only its owner can mark or tag it. Deleting a session keeps its subagents, as sessions of their own.
+
+On a phone the page is the Tree: two lines a row, the search above **Unseen**, **Asking**, **Running**, **Filter** and **Select**, and the order under them. Tap a row's arrow to open its subagents; while you scroll through them, the session they belong to stays at the top, and tapping it brings you back to it. **Select** puts checkboxes on your sessions, with **Seen**, **Unread**, **Tags** and **Delete** at the bottom of the screen; **✕** ends it.
+
+The page lists fifty conversations at first; **Show 50 more conversations** lists more. Your browser remembers each page's view, order, filters, which sessions it shows, the groups you opened and the timeline's range. A project's menu in the sidebar has **Sessions** too.
+
+A link can open a table with its filters. Its address takes the filters as JSON (`filter`), which sessions (`kind`: `all` or `sub`), `whose`, a `search`, and an order (`sort`, `direction`), such as `/sessions?filter={"join":"and","conditions":[{"field":"family","values":["SESSION_ID"]}]}` for a session with its subagents. Each condition has a `field` (`status`, `unseen`, `draft`, `tag`, `project`, `branch`, `parent`, `family`, `active` or `created`), its `values` (or `within` a period: `1h`, `1d`, `7d`, `30d`, `90d`) and `"not": true` to turn it around. What the link doesn't name shows all sessions, everyone's, without filters or search, in the order and view you chose; your browser then remembers it as if you had chosen it, and the address loses the parameters.
+
+### A project's branches
+
+A project's **Branches** page lists every branch of the project in one table: its sessions (a people icon counts your teammates'), its review with its state, its git state in words, as the branch's top bar says it (such as **2 not pushed**, **1 behind**, **No remote branch** or **Merged**), when it was last active, **New session**, and its menu. Where the page is too narrow for a column, on a phone or beside a wide sidebar, what it would show is under the branch's name. A branch without a session is found here. Filter the table by name, check branches to **Archive** or **Delete** several at once (the primary branch has no checkbox), or choose **New branch…**. A branch that is gone but still has sessions keeps a row, so that you can delete them.
+
+**New session** on a branch's row starts a chat on the branch and opens it. It shows when you point at the row or move the focus into it, and always on a touch screen; where the table is narrow it shows its icon only. A branch's menu (**⋮** at the end of its row) starts with **New session** and **Open branch**, which opens the branch page, then has the branch's actions. A gone branch's row has no **New session**.
+
+**New branch…** asks for the new branch's name and what it starts from ([Create a branch](#create-a-branch)). **Create and start a session** creates the branch and then opens a new chat on it; **Create branch** only creates it.
+
+Below the table, **Archived and hidden** has what was put away, under captions shown only when they have branches:
+
+- **Yours**: the branches you archived, with when, **Unarchive** and delete ([Archiving](/platform/archiving)).
+- **Team archive**: teammates' branches their owners archived, and branches archived for a team, with whose they are. A team's admins, and the members whose work on a branch the team reads, bring one back with **Unarchive for** the team, or remove it from the team ([Teams](/platform/teams)).
+- **Hidden by you**: teammates' branches whose sessions you hid from your sidebar. **Show in my sidebar** brings them back.
+
+**All archived work…** opens **Archived**, with the archived work of all your projects.
+
+### A project's settings
+
+**Settings** lists the project's settings in two groups, each with what it is set to: **Agents** (**AI provider**, **Development mode** and **Launch links**) and **Project** (**Repository** and **Environment variables**). Select one to open it; **Settings** at its top leads back to the list.
+
+### An archived project
+
+An archived project's pages say under the header when it was archived, with **Unarchive project…**. Its **Branches** page has no table: its branches are listed under **Archived and hidden**, and come back or go with the project. Its header's menu has **Unarchive project…** and **Delete project…**, and **New chat** waits until you unarchive it.
+
+## Moving a chat to another worker
+
+Everything you send the agent runs on a worker you choose: the chat input's worker chip, and the model and worker chips of your answers to the agent's requests, of **Resume** and of a message an MCP App view sends for you. Each starts as the chat input's choice. Sending to a worker other than the chat's moves the chat there:
+
+- **The agent isn't running** (it finished its turn, asked you something, or was stopped): choosing another worker in the chat input asks **Move this chat to …?**, and your next message, answer or **Resume** moves the chat before the agent continues. This also works when the chat's worker is offline or no longer one of your workers: the new worker starts from what the old one last published, and changes the old one hasn't published stay on it. Your message shows **Moved this chat from … to …**, and the agent is told it moved.
+- **The agent is running**: it confirms **Use … for the next message?**, and the chat moves when the agent reads your message; until then it works on its worker.
+- **The chat waits for its disconnected worker** (it shows **Paused until worker … reconnects**): it continues by itself once the worker is back. To continue elsewhere now, **Stop** it first; then your next message, or **Resume**, moves it.
+
+The workspace is synchronized to the new worker, and commands and processes the agent started stay on their worker: the agent can still read, answer and stop them there, and the chat's running processes list them with that worker, while it is connected. A move that can't go ahead (the worker isn't connected, messages are queued in the chat, subagents that share its checkout still run) refuses what you sent and says why; nothing moved, and your text stays where you wrote it. Next to each worker chip the chat says what sending there does.
+
+## Drafts
+
+To write a message now and send it later, possibly from another device, choose **Save draft** next to **Send** instead of sending. The draft is saved with the conversation: its text, its model and effort, its worker, and its files, which are uploaded to the conversation's worker right away. The agent does not start. In **New Chat**, **Save draft** goes through the same queue as a message: it creates the chat without starting the agent, uploads the files and saves the draft there, and its slot then becomes a link to the chat.
+
+The draft shows at the end of the conversation like one of your messages, marked **Draft**, with the files it uploaded and the model and worker it is sent with. While a conversation has a draft, the chat input is replaced by a note that the draft is your next message (**Stop** stays there while the agent works or recovers interrupted work): send or discard the draft to write another message. Under the draft:
+
+- **Send** sends it as an ordinary message, exactly as it is shown. While the agent is busy, it is delivered with the **Queue** or **Steer** your account remembers from the chat input.
+- **Edit** opens it in place, with its attachment bar, model and worker: **Save** keeps your changes as the draft, **Send** saves and sends it, **Cancel** leaves the draft as it was.
+- **Discard** removes it after you confirm. When the draft uploaded files, you can also delete them from their worker; otherwise they stay in the conversation's artifacts folder.
+
+Every device shows the same draft within a few seconds. A draft changed on another device since you opened it is never overwritten: saving, sending or discarding it says so and shows its latest version instead. Team members reading a shared conversation don't see its draft. Deleting the conversation deletes its draft.
+
+So you can find the chats where you left a draft, a chat with your draft shows the draft icon (a page with a pen, as on **Save draft**) in the sidebar's list, whatever its agent does meanwhile: a small pulsing dot on the icon means the agent is working, and pointing at the icon also names the agent's status, such as waiting or stopped. When its agent asked you something, the chat shows the question icon instead, and pointing at it says that you saved a draft there. The icon goes away once you send or discard the draft. To list these chats, choose **Draft** under **More** in the list's head ([Filtering and grouping the list](#filtering-and-grouping-the-list)). Team members never see the icon.
+
+## Edit a message
+
+Editing a draft, one of your earlier messages (its menu's **Edit**) or a queued message opens it in place as a small composer:
+
+- the attachment bar shows the files the message already uploaded, marked as uploaded, and the files you add (they upload when you save or send). Select a file to preview it; **×** on an uploaded file offers **Remove from this message** (the file stays in the conversation's artifacts folder) or **Delete file** from its worker, which happens right away: **Cancel** doesn't bring it back, and messages that already show the file can no longer preview it. Attach files with the paperclip, by dropping them on the editor or by pasting them;
+- the text, with its file references as chips;
+- the model and effort, and the worker, the message is sent with;
+- **Cancel**, **Save** (a draft or a queued message) and **Send** (a draft or an earlier message). Ctrl/⌘+Enter sends (or saves a queued message); Escape cancels.
+
+Sending an edited earlier message starts a new branch from where the original was sent, as before; the original stays on its branch (‹ 1/2 ›). Saving a queued message replaces it in the queue with its delivery mode and queue time. A message an agent or a worker sent with `otti` keeps the worker its request named.
+
+Deleting a file needs an otti-worker version that supports it; an older worker says to update it.
+
+## Reading a conversation
+
+Most of an agent's work is tool calls: reading files, running commands, editing. The transcript folds that work so you can follow the conversation, and every level opens down to the complete input and output of each call.
+
+- **Your messages, the agent's text, questions, notices** (a model failure or a fresh context) and MCP tool calls that involve you (an MCP App view, or a server asking for your input) always show. Subagent starts, completions and messages appear as compact rows: select a row for its details, or **Open** to visit the source session. A message is labelled with the kind its agent gave it: **Agent direction**, **Agent question**, **Agent answer**, **Agent report** or **Agent notification** ([`session prompt --kind`](/cli/otti#start-and-continue-a-conversation)). Messages with no recorded sender identity are labelled unverified, never attributed to you.
+- **A run of tool work** between them is one line that says how long the agent worked, such as **Worked for 41s · 1 failed**. Other MCP tool calls are part of that work. Select it to open one row per tool call, with the agent's thinking and platform notices in place. A run of a single tool call is not folded: it shows as that call's row.
+- **A tool call's row** shows what it did and how it ended, for example **Ran** `bun test` **· exit 1 · 18s**, or **Edited** `src/upload.ts` **· +12 −3**. Select it to see the call, with its complete input, and the result, with its complete output, each with its time.
+
+While the agent works, its current run of tool work stays open under **Working**, with the number of tool calls and the time so far. It shows the last three rows; **Show N earlier** shows the rest. A call that is running says how long it has run. Streaming and running calls start completely collapsed, just like completed calls; select their row to see the input and output. **Expand all tool work** in the chat menu overrides this default.
+
+While the agent waits for its model to respond, the **Working** line also says so and for how long, such as **Working · 3 tool calls · 1m 12s · Waiting for model response · 11s** (**Connected; waiting for model output** once the model's provider has started its response). Without a run of tool work, for example right after you send a message, the same status shows on its own line below the conversation. It goes away as soon as the model's reply starts to show.
+
+The current position of the conversation, its **Head**, a point where it branches (‹ 1/2 ›) and a call without a result always show as their own row, so a folded line never hides them. One divider closes each turn: it names the model and effort the agent ran on, as the chat input's model chip shows them, and the worker it ran on, then when the turn ended and how long it took. Point at the model for its provider and model ID. A subagent's start row in the transcript names its model the same way, with the effort's name (**GPT Astra 6 · High**), and a session shared with you shows the display names its owner gave the models.
+
+The tool call, its result and each message have a menu (**⋮**) with **Continue from here** (on a result, **Continue from this result**), **Fork conversation from here** and **Copy reference**; your messages also have **Edit message**, and messages have **Copy message**. On a desktop the menu appears when you point at the message.
+
+On a wide screen, a vertically centered rail hugs the left edge of the chat pane, with evenly spaced marks for messages, final answers and questions (amber when outside the view). Every message visible above the composer has a darker mark; only the current mark is taller. The marks gently widen around the pointer, with a message preview beside the hovered mark. Expanding tool output does not stretch or move the marks; long outlines scroll within the rail. Point at a mark to preview the message and select it to jump there. The destination briefly pulses to show which message you selected (unless you prefer reduced motion). **Alt+↑** and **Alt+↓**, outside editable fields, step through the same marks on any screen.
+
+File links in agent messages open the file in the chat, including files outside the repository such as `/tmp/report.txt`: beside the chat where the page has room for a panel, as the branch's views do (drag its left edge to resize it; opening one of the header's views closes it), and otherwise in a dialog, which fills the screen on phones. The chat's address keeps the file, so Back and reloading the chat show it again. **Expand** (⤢) in its title bar opens the file's own page in the tab; Back returns to the chat with the file beside it. To read a file in a browser tab of its own, Cmd-click (Ctrl-click on Windows and Linux) or middle-click its link or **Expand**. A link can name a file in any of these ways:
+
+- **Relative to the agent's working directory** when it wrote the message, such as `[screenshot](shot.png)`, `[notes](./docs/notes.md)` or `[log](../build.log)`. In a project conversation that is the branch's checkout, `$R5D_ROOT/projects/<project>/<branch>`; in an account conversation, the workspace root. Octomerge records the worker and working directory with each message, so a link keeps its meaning after the conversation moves to another branch checkout or worker. Messages from before Octomerge recorded working directories cannot resolve relative links; the preview says so.
+- **Portable**, such as `[report]($R5D_ROOT/plans/.../report.md)`: the worker resolves its own managed root.
+- **Absolute or home-relative**, such as `[report](/tmp/report.txt)`, `[passwd](/etc/passwd)` or `[notes](~/notes.txt)`, on the message's worker. Your worker account's file permissions still apply.
+
+Web links, and links in web pages the agent read, open in a new tab. A link to a session, and a session's full ID, that the agent writes on its own show as a chip that opens the session ([Mention a session](/platform/teams#mention-a-session)). Previews follow the file:
+
+- **Markdown** (`.md`, `.markdown`, `.mdx`) opens rendered, with **Source** for the original text and **Preview** to switch back. Its HTML is sanitized and MDX components and scripts are not executed. Markdown above 100,000 characters or 2,000 lines opens as source. Tables keep their words whole and short cells, such as IDs, names and statuses, on one line; a table wider than the panel scrolls sideways.
+- **Code** in recognized languages, such as TypeScript, Python, Rust, Go, shell scripts, JSON, YAML and HTML, is shown as read-only highlighted source. HTML is shown as source, not rendered.
+- **Images** (PNG, JPEG, GIF, WebP, AVIF, BMP and ICO) are displayed. SVG is displayed as a static image, which never runs its scripts, with **Source** for its markup.
+- **Recordings and videos** (MP3, M4A, AAC, WAV, Ogg, Opus, FLAC, MP4, M4V, MOV and WebM) play in your browser's player. A file your browser can't decode says so; download it to open it in another app.
+- **Plain text**, such as logs, CSV and other text files without highlighting, is shown as raw text. Files with other names are shown this way when they contain UTF-8 text.
+- Binary files, including text-named files that contain binary data, cannot be previewed; use **Download file**.
+
+Markdown images in agent messages, such as `![screenshot]($R5D_ROOT/artifacts/<conversation-id>/screenshot.png)`, `![chart](/tmp/chart.png)` or `![diagram](docs/diagram.png)`, display inline using the same worker-file previews and the same resolution. They support the image formats above, show a loading indicator while fetching, and offer **Retry** if reading or decoding fails. Use an ordinary file link to open the preview or download the file.
+
+Previews are limited to 8 MiB. **Download file** streams files from the repository checkout or the conversation's artifacts folder (`$R5D_ROOT/artifacts/<conversation-id>/`, including its subfolders) without a size limit; downloads of other files are limited to 8 MiB.
+
+Links in a previewed Markdown file open in the same panel or dialog, from the same source worker. Links relative to the file, such as `[notes](./notes.md)`, resolve against its folder, not the agent's working directory; use the back arrow beside the title to return to the previous file, where you left it. Images in the file, such as `![screenshot](./screenshot.png)`, are read from that worker as well. Web links open in a new tab. In a file's own tab, its links open in that tab and the browser's Back returns to the previous file.
+
+These are files as they are now, not copies saved with the message: a file deleted since shows as unavailable, and a changed file shows its new content. A message's links are read on the worker it ran on, even after you move the conversation to another worker. Fetching a file local to that worker, such as its artifacts, files ignored by Git and anything outside the workspace, requires it to be connected and your account to retain access. A file the workspace synchronizes (`$R5D_ROOT/…` and project checkouts, apart from artifacts and ignored files) can still be opened while that worker is disconnected: it is read at the same workspace path on the conversation's current worker, or from the synchronized workspace, and the preview says where it came from. A missing or unavailable file shows a message naming the cause; use **Retry** after restoring it. Messages without a recorded source worker cannot resolve file links safely—ask the agent to share a new link. The page keeps the files it read in its memory, not on disk, until you reload or close it: a file you open again or go back to shows at once while it is read again, and updates if it changed. If reading it again fails, the copy shows with a notice saying when it was read. Select **Reload** (↻) in the title bar to read the file now.
+
+## When the agent asks you something
+
+The agent can ask you questions, ask you for environment values such as an API key, and an [MCP server](/get-started/mcp-servers#when-a-server-asks-for-input) can ask for your input during a call. Asking doesn't pause the agent: it goes on with work that doesn't need your answer, waits, or ends its turn, as it decides. The request stays open in the conversation until you answer or dismiss it, another agent answers or dismisses it, or the agent that asked dismisses it:
+
+- Its form can be answered at any time, while the agent works or waits, after it has finished its turn, and after a subagent has reported back.
+- Questions and their options, and the descriptions of the environment values the agent asks for, show formatting, code and links as the agent's messages do. Opening a link or copying code in an option doesn't choose that option.
+- The fields you write in, a question's own answer and the notes under the questions, work like the chat input: type `@` to mention a session or reference a workspace project, and paste files into a field, drop them on it or attach them with the paperclip above the notes. Each file shows as a chip where you added it and in the reply's attachment bar, and stays in this browser, also across a reload, until you send the reply. Every file in the bar goes with your answer when you select **Continue**, as a message's files go with the message; removing a file from the bar removes its chips too. Your answers show the files as chips you can select to preview them.
+- The environment values you provide are saved encrypted, as the form's heading says: in a project chat to the project's [environment variables](/platform/shell-environment#project-environment-variables), in a workspace chat to **Settings → Secrets** ([Secrets](/platform/shell-environment#secrets)). Commands the agents start afterwards receive them.
+- While a request is open, a banner above the chat input lists it. Select **Answer** to jump to its form, which briefly pulses (unless you prefer reduced motion). If the chat can't show the form, the banner says what to do instead: reload the page, or answer it with `otti` (below).
+- **Dismiss** closes a question or an environment request without answering it, and the agent is told that you dismissed it. Dismissing questions is like cancelling: nothing you wrote or attached in their form goes along, and it's discarded. To tell the agent why, or to show it a file anyway, answer instead (for example "I don't have an answer, see this file") or write an ordinary message. When you dismiss an environment request, what you wrote in its additional context goes along.
+- If you answer in an ordinary message instead, or the agent no longer needs what it asked, the agent dismisses its own questions or environment request; your message reminds it of the requests still open. The form then says that the agent dismissed it and why, and the banner, the question icon and the email about it go away. Dismissing answers nothing: the agent acts only on what you wrote.
+- Your answer or dismissal runs on the model and the worker its form shows: the chat input's choice, or what you choose in the form's own chips for that reply. A worker other than the chat's moves the chat there ([Moving a chat to another worker](#moving-a-chat-to-another-worker)), so you can answer even while the chat's worker is offline.
+- Your answer or dismissal reaches the agent as a message that names the request. It steers: a working agent reads it at its next step, a waiting one wakes up, and an agent that ended its turn starts again. Until it arrives, the queue shows it as **Answer**, **Env response** or **Dismissal**.
+- You answer, and so can another of your agents, with `otti` in its shell: for example the agent that started a subagent, when its instructions or your earlier answers already settle what the subagent asks. It can also dismiss a request that no longer matters. The conversation then says which agent answered or dismissed it, and that you didn't, and the asking agent is told the same. Only you answer an MCP server's request, in its card. Messages from other agents, a subagent's report and other notices never answer a request, and team members only read it. An agent that started a subagent is told when the subagent asks you something, so it can answer it or point you to the subagent's chat.
+
+Agents are told to ask in such a form whatever they need you to answer, such as a decision, a choice between options or your approval of a step, rather than in their messages. An offer of more work once the task is done, such as implementing what an investigation found, can still end a message.
+
+If nobody answers within a minute, Octomerge emails you what is asked, with a link to the conversation, also while the agent goes on working ([Email notifications](#email-notifications)). While a request is open, the chat shows a question icon in the sidebar's list, whatever its agent does meanwhile: a small pulsing dot on the icon means the agent goes on working, and pointing at the icon also names any other status that needs you, such as a model failure or a paused recovery, and whether you saved a [draft](#drafts) there. Its project shows the question icon while it is closed, and the chat that started it shows the question icon in place of its subagents' number. The icon goes away once the request is answered or dismissed. To list these chats, select **Asking** in the list's head ([Filtering and grouping the list](#filtering-and-grouping-the-list)).
+
+`otti -s SESSION_ID answer-questions` answers the newest open questions and `answer-env-request` the newest open environment request; `dismiss-request` dismisses the newest open question or environment request, or the one `--tool-call-id` names, with an optional `--note` for the agent. An MCP server's request is answered only in the chat. Agents can run them too ([Agents use otti like you](/cli/otti#agents-use-otti-like-you)).
+
+## Recover an interrupted chat
+
+During automatic recovery, the chat says it is checking saved results and shows
+the next scheduled check when it is waiting. Your accepted messages are retained.
+To end the task instead, select **Stop** in the chat input, as while the agent
+works: Octomerge checks nothing further and starts nothing new, and an action whose
+outcome it had not confirmed reaches the agent as **Outcome unknown** when the
+chat continues.
+
+Sometimes Octomerge cannot tell whether an action took effect: a server failed after
+receiving a request, a worker never reported a result, or an action ran past its
+time limit. Octomerge does not repeat the action and does not stop to ask you. The
+agent receives the action's result as **Outcome unknown**, with the reason when
+Octomerge knows it, and checks for itself whether the action took effect (for example,
+whether a comment was posted) before deciding whether to do it again. The
+action's row in the chat shows **outcome unknown**. Actions the agent requested
+in the same step after it are not started.
+
+If recovery finds records that do not fit together, it stops instead of
+guessing, and the chat offers **Reconcile and resume**, which checks the saved
+records again and continues when they can be recovered, without repeating an
+action. **Stop** in the chat input ends the task instead; when the records
+themselves are inconsistent, the chat stays paused after a Stop too, until
+**Reconcile and resume** can recover them.
+
+If a step fails because of a bug in Octomerge that retrying cannot fix, the chat stops
+instead of retrying, Octomerge reports the bug to its administrators, and you get an
+email. The chat stays stopped until the bug is fixed. To continue your work
+now, start a new chat and paste the stopped chat's link into your first
+message: the new agent can read the stopped conversation. Or wait for the fix
+and choose **Reconcile and resume**.
+
+A pending Stop is still honored after recovery. Once the chat has stopped, use
+**Resume** if you want it to continue. Resume continues from the saved
+conversation without adding a message to it. Refreshing a page does not repeat
+an action.
+
+## When the chat's worker is unavailable
+
+An agent runs only with its chat's own connected worker. A chat can be started
+without you while its worker is unavailable, for example when a subagent
+finishes, a claim it waits for is released or its wait ends. Nothing was in
+progress then, so nothing needs recovering: what reached the chat stays in its
+transcript, and the agent reads it when it next runs.
+
+- **Worker offline.** The chat pauses with a notice naming the worker, and its
+  status reads **Paused until worker '…' reconnects**. It continues by itself
+  once the worker reconnects. To move it to another worker instead, stop it,
+  choose the worker in the chat input and select **Resume** (or select the
+  worker with `otti session set-worker SESSION_ID --worker WORKER` and resume
+  it).
+- **No worker.** When the chat has no worker, or its worker is no longer
+  connected to your account, the chat stops with a notice that says so, and
+  waits for you. Choose a worker in the chat input and select **Resume**, or
+  select one with `otti session set-worker SESSION_ID --worker WORKER`: the
+  chat then continues by itself. A chat that never had a worker also takes the
+  one you choose in the chat when you send your next message.
+
+## How the workspace synchronizes
+
+Every worker keeps the same workspace: every project checkout and your account
+files (plans, notes, instructions and skills). A worker publishes a change
+within seconds of making it and takes in the other workers' changes as they
+arrive, and Octomerge keeps the latest copy, so it stays readable while a worker is
+offline. Each checkout's commits travel separately, through its project's
+history on Octomerge.
+
+- **What is synchronized:** every file, except what a `.gitignore` excludes,
+  the platform's own folders at the workspace root (the artifacts folder among
+  them), and each checkout's own Git data (its `.git` and its submodules).
+  Empty directories are not synchronized. Files a checkout's Git tracks are
+  synchronized even inside an ignored directory. A repository you clone into
+  the workspace synchronizes like any other files, its `.git` included.
+- **Edits on two workers** merge line by line when they touch different lines,
+  as `git merge` would. Changes to the same lines, or to lines next to each
+  other, are a conflict.
+- **Submodules** are not synchronized: run `git submodule update --init` in
+  the checkout on the worker that needs them.
+- **Large files:** a file may hold up to 128 MiB, and the synchronized
+  workspace up to your plan's limits: 10 GiB of files and 200,000 files,
+  or 50 GiB and 500,000 files on the Pro plan. A tracked file larger
+  than 128 MiB (Git LFS content can be) is not synchronized: each worker gets
+  it from its own checkout's Git. Git LFS content up to 128 MiB synchronizes
+  like any other file between workers that have git-lfs. On a worker without
+  git-lfs, Git LFS files keep their pointers, and `otti workspace status`
+  says how to get the content.
+- **File names that differ only in case** (`Readme.md` and `README.md`), made
+  on a Linux worker, cannot both exist on a Mac: the Mac holds one of them,
+  and `otti workspace status` lists the others.
+
+## When a worker's files cannot be synchronized
+
+Synchronization checks paths, file types and size, never what files contain.
+A worker stops synchronizing, and asks for a review, when:
+
+- **Too much new content.** More than 5 MiB of new files that no project tracks
+  or ignores appeared in one checkout (or outside the checkouts), usually
+  dependencies or build output without a matching `.gitignore` entry,
+  sometimes media an app needs, and they are still there 10 seconds later. A
+  build's temporary file that is renamed or deleted within seconds only holds
+  the worker's synchronization until it is gone. Moving or renaming files the
+  workspace already synchronizes adds no new content; copying them does.
+- **A path or file it cannot carry.** A name with a backslash, a control
+  character or bytes that are not UTF-8, a file over 128 MiB that no project
+  tracks, or a directory with more than 205,000 entries.
+- **A conflict.** Another worker changed the same lines of a file since this
+  worker last synchronized: the file gets conflict markers. For a binary file,
+  a link, or a file one worker deleted while the other changed it, the worker
+  keeps its own version. A worker joining with files of its own that differ
+  from the synchronized ones stops the same way, so neither version is lost.
+- **No room.** The synchronized workspace would pass its limits (10 GiB or
+  200,000 files; 50 GiB or 500,000 files on the Pro plan).
+
+Octomerge then opens a remediation chat on that worker, named for the cause:
+**Large Diff Remediation**, **Unsafe File Remediation** or **Workspace Conflict
+Remediation**; once its agent has read what went wrong, it renames the chat
+after what it fixes, such as **Resolve README.md conflict**. The agent is told
+exactly which paths are responsible and why, may change only those paths and
+the ignore rules that exclude them, and moves rather than deletes. For a
+conflict it resolves the markers, or compares the worker's version with the
+other copies and keeps the work of both. For content that is too large it
+decides, per path, whether it is disposable (excluded with an ignore rule) or
+something a project needs (published as it is, or excluded only when a clean
+worker can rebuild or download it); if it cannot tell, it asks you in its
+chat.
+
+While the remediation runs, the stopped worker neither publishes nor takes in
+changes, and the other chats on that worker pause at their next step: their
+transcript shows **Paused for workspace remediation** with a link to the
+remediation chat, and they continue by themselves when it finishes. Chats on
+other workers keep running, and other workers keep synchronizing. When the
+remediation finishes, each paused chat continues where it stopped and shows
+**Resumed after workspace remediation**, with the same link; its agent sees
+neither card. An agent waiting for something keeps waiting: its chat, the
+sidebar and `otti session status` show it waiting, and a finished or stopped
+chat stays as it is. Only work the remediation keeps from starting shows as
+paused: a message you send meanwhile to a chat on that worker, or a wait whose
+time runs out, continues once the remediation finishes. The remediation
+agent decides which chats need to know what it changed, on any of your
+workers, and tells only those, in its own words, such as "keep the new
+`.gitignore` rule and commit it with your next change": a chat shows the
+message as **Message from the workspace remediation**, and its agent reads it
+before it continues (an agent that is waiting is woken for it; a chat that has
+stopped isn't told). When the remediation only published your content as it
+was, nobody is told anything. The remediation chat keeps the whole account:
+what it changed, what Octomerge verified and whom it told. The banner at the top of
+the app, and `otti workspace status`, show the open remediation and what was
+refused.
+
+### When the workspace is full
+
+Your synchronized workspace holds at most your plan's limits across all its
+project checkouts and account files: 10 GiB of files and 200,000 files, or
+50 GiB and 500,000 files on the Pro plan. `otti workspace status` shows what it holds against
+yours. A change that would take it past either is refused, and says how much
+the workspace would hold: a new branch or project fails with that reason (in
+the sidebar, and in a session started from a launch link), and a worker that
+would publish it stops for an **Unsafe File Remediation**, whose agent excludes
+only content no project needs and otherwise asks you to make room. Archive or
+delete branches you no longer need: their files leave the workspace at once (an
+archived branch's stay readable on Octomerge and come back when you unarchive it;
+see [Archiving](/platform/archiving)), and creating the branch again, or
+opening its launch link again, then succeeds. If your limits get smaller (a
+plan change), a workspace already over them keeps working: only changes that
+make it grow are refused until it is under them again.
+
+## Continue from an earlier step
+
+The menu (**⋮**) of a message, a tool call or a result has **Continue from
+here** (on a result, **Continue from this result**), which moves the
+conversation to it, and **Fork conversation from here**, which copies the
+conversation up to it into a new chat. Later steps stay readable, faded, on
+their branch (‹ 1/2 ›); their menus still work, so **Continue from this result**
+there brings you back. Continuing from a tool call leaves the call without a
+result: its row shows **No result**. Files on disk are unchanged. When the
+agent isn't running, the chat offers **Resume** according to how the
+conversation now ends:
+
+| The conversation ends with | The banner says | Resume |
+| --- | --- | --- |
+| An action without a result | Agent was interrupted before completing an action | Runs the action again, then continues |
+| A message without a reply | Message was not processed | Answers the message |
+| An action's result | Agent was interrupted after completing an action | Continues from the result |
+| A finished answer | (no banner) | Nothing to continue |
+
+Running an action again can repeat its effects, so the button reads **Review
+and resume** and asks you to confirm in **Retry interrupted actions?**, which
+names the tools. A step whose only actions are a wait or a worker switch
+resumes without asking. The earlier result stays on its branch; the new one
+follows it. While the replay waits for your confirmation, a message you send
+waits in the queue; once you confirm, the actions run first and your message
+reaches the agent after their results. To skip the actions instead, send your
+message with **Force**, or use **Force now** on the queued message: the agent
+receives the actions as not run, followed by your message.
+`otti session resume SESSION_ID --confirm` gives the same confirmation.
+
+## Create a branch
+
+On a project's **Branches** page, or in a project's menu in the sidebar (**⋯** on its row), choose **New branch…**,
+name it, select a source branch and
+choose how the new branch starts:
+
+- **Bring uncommitted changes** (the default) works like `git switch -c`: the
+  new branch starts at the commit Octomerge last synchronized from the source
+  checkout, and the source files most recently synchronized to Octomerge become its
+  files, so the source's published uncommitted changes (edits, new files,
+  deletions) are uncommitted changes in the new branch too. Staged changes
+  arrive unstaged, and the source keeps its own changes.
+- **Clean from last commit** checks out only the commit Octomerge last synchronized
+  from the source checkout. Its uncommitted changes stay on the source branch.
+
+A worker synchronizes a change within seconds of making it. To be sure a
+commit or a change made a moment ago is included, synchronize first
+([`otti workspace sync`](/cli/otti#workspace-status-and-synchronization)).
+A branch an agent creates from its own worker starts from that worker's files
+and commits as they are at that moment.
+Commits that are only on the remote need a fetch and pull in the source
+checkout first, unless you start the new branch from the remote: choose
+**Repository branch** as the source (`--source remote:BRANCH` with `otti`).
+
+If the source has no uncommitted changes, both choices give the same files.
+**Create and start a session** creates the branch and then opens a new chat on
+it; **Create branch** only creates it. The dialog shows **Creating BRANCH…**
+while Octomerge creates the branch (then **Starting a session on BRANCH…**), and
+closes once it is ready; if the branch can't be
+created, the dialog says why, for example when the name is taken or the source
+branch has never synchronized. **Continue in background** closes the dialog
+while the creation goes on; with **Create and start a session**, the new chat
+opens when the branch is ready. If the branch is created but its session can't
+start, a message says why, and **New session** on the branch's row starts one. Every worker receives the new branch's files within seconds and sets
+up its checkout in the background; opening its first chat or shell may still
+take a moment to prepare the checkout.
+
+## Search a conversation
+
+Open the chat's top-bar menu (**⋮**) and select **Search conversation**.
+**Cmd+F** / **Ctrl+F** remain the browser's own Find shortcuts. Search checks saved user and assistant message text across the entire
+conversation, including unloaded history and alternate branches. It matches
+literal text without case sensitivity, with one result per matching message.
+Tool inputs/results, reasoning, internal prompts, and unfinished streaming text
+are not searched.
+
+Select a result to load and highlight its message. Use the arrows or **Enter** /
+**Shift+Enter** in the search field to move between results. **Load more results**
+fetches the next page. **Refresh search** includes newly saved messages. Search
+shows loading, no-results, and retry states without downloading the full history.
+
+Searching another branch only changes what you are viewing; it does not move
+the conversation head or change files. **Escape** closes search. Use the
+**Scroll to latest messages** button to return to the live chat.
+
+## Long conversations
+
+When a conversation fills about 90% of the model's context window, the agent
+pauses after its current tool round and the chat shows **Compacting context**
+with the elapsed time, including after a reload and in other tabs. The agent
+asks the same model for a summary of the work so far, starting with the task
+as it stands now, then continues with a fresh context. That context starts
+from:
+
+- the latest messages from you and the answers you gave in the question
+  panel, word for word (long ones shortened, with a pointer to the full
+  message), and at most three recent messages from other agents, shortened.
+  A subagent also keeps the latest directions, questions and answers from the
+  chat that started it, four at most; that chat's reports are shortened with
+  the other agents' messages, and no agent's notification is kept (agents
+  give their messages these kinds, which the chat shows, such as **Agent
+  report**). Your original request isn't repeated: the summary says what the
+  task has become;
+- a list of the images the agent had in view, such as screenshots and files
+  it read. They aren't attached to the fresh context, and the agent reads
+  again any it still needs. Images you attached to the messages it quotes stay
+  attached;
+- pointers to the plan shown to you and the agent's session notes, and the
+  commands it runs to check the current state of the files, its subagents and
+  claims, instead of a copy that would soon be out of date;
+- the summary, labeled as model-generated.
+
+If the conversation's last steps leave no room for the summary, for example
+after a tool returned a very large result, the summary covers the conversation
+up to before them, and the fresh context lists those steps after it; if even
+that doesn't fit, the model summarizes a shortened transcript of the
+conversation instead. The fresh-context divider in the chat shows exactly what
+the agent received.
+
+Running commands and child chats keep running while the context is compacted.
+**Stop** still ends the run immediately. A message you steer during compaction
+is not part of the summary; it reaches the fresh context unchanged, and a
+queued message still waits for the turn to finish. The agent never continues
+without a summary: when a request for it fails, times out or returns something
+unusable, it asks again, adjusting the request. If it still can't get one, the
+chat stops with **Context summary could not be written**, saying why, and
+Octomerge emails you as for any stopped chat. **Resume** tries the summary
+again.
+
+You can also compact a conversation's context before it fills up, for example
+when its work moved on to something new: choose **Compact context…** in the
+chat's menu, in its top bar or on its row in the list. The dialog takes
+optional additional instructions, such as what the summary must keep or may
+drop ("The naming is done. Keep the decisions and the launch work."). They are
+added to the usual summary request as your words, not used instead of it: the
+summary still covers the task, decisions, progress and next steps. Choose
+**Compact**, and the chat shows who asked and the instructions, then
+**Compacting context**. A working agent compacts after its current tool round
+and works on; an idle chat compacts right away and stays idle, and your next
+message continues from the fresh context; a stopped chat compacts when you
+continue it. A message at the bottom of the screen says which. A chat that is
+compacting already isn't compacted again, and one whose context has nothing new
+since it started or was last compacted says so. Compacting an idle chat doesn't
+count as a finished run: a subagent doesn't report it to the agent that started
+it, and **Notify me on completion** doesn't email you about it.
+`otti session compact` does the same from a terminal or an agent's shell
+([otti](/cli/otti#compact-a-conversations-context)).
+
+## What the agent's context holds
+
+The composer's context meter (top right, for example **42k /200k**) shows how
+much of the model's context window the agent's latest model request used.
+Hover it, or select it, to see what that request was made of, with an
+estimated token count for each part:
+
+- **System prompt**: Octomerge's instructions to the agent, in sections such as the
+  base prompt, platform guidance, session memory, this conversation's project and
+  branch, and how the agent looks up what changes while it works: your
+  workers, the models, your environment's names and descriptions, the teams
+  the chat is shared with.
+- **Instructions**: your account and project `AGENTS.md`, and how the agent
+  finds and uses your skills.
+- **MCP servers**: the two tools the agent looks up your MCP servers' tools
+  with and calls them with, which carry the rules it follows for third-party
+  tools, and each connected MCP server they reach, with its tools and status.
+  A server's tools are looked up when needed, so they have no size here.
+- **Tools**: the core tools (files, shell, browser, web, plans, subagents). A
+  workspace remediation chat also lists **Workspace remediation**, the two
+  tools its agent uses to recheck the workspace and confirm the remediation.
+- **Messages**: the conversation itself.
+
+The system prompt says how to look things up rather than listing them, so
+adding an environment variable, a skill or an MCP server, or sharing the chat,
+doesn't change what a running agent was sent: its provider keeps reusing the
+cached prompt. The agent looks them up when a task needs them, for example
+`otti get skills` before it starts a task, `otti account env list` before
+it asks you for a credential, and its MCP lookup before it uses a server.
+MCP servers' tools aren't in the agent's tool list either, so a server's new
+or changed tools don't start the cache over.
+
+Select a part to read its exact text or tool definitions; an MCP server shows
+the tools the agent's lookup would list for it now. Counts are estimates;
+their total is the provider's count when it reported one.
+
+Use the switches to turn parts off for this conversation, for example a large
+`AGENTS.md` or an MCP server the task does not need. A server you turn off is
+out of the agent's reach at once, and turning one off or on doesn't change
+what the agent was sent. **All MCP servers** turns off every server and leaves
+the two MCP tools out. The base prompt, this conversation's own facts, the
+lookups of what changes while the agent works and the core tools are always
+sent. Changes apply from the agent's next model request, and the agent is
+told which parts you turned off (or, for one MCP server, finds it in its
+lookup).
+Turned-off files stay readable: the agent can still open them with its tools
+if you ask it to.
+
+Subagents the agent starts from the conversation, and forks of it, start with
+the same settings; change them there independently. Conversations started with
+`otti session start` begin with everything on. Agents cannot change these
+settings themselves.
+
+### Start a chat without parts of its context
+
+In **New Chat**, the same meter shows what a chat started in the selected
+project and branch would begin with: that branch's project `AGENTS.md`, your
+account `AGENTS.md`, the skills, the MCP servers the project offers and the
+other parts, with estimated sizes. Choosing another project or branch updates
+it. Turn parts off there before you send the first message, for example to
+start a chat without your account or project `AGENTS.md`; the chat is created
+without them, and its subagents and forks start the same way. You can turn
+them back on in the chat at any time.
+
+The base prompt and the chat's own facts are always sent; their sizes appear
+after the chat's first request. Your choices stay in
+the New Chat draft until you send it; the next new chat starts with everything
+on. A launch link's dialog offers the same choices for the session it starts.
+
+## Email notifications
+
+When an agent asks you something, Octomerge emails you: questions, environment
+values, and an MCP server asking for your input during a call. It doesn't
+matter whether the agent goes on working, waits or ends its turn, and
+subagents' questions are emailed too. The email lists what is still
+unanswered a minute after it was asked (the questions with their options, or
+the names of the environment values), names the project, branch and
+conversation, and links to the conversation, where you answer. Replying to the
+email does not reach the agent. If it is answered within that minute, by you or
+by another agent, no email is sent. A conversation sends you at most one such
+email every 10 minutes; what it asks meanwhile goes in the next one, unless it
+was answered by then.
+These emails are on by default. To stop them, including the ones not sent yet,
+turn off **When an agent asks me something** under **Settings →
+Notifications**.
+
+An agent can also email you itself when work is ready for your review or needs
+you while you are away, for example at the end of a long task. The email goes only
+to your account's verified address; the agent cannot choose recipients. It
+names the project, branch and conversation, contains the agent's short subject
+and message, and links back to the conversation. The chat shows each request
+and whether it was accepted for sending or why no email was sent. When a
+request is refused, the agent is told why and continues in the conversation.
+
+Agent emails are on by default. To stop them, including emails that have not
+been sent yet, turn off **When an agent sends me a notification**
+under **Settings → Notifications**. Each email links to that setting.
+
+To prevent excessive email from agents:
+
+- a conversation can email you at most once every 10 minutes;
+- all agents together can email you at most 10 times an hour and 30 times a day;
+- the same subject and message from one conversation is sent at most once a day;
+- subagents cannot email you; they report to the agent that started them.
+
+Turn on **Notify me on completion** in a chat's **⋮** menu (in the top bar or
+sidebar) to receive an email when its run finishes. You can change this setting
+before or during a run. If the agent already emailed you during the last 10
+minutes of that run, you receive only the agent's email. When the run ends or
+waits while the agent asks you something, the question email tells you, and
+**Notify me on completion** waits for the run that finishes; with question
+emails turned off, it emails you then instead.
+
+Octomerge also emails you when a chat stops without you stopping it and waits for
+you: the model provider kept failing and the retries ran out, recovery of an
+interrupted step found records it could not verify, or the agent reported a
+critical platform problem. The email says what happened and what to do, and links to
+the chat. Subagents report to the chat that started them instead, unless you
+turned on **Notify me on completion** for one. To stop these emails, turn off
+**When a chat stops unexpectedly** under **Settings →
+Notifications**.
+
+Email requires an email sender configured for your installation. Without
+one, no email is sent, and agents are told that email is unavailable and tell
+you in the chat instead.
+
+## Session working memory
+
+Agents can keep ordinary text notes in `$R5D_ROOT/memory/<session-id>/`, which
+synchronizes with the rest of the workspace. Notes can record objectives,
+constraints, pending work, decisions, blockers, plan and artifact references,
+child handoffs, and verification status.
+
+The directory remains available after a context reset or resume. Agents update
+notes at meaningful milestones and read them when needed; their contents are
+not automatically added to every model request. Each session has its own folder,
+separate from durable project or user memory.
+
+The folder exists from the start of every chat, including subagents, forks and
+issue implementations, on whichever worker the chat runs. An empty folder is not
+synchronized; notes written there are.
+
+Deleting a chat, its branch or its project removes its memory folder from the
+workspace, and every worker deletes the notes it had synchronized, within
+seconds or when it reconnects. A note a worker wrote while it was offline, and
+never synchronized, is published again as a new file; one it changed
+meanwhile stops that worker for a conflict remediation, so neither version is
+lost silently. The workspace keeps no earlier versions of the notes.

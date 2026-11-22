@@ -1,0 +1,136 @@
+---
+title: "Run the worker as a service"
+description: "Keep a worker running in the background and across reboots with systemd on Linux or launchd on macOS."
+---
+
+`otti-worker start` runs until you stop it. To keep a worker running without a terminal, start it with the machine and start it again when it fails, run the same command from your system's service manager: systemd on Linux, launchd on macOS. Its [life vest](/get-started/add-worker#the-life-vest) already brings back a worker that was stopped, crashed or hangs; the service manager starts the machine's worker at boot and brings back the life vest itself. The examples run the `otti-worker` that Bun installed ([Connect a worker](/get-started/add-worker)); copy your environment's `--base-url` from **Settings → Workers** in place of `https://octomerge.dev`. A service set up with the worker's earlier command, `r5d-worker`, keeps working as it is; to switch, install the CLIs as [Connect a worker](/get-started/add-worker) shows and point its `ExecStart` (or `ProgramArguments`) at `otti-worker`, which keeps the worker's sign-in, workspace and identity. A service that names `https://r5d.dev`, Octomerge's address before octomerge.dev, keeps working as it is: there is no need to change it. Moving it to `https://octomerge.dev` takes a new sign-in, and the worker then starts with a new copy of its workspace: let it publish its changes and stop it first ([Connect a worker](/get-started/add-worker)).
+
+## Before you start
+
+1. Install the CLIs on the machine as **Settings → Workers** shows, as the user the service will run as, then sign in as that user, in a terminal:
+
+   ```bash
+   otti-worker auth
+   ```
+
+   The service starts with that sign-in (`~/.config/r5d/r5dctl/config.json`, or the file `--config` names). Run `start` once in the terminal too, to see the worker connect, then stop it with **Ctrl+C**.
+2. Find where `otti-worker`, `bun` and `node` are: `command -v otti-worker bun node`. `otti-worker` is in Bun's directory for commands, `~/.bun/bin` (`bun pm bin -g`). A service does not read your shell's startup files, so the service names `otti-worker` by its full path, and its `PATH` must hold Bun's directory for commands, the directory of `bun`, which runs the worker, and those of `node` and `npm`, which run its launcher and its updates. **Update CLIs** also looks for `otti-worker` on that `PATH`.
+3. To let agents build and run containers, run the service as a user who can use Docker (see [Docker](/get-started/add-worker#docker), and [below](#docker)).
+
+What the service manager needs to know about the worker:
+
+- **It updates itself.** The installed `otti-worker` is the worker's launcher: it starts the version the worker updated to, also after a restart, so the service needs no edit for an update. Installing another version with Bun changes what the next start runs.
+- **Exit codes.** A missing or refused sign-in exits with **78**: no credential for the server, or one that was revoked (`auth logout` with `otti`, `otti-worker` or `otti-browser` on the machine, or **Settings → CLI & API**), lost the access a worker needs, or names a label another sign-in's worker holds. Starting again does not help until you sign in again, so don't restart on 78. Every other failure, such as a server that cannot be reached at start, exits with 1 and is worth a retry. Without Bun on `PATH` (or in `~/.bun/bin`), `otti-worker` exits with 127 and says how to install it.
+- **Stopping.** On a stop the worker ends its commands and terminals, then exits; give it a minute and a half before the service manager kills it (the examples below do).
+- **Restart after any exit.** The worker's life vest restarts the worker, but it stops like any process on a stray `SIGTERM`: an agent's `killall bun` or `pkill -u` stops it cleanly, with exit code 0. So the examples restart it after any exit but a stop by the service manager and a refused sign-in.
+- **Killed outright.** A worker killed outright (`kill -9`, the out-of-memory killer, a power cut, a stop that outlasts the service manager's wait, or its life vest after it hung) cannot release its workspace's lock. The lock names the worker's process, so the next start sees that it no longer runs, moves the lock aside and carries on; its log says so in one line, and the commands that were running are listed as ended, or with an unknown outcome when nothing recorded how they ended. A lock that an older worker release left doesn't say which process held it: unless the machine restarted since, the start refuses with `workspace_lock_unverified`, exits with 1 and shows the reason in **Settings → Workers**. If no other worker runs with the same `--root` and label, add `--archive-workspace-lock` to the service's `otti-worker start` once (or run that start in a terminal, which asks) and restart the service. Another worker that still holds the lock is named (`authority_busy`), and the service starts once that one stops. A remote holds no workspace, so it has no such lock.
+
+## Linux: systemd
+
+As root, save this as `/etc/systemd/system/otti-worker.service`, with your user, label and paths:
+
+```ini
+[Unit]
+Description=Octomerge worker
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=alice
+# Bun's directory for commands (otti-worker), bun's, and node's and npm's:
+# a service does not read your shell's PATH.
+Environment=PATH=/home/alice/.bun/bin:/usr/local/bin:/usr/bin:/bin
+# The installed CLI, where `command -v otti-worker` finds it.
+ExecStart=/home/alice/.bun/bin/otti-worker start --label my-server --base-url https://octomerge.dev
+# After any exit but systemd's own stop: something else, such as a stray
+# SIGTERM (killall bun), may have ended it.
+Restart=always
+RestartSec=10
+# A missing or refused sign-in: stay stopped until someone signs in again.
+RestartPreventExitStatus=78
+# Time to stop before systemd kills it.
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now otti-worker
+journalctl -u otti-worker -f      # its log
+```
+
+The journal records when each line was written (`journalctl -o short-iso-precise` shows it to the microsecond), so the worker writes its lines there without the time it otherwise starts them with ([The worker's log](/get-started/add-worker#the-workers-log)).
+
+When the sign-in is refused, `systemctl status otti-worker` shows the service failed with `status=78/CONFIG`, and the log says why and which command signs in again. Run that command as the service's user, then `sudo systemctl start otti-worker`.
+
+Without root, run it as a user service: save the unit as `~/.config/systemd/user/otti-worker.service` without the `User=` line and with `WantedBy=default.target`, then `systemctl --user daemon-reload`, `systemctl --user enable --now otti-worker`, and `loginctl enable-linger $USER` so that it runs while you are not logged in. `journalctl --user -u otti-worker -f` shows its log.
+
+### Docker
+
+A service with `User=` gets that user's groups each time it starts: once the user is in the `docker` group (`sudo usermod -aG docker alice`), `sudo systemctl restart otti-worker` gives the worker, and the agents' commands it runs, access to Docker. To give the group to the service alone, without adding the user to it, add `SupplementaryGroups=docker` to the `[Service]` section instead.
+
+A user service runs in your own systemd instance (`user@<uid>.service`), which keeps the groups it started with. After adding yourself to the `docker` group, restart that instance (`sudo systemctl restart user@$(id -u)`, which stops your other user services too) or reboot; with lingering on, logging in again doesn't restart it.
+
+Agents find `docker` in `/usr/bin`, where Linux packages put it ([Docker](/get-started/add-worker#docker)).
+
+## macOS: launchd
+
+Save this as `~/Library/LaunchAgents/dev.r5d.worker.plist`, with your label, home directory and paths (`command -v otti-worker` shows where the installed CLI is; `/opt/homebrew/bin` holds Homebrew's Bun and Node.js):
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>dev.r5d.worker</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/alice/.bun/bin/otti-worker</string>
+    <string>start</string>
+    <string>--label</string>
+    <string>my-mac</string>
+    <string>--base-url</string>
+    <string>https://octomerge.dev</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/alice/.bun/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+  <!-- Time to stop before launchd kills it (20 seconds by default). -->
+  <key>ExitTimeOut</key>
+  <integer>90</integer>
+  <key>StandardOutPath</key>
+  <string>/Users/alice/Library/Logs/otti-worker.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/alice/Library/Logs/otti-worker.log</string>
+</dict>
+</plist>
+```
+
+Then:
+
+```bash
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.r5d.worker.plist
+tail -f ~/Library/Logs/otti-worker.log                # its log
+launchctl bootout gui/$(id -u)/dev.r5d.worker         # stop it and unload it
+```
+
+launchd records no times in the log file, so each line the worker writes there starts with the time it was written, in UTC ([The worker's log](/get-started/add-worker#the-workers-log)).
+
+The agent starts when you log in. launchd has no counterpart of systemd's `RestartPreventExitStatus`: with `KeepAlive` on, it starts the worker again after any exit, 78 included, at most once per `ThrottleInterval` seconds (10 by default, 60 above). So after a refused sign-in the log shows the refusal once a minute until you sign in again (`otti-worker auth` in a terminal; the next start then connects) or unload the agent with `launchctl bootout`, which is also how you stop it. `ExitTimeOut` gives a stopping worker the same minute and a half as the systemd unit: by default launchd kills a job 20 seconds after asking it to stop. On macOS the life vest can't resume itself: a stop of every process of your user, which also freezes your desktop, stops it too.
+
+The agent runs as you, so the worker can use the Docker Desktop or OrbStack you run. Agents find `docker` in `/usr/local/bin`, which the `PATH` above includes: let Docker Desktop install its command-line tools for the system (**Settings → Advanced**), or OrbStack install its tools there ([Docker](/get-started/add-worker#docker)).
+
+`otti-browser` can run the same way on a Mac: a second agent, with its own label (`dev.r5d.browser`), log file and the installed `otti-browser start` with the `--base-url` **Settings → Browser** shows. A missing or refused sign-in ends it with 78 too.

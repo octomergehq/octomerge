@@ -1,0 +1,90 @@
+---
+title: "Deploy access"
+description: "Give every agent deploy access once: sign in to Vercel or Cloudflare, or add a Fly.io token, a kubeconfig or AWS credentials in Settings → Secrets."
+---
+
+**Settings → Secrets → Deploy and cloud** connects the places your agents deploy to, and so does the **Access** step of **Set up your workspace**. A connection adds ordinary entries to **Secrets and variables** below it, such as `VERCEL_TOKEN` or `KUBECONFIG`: every command your agents run, in every project and on every worker, gets them like any other [secret](/platform/shell-environment#secrets). Values are encrypted and never shown, not even in Settings as the values of entries you add yourself are, and agents see only their names and descriptions.
+
+| Deploy target | How it connects | What agents get |
+| --- | --- | --- |
+| Vercel | Sign in with Vercel | `VERCEL_TOKEN` |
+| Cloudflare | Sign in with Cloudflare | `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` |
+| Fly.io | An organization token you create and paste | `FLY_API_TOKEN` |
+| Kubernetes | A kubeconfig you upload or paste | `KUBECONFIG`, a file |
+| AWS | Access keys, or IAM Identity Center | `AWS_PROFILE` (`r5d`) and `AWS_CONFIG_FILE`, a file |
+
+<Note>
+Vercel and Cloudflare say **Not set up on this installation** where your installation has no client for them; the other three always work. An installation without deploy targets shows no Deploy and cloud section.
+</Note>
+
+## Sign in to Vercel or Cloudflare
+
+1. Choose **Sign in** on the target's row. Octomerge lists what it asks the provider for, what agents get, and any entry you added yourself that the connection replaces.
+2. Choose **Continue**, approve Octomerge at the provider, and you land back where you started: in **Settings → Secrets**, or in the setup checklist's **Access** step. Approve within 15 minutes; after that, sign in again.
+
+### Vercel
+
+Octomerge connects to Vercel as an integration. At Vercel you choose the team to install it in, and whether it reaches all of the team's projects or specific ones. It asks for deployments, projects and project environment variables (read and write), its own installation (so that **Disconnect** can uninstall it), and reading your team and user. The row shows the team and which projects you gave it when it connected.
+
+Vercel's token doesn't expire: it works until you disconnect, which uninstalls Octomerge's integration at Vercel and ends the token at once. Agents use it with the `vercel` CLI:
+
+- Pass `--scope <team slug>`, which the row shows. The token can't list your teams, so `vercel teams ls` and `vercel switch` don't work with it.
+- To work on a project, run `vercel link --yes --project <name> --scope <team slug>`, or set `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` together: the CLI refuses one without the other.
+- With specific projects, agents reach only those, and they can't create new projects.
+
+To use another team, choose **Disconnect**, then **Sign in** again: Octomerge won't sign in to Vercel while it's connected, so that no old installation is left behind. To change which projects Octomerge reaches, change the integration's project access on your team's Integrations page at Vercel.
+
+If you uninstall Octomerge's integration at Vercel yourself, agents keep getting a `VERCEL_TOKEN` that no longer works until you choose **Disconnect** in Octomerge.
+
+### Cloudflare
+
+Cloudflare asks for Workers Admin, Cloudflare Pages write, DNS read, Account Settings read, User Details read and Background Access, which lets Octomerge renew the token. D1, Workers KV and R2 are optional: decline them on Cloudflare's page if agents shouldn't change them. The row shows what Cloudflare granted. When your sign-in reaches several Cloudflare accounts, choose the one agents deploy to with **Choose account**; it becomes `CLOUDFLARE_ACCOUNT_ID`.
+
+Cloudflare's tokens last an hour. Octomerge renews `CLOUDFLARE_API_TOKEN` as a command starts, so a command started more than an hour ago may hold an expired token: run a new command. If Cloudflare ends Octomerge's access (you revoked it there), the row asks you to **Reconnect**, and agents get no Cloudflare entries until you do.
+
+## Add a Fly.io token
+
+Fly.io has no sign-in for other apps. Choose **Add token**, enter the organization's slug (yours is `personal`) and create an organization token on the organization's **Tokens** page or with flyctl:
+
+```sh
+fly tokens create org -o personal --name r5d --expiry 2160h
+```
+
+Paste all of it, including `FlyV1`. Octomerge checks it with Fly.io before saving it as `FLY_API_TOKEN`. The token in this example expires after 90 days; add a new one before then.
+
+## Add a kubeconfig
+
+Choose **Add kubeconfig**, then choose the file or paste it (at most 1 MiB). Octomerge checks it without connecting to your clusters:
+
+- it is a `v1` `Config` with at least one context, and every context names a cluster and a user it defines;
+- `current-context` names one of them; without one, the first context becomes current;
+- every server uses `https://`;
+- credentials are inline: a kubeconfig that names files (`certificate-authority`, `client-certificate`, `client-key`, `tokenFile`) is refused, because those files aren't on your workers. Use `certificate-authority-data`, `client-certificate-data`, `client-key-data` or `token` instead.
+
+A user that runs an exec plugin, such as `aws` or `gke-gcloud-auth-plugin`, is allowed: the row names the command, which your workers need installed. Agents get the file in `KUBECONFIG` and choose another context with `--context`.
+
+## Add AWS credentials
+
+Choose **Add credentials**, then:
+
+- **Access keys**: an IAM user's access key ID (`AKIA…`) and secret access key, and a default Region. Octomerge checks them with AWS STS and shows the account and ARN. Use a user with only the permissions agents need.
+- **IAM Identity Center**: your start URL, its Region, the account ID, the permission set's role name and a default Region. Nothing secret is stored: agents sign in with `aws sso login --profile r5d --use-device-code` and ask you to approve the code it shows.
+
+Either way agents get `AWS_PROFILE=r5d` and `AWS_CONFIG_FILE`, a file with the `r5d` profile, which the AWS CLI and SDKs read.
+
+## In Secrets and variables
+
+A connection's entries are listed with your other entries, marked with where they came from: **From Vercel sign-in**, **From Cloudflare sign-in**, **From your Fly.io token**, **From your kubeconfig** or **From the r5d AWS profile**. They can't be edited:
+
+- Connecting replaces an entry of the same name that you added yourself; Octomerge tells you before it does.
+- Saving an entry with a connection's name is refused until you disconnect it.
+- An agent's request for a value can't replace one either.
+- A project variable of the same name still overrides it, as for any account entry.
+
+## Disconnect or remove
+
+Choose **Disconnect** (a sign-in) or **Remove** (what you pasted) on the target's row, or on one of its entries in Secrets and variables. After a confirmation that names every entry it removes, they all go; commands started afterwards no longer get them, and running commands keep what they started with. Where you chose it, Octomerge then says what it removed and what happened at the provider, until you dismiss it.
+
+For a sign-in, Octomerge also ends its access at the provider (it revokes its Cloudflare token, and uninstalls its Vercel integration) and says whether that worked; when the provider can't be reached, it tells you what to remove there. Cloudflare's tokens stop working at once, even in a terminal opened before you disconnected, but your Cloudflare profile keeps listing the connection under Connected Applications until you choose **Revoke** there, which removes the listing. Octomerge can't revoke what you pasted: if a Fly.io token, a kubeconfig's credentials or an access key may have leaked, revoke it where you created it.
+
+`otti account env delete` (or `revoke`) and `otti account secrets delete` on a connection's entry disconnect the connection the same way, and print what they removed. `otti account env set` on one is refused, naming where it comes from.

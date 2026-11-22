@@ -1,0 +1,90 @@
+---
+title: "Archiving branches and projects"
+description: "Keep old work cheaply: an archived branch leaves every worker, and its files, commits and conversations stay on Octomerge, readable."
+---
+
+Archive a branch you no longer work on to take it off your workers and out of your workspace limits without deleting it. Unarchive it when you need it again: it comes back as it was.
+
+**Settings → Usage** shows how much of your workspace limits and archive quota you use, project by project and branch by branch, and archives a branch from there too ([Usage and limits](/platform/usage)).
+
+## What archiving does
+
+| | When you archive a branch |
+| --- | --- |
+| Its checkout on your workers | Deleted from every worker, with its ignored files such as `node_modules/`, build output and `.env`. Those are not kept: they never leave their worker. |
+| Its running processes | Stopped, as deleting the branch stops them: an agent's commands and the terminals still running in its checkout each get 10 seconds to shut down before they are killed. A worker that is offline stops them when it reconnects. The archive dialog and the preview list them. |
+| Its files | Kept on Octomerge's server: the tracked files, uncommitted changes and untracked files your workers synchronize. |
+| Its commits | Kept in the project's history on Octomerge, pushed to your remote or not. Archiving pushes nothing. |
+| Its conversations | Kept, read-only. You can read them in the browser and with `otti conversation`, but not send a message, answer or resume them until you unarchive the branch. |
+| Its schedules | Paused. Unarchiving resumes them from their next occurrence; one that came due while the branch was archived is skipped. |
+| Its claims | Released. |
+| Its shares with teams | Kept: team members keep reading its conversations. |
+| Its name | Reserved: no new branch can take it while it is archived. |
+| Your workspace limits | Its files no longer count toward them (200,000 files and 10 GiB; 500,000 files and 50 GiB on the Pro plan). They count toward your archive quota instead: 50 GiB of archived files, 250 GiB on the Pro plan (by file size). |
+
+The archive keeps the branch's files and commits as Octomerge last synchronized them from your workers. It doesn't wait for your workers, so it takes seconds. A worker synchronizes a change, a commit included, within seconds of making it; to be sure a change made a moment ago is included, synchronize first ([`otti workspace sync`](/cli/otti#workspace-status-and-synchronization)). Whatever a worker changed in the branch and hasn't synchronized is lost when it deletes the checkout: right away for a connected worker, when it reconnects for an offline one. The preview names the offline workers.
+
+A branch whose conversation is running, queued or waiting, or a sub-agent of one, can't be archived while it runs. You are told which conversation to stop; an agent's archive waits for it.
+
+The project's primary branch is archived only with its project.
+
+## Archive and unarchive in the app
+
+**Archive branch…** is in the menu (**⋮**) of the branch's header, on the branch's own pages, and on the [branch page](/platform/workspace-chats#the-branch-page). A session whose branch is merged (its pull request merged, or its work is in the project's primary branch) also shows **Archive** when you point at it in the sidebar. To archive several branches at once, check them on the project's [Branches page](/platform/workspace-chats#a-projects-branches) and select **Archive**. The dialog previews what archiving would do before you confirm; Octomerge never archives a branch by itself.
+
+Every page of an archived branch says so under its header, with **Unarchive**. The project's Branches page lists its archived branches under **Archived and hidden**, with when they were archived, **Unarchive** and delete; **Archived** (`/archived`, from **All archived work…**) lists the archived work of all your projects, and suggests branches you might archive: merged ones first, then idle ones, with their pull request and the commits they have that aren't in the primary branch.
+
+## Archive and unarchive with otti
+
+Preview what archiving would do, then archive:
+
+```bash
+otti -p my-project archive branch old-experiment
+otti -p my-project archive branch old-experiment another-one --confirm
+```
+
+Without `--confirm`, nothing changes: the preview lists each branch's files and their size, its conversations, the schedules that would pause, the processes it would stop, the workers that are offline, and your archive quota.
+
+Find candidates and archived branches:
+
+```bash
+otti -p my-project get branches --idle 30d     # live branches without a conversation for 30 days
+otti -p my-project get branches --archived     # archived branches
+otti -p my-project get branches --all          # both
+otti -p my-project describe branch old-experiment
+```
+
+Read an archived branch's files, which needs no worker (this works for live branches too: their files as Octomerge last synchronized them):
+
+```bash
+otti -p my-project -b old-experiment files ls
+otti -p my-project -b old-experiment files ls src
+otti -p my-project -b old-experiment files cat README.md
+```
+
+Unarchive it:
+
+```bash
+otti -p my-project unarchive branch old-experiment
+```
+
+The branch comes back under its name. Every worker receives its files and sets up its checkout by itself, with the uncommitted changes it was archived with still uncommitted; dependencies such as `node_modules/` are installed again. Unarchiving is refused when the files would take your workspace past its limits: archive or delete other branches first.
+
+## Archive a whole project
+
+```bash
+otti archive project my-project --confirm
+otti unarchive project my-project
+otti unarchive project my-project --only-primary
+otti get projects --archived
+```
+
+Archiving a project archives every branch of it, the primary one included. An archived project takes no new branch or conversation. Unarchiving it restores its primary branch and the branches archived with it; `--only-primary` restores the primary branch alone, and the others stay archived until you unarchive them. Unarchiving any branch of an archived project unarchives the project with its primary branch.
+
+## Delete archived work
+
+`otti -p my-project delete branch old-experiment --confirm` deletes an archived branch for good: its files, its history on Octomerge and its conversations. Deleting a project deletes its archived branches with it. Archived branches are kept until you delete them; nothing expires.
+
+## Agents
+
+Agents archive and unarchive with `otti` like you, with the same refusals; an agent can't archive the branch its own conversation runs on. An agent that refers to an archived branch (`@my-project/old-experiment`) gets no checkout: `otti checkout path` says the branch is archived and how to read it with `files ls` and `files cat`.

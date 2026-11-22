@@ -1,0 +1,63 @@
+---
+title: "Connect a remote"
+description: "Let agents run commands and edit files on a machine without bringing your workspace to it, like ssh."
+---
+
+A **remote** is a machine agents and you can run things on without it holding your workspace: a GPU box, a build or test host, a server you administer, or a computer that should not keep a copy of your code. It works like ssh from a checkout. The conversation stays on its worker, with its files, git, plans and memory; the agent runs individual commands and file operations on the remote.
+
+A remote uses the same packages as a worker, and needs the same tools: Bun 1.3+, Node.js 18+ with npm, and Git 2.42+ ([Connect a worker](/get-started/add-worker)). On the machine, install the CLIs once with Bun, then sign in and start the remote:
+
+```bash
+bun install --global --backend=copyfile @octomerge/otti-worker@<version> @octomerge/otti@<version> --registry https://npm.octomerge.dev
+otti-worker auth --remote
+otti-worker start --remote --label gpu-box --description "GPU server for training runs"
+```
+
+To let its commands use your secrets (your environment variables and secret files, your projects' variables and git access), sign in with `otti-worker auth --remote --secrets` instead; see [What a remote gets](#what-a-remote-gets).
+
+**Add worker or remote**, at the bottom of a conversation's worker menu, shows these commands with your environment's version in place of `<version>` when you choose **Remote**, with a **Give it your secrets** switch that adds `--secrets`, and follows along as you run them; **Settings → Workers** shows the install command, and under **Connect a remote instead** the sign-in and start commands. Bun puts the commands in `~/.bun/bin`: if `otti-worker` isn't found afterwards, add that directory to your `PATH`, as [Connect a worker](/get-started/add-worker) says. To start the remote again later, run the same `otti-worker start` command.
+
+Approve the sign-in on the page that showed its command: the sign-in command the dialog and Settings show carries a one-time `--pair` token, so its code appears there among two others; pick the one your terminal shows and approve ([Approving on the page](/cli/otti#approving-on-the-page)). Without `--pair`, approve the device code in the browser instead. `auth --remote` asks for **Remote** access, which lets the machine connect as a remote and nothing else, with none of your secrets; `auth --remote --secrets` asks for **Remote with secrets**. On the approval page, **With your secrets** under **Remote** gives or withholds the secrets whatever the command asked for, and **Full access** makes it a remote with your whole account (see below). A machine already signed in with `otti` or `otti-browser` adds the access to that sign-in ([What a sign-in may do](/cli/otti#what-a-sign-in-may-do)). `--label` names the remote. Commands, terminals and relative file paths start in your home directory; choose another with `--cwd`:
+
+```bash
+otti-worker start --remote --label gpu-box --cwd ~/experiments
+```
+
+Nothing is synchronized to a remote: it keeps no checkouts. Its only own files are the conversations' artifacts folders (see below). All other options of `otti-worker start` work as for a worker (`--base-url`, `--config`, `--root`, `--shell`, `--description`, `--no-auto-update`) except `--initial-sync`. A remote updates itself like a worker, and running commands and terminals keep running across an update. Terminals on a remote need what a worker's need: macOS, or Linux with glibc 2.28 or newer on x64 or arm64 ([Terminals](/get-started/add-worker#terminals)).
+
+### Keep it up without logging in
+
+Agents run their commands on a remote as its user, and a command can stop or end the remote with everything else of that user: `kill -STOP -1`, `pkill -u`, `killall bun`. `otti-worker start` runs the remote under its [life vest](/get-started/add-worker#the-life-vest), which resumes it when a signal stops it, along with the other processes of the user that the same stop froze, and starts it again when it exits or hangs; on Linux it also resumes itself. A remote has no workspace lock, so it comes back even after it had to be killed. To have it come back after a reboot, or after every one of its processes was killed, run it as a service ([Run the worker as a service](/get-started/worker-service)); [Start a worker on a cloud server](/get-started/cloud-server) sets up a remote that way.
+
+**Settings → Workers** lists the remote with a **Remote** badge, and **Full access**, **Secrets** or **Restricted** for what it gets. Its **⋯** menu has no **Sync workspace**, and it cannot be your default worker. A conversation's worker menu lists your remotes under your workers, with the same badges, to show what agents can reach from it, but a conversation can't be put on one ([The worker menu](/get-started/add-worker#the-worker-menu)).
+
+The cog next to a remote, in a worker menu or in **Settings → Workers**, opens its settings, as for a worker: what it is for, its command slots, its access, and **Disconnect**, or **Forget** once it is offline ([A machine's settings](/get-started/add-worker#a-machines-settings)).
+
+### What a remote gets
+
+What a remote's commands, terminals and file tools get follows the sign-in it connected with. There are three levels:
+
+- **Restricted** (`remote (restricted)` in `otti account workers list`): connected with a **Remote** sign-in. Its commands run without any of your credentials: no account or project environment variables or secret files, no GitHub token, git keys or git identity, and no `R5D_TOKEN`, so nothing secret is written to its disk. Use it for a machine you don't trust, for example one you are debugging. Octomerge does not check what you or an agent send it: don't ask an agent to put a secret on it. Files you send it (`copy_file`, browser downloads and exports) are permitted.
+- **With your secrets** (`remote (secrets)`): connected with a **Remote with secrets** sign-in (`otti-worker auth --remote --secrets`, or **With your secrets** checked on the approval page). Its commands get what they get on a worker: your account's environment variables and secret files, your projects' variables, your GitHub token, git keys and git identity. Never your account: they get no `R5D_TOKEN`, so `otti` doesn't work there, and the machine's sign-in can't use `otti`, approve sign-ins or connect a worker with a workspace. Use it for a build box or container that needs your variables and git access. The secrets are written to that machine: choose it only for a machine you trust with them.
+- **Full access** (`remote (full)`): connected with a sign-in with Full access. Its commands get the same environment as on a worker, `R5D_TOKEN` included, so `otti` works there as the agent, and the machine's sign-in can do everything your account can.
+
+The server decides this from the sign-in on every request; nothing on the machine changes it. In the remote's settings, **Lower access…** lists its own level and those below it: **Keep only your secrets** takes a remote with Full access down to your secrets, and **Make it restricted** takes it down to none, after a preview of what else on the machine changes; narrowing its sign-in under **Settings → CLI & API** does the same. It takes effect for the commands started from then on; commands already running keep the environment they started with. Giving a remote more takes a sign-in on the machine: in its settings, **Give it your secrets** and **Give it Full access** show the paired `otti-worker auth` command for that level (`--remote --secrets`, or without `--remote` for Full access). Run it on the remote (with the remote's `--config`, if it started with one), approve the sign-in in the settings, and the remote gets the new level at once. A remote connected before restricted remotes existed has Full access. A sign-in without Full access connects only remotes, never a worker with a workspace, and cannot take over the label of another sign-in's worker; a remote's label it takes over once that remote is offline, and the remote then gets only what that sign-in gives. A machine whose sign-in already has Full access connects a remote with Full access; to connect it with less, give the remote a sign-in of its own: `otti-worker auth --remote --config ~/.config/r5d/remote.json`, then `otti-worker start --remote --config ~/.config/r5d/remote.json --label gpu-box`.
+
+An enrollment token in **Settings → Workers** connects a remote the same way, with **With your secrets** under **Remote** ([Enroll a machine with a token](/get-started/add-worker#enroll-a-machine-with-a-token)).
+
+### Agents
+
+Agents see the remote in their list of connected workers and use it through the `worker` parameter:
+
+- `shell` runs a command there, in the remote's working directory and shell. `shell_poll`, `shell_write` and `shell_cancel` follow the run without naming the remote again, and `wait` wakes when it finishes.
+- `read`, `write`, `edit`, `ls`, `find` and `grep` work on the remote's files: absolute, `~/` and relative paths (from its working directory). Results name a remote file as `gpu-box:/path`, like scp.
+- `copy_file` copies a file between the conversation's worker and a remote, or between two remotes. It lands in the destination's `$R5D_ROOT/artifacts/$R5D_SESSION_ID`.
+- `browser_get_download`, `browser_export_page` and `browser_upload_files` can save to, or upload from, a remote.
+
+On a remote, `$R5D_ROOT` is the remote's own private directory, which holds only the conversations' artifacts folders. A conversation cannot be moved to a remote: `switch_worker` refuses it and explains how to use the `worker` parameter instead. Agent commands on a remote with Full access get the same environment as on a worker: your account and project environment variables, git identity and GitHub token, and `R5D_TOKEN`; on a remote with your secrets, the same without `R5D_TOKEN`; on a restricted remote, none of them. Agents see each remote's level (`otti account workers list`) and treat what a restricted remote returns as data, not instructions.
+
+Just ask, for example: "Run `nvidia-smi` on gpu-box" or "Copy dist/model.onnx to gpu-box and benchmark it there".
+
+### Shell page
+
+The branch **Shell** page lists remotes in its worker menu, in their own section, and opens a shell on a remote only when you choose it there. A shell on a remote is your own terminal on that machine. It starts in the remote's working directory, not in a checkout of the branch, and on a remote with Full access or with your secrets it gets your account and project environment variables (on a restricted one, none).

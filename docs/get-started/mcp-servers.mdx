@@ -1,0 +1,92 @@
+---
+title: "MCP servers"
+description: "Connect remote MCP servers so agents can use their tools."
+---
+
+The [Model Context Protocol](https://modelcontextprotocol.io) (MCP) lets a service offer tools to AI agents. Connect a remote MCP server once, and every agent in the projects you choose can use its tools: issue trackers, observability, documentation search, internal services, and more.
+
+## Connect a server
+
+1. Open **Settings → MCP servers** and choose **Add server**.
+2. Enter a name, a slug, and the server's MCP endpoint URL, such as `https://mcp.example.com/mcp`. The slug is the short name agents call the server's tools by. Octomerge connects over HTTPS with Streamable HTTP (or the older HTTP+SSE transport) and supports servers built for both the current and earlier MCP revisions.
+3. Choose how Octomerge authenticates:
+   - **OAuth**: add the server, then select **Connect** and sign in to the service in the window that opens. Octomerge refreshes the access token when it expires. If the service needs you to sign in again, the server shows **Authorization required**; select **Reconnect**.
+   - **Bearer token**: paste a token the service gave you. Octomerge sends it in the `Authorization` header and never shows it again.
+   - **No authentication**: for servers that need none.
+4. Choose **All projects** or **Selected projects only**. Conversations in your account workspace use servers available in all projects.
+
+Settings shows each server's status, the time of the last check, and the tools it offers. Turn off individual tools you do not want agents to use. **Refresh** fetches the current tool list; Octomerge also refreshes it automatically as the server allows.
+
+Credentials are encrypted when stored and are used only by Octomerge's servers. They never reach your workers, shell commands, or chat transcripts. Removing a server deletes its credentials.
+
+## How agents use MCP tools
+
+Agents reach every server through two tools of Octomerge's own: **lookup_mcp** lists the chat's servers, the instructions each gives for its tools, and their tools with what they take, and **call_mcp** calls one of those tools, naming the server by its slug in Settings and the tool by its name. The agent looks a server up before it first uses it in a chat. Octomerge checks the arguments of a call against the tool's description of its input before anything is sent, so a malformed call is refused without reaching the server, and the agent corrects it.
+
+The servers and their tools aren't part of the agent's instructions or of its tool list, so adding, removing or reconnecting a server, or a change in its tools, doesn't disturb chats that are running: they reuse what the model provider already cached instead of starting over, and pick up the change when the agent looks the servers up. In a chat's [context panel](/platform/workspace-chats#what-the-agents-context-holds), **All MCP servers** turns the two tools off for the chat, and each server's own switch decides whether the agent can look it up and call it.
+
+Tool calls appear in the chat with the server name and the tool's title. A call folds into the agent's other [tool work](/platform/workspace-chats#reading-a-conversation), unless it involves you: a call with an [interactive view](#interactive-views), or one whose server [asks for your input](#when-a-server-asks-for-input), shows on its own row, also after it finished.
+
+Server instructions, tool descriptions and tool annotations come from the server's operator, not from you or Octomerge. The agent treats them as information, never as permission: a tool described as read-only or safe does not authorize purchases, messages, deletions or data transfers you did not ask for.
+
+You can list a chat's servers too: `otti -s SESSION_ID get mcp-servers` for a chat or `otti -p PROJECT get mcp-servers` for a project's chats lists each server's slug, its status as last checked, the tools it offers and its instructions.
+
+Results follow the same rules as Octomerge's own tools:
+
+- Text becomes the tool result.
+- Images are shown to the agent within the usual image limits and saved with your chat's files.
+- Files the server returns are saved with your chat's files, and the agent receives their paths.
+- A server that reports an error, or rejects a call before doing anything, gives the agent an error it can correct.
+
+If a call's outcome is uncertain, for example because the server failed or the connection dropped after the request was sent, Octomerge never repeats it automatically and does not stop to ask you. The agent receives the call's result as **outcome unknown**, with the reason, and checks the service itself before deciding whether to call the tool again: reconnecting cannot prove that the first call did nothing. Tools the agent asked for in the same step after that call are not run.
+
+Some servers hand long operations back as tasks. Octomerge follows the task until it finishes and cancels it if you stop the agent.
+
+## When a server asks for input
+
+A server can ask you to complete a bounded form or open a web page. The chat identifies the requesting server and offers explicit accept, decline and cancel actions.
+
+The request doesn't pause the agent: it goes on with work that doesn't need the call's result, or waits or ends its turn, and the request stays open in the chat until you answer it, like the agent's own [questions](/platform/workspace-chats#when-the-agent-asks-you-something). When you answer, the call continues and the agent receives its result, whether it is still working, waiting or has finished its turn.
+
+### Forms
+
+Supported forms contain simple text, number, boolean or selection fields. Review the values before accepting. Unsupported complex forms and requests recognized as asking for secrets are refused. Detection is only a heuristic: **never enter passwords, API keys, tokens or payment credentials in these forms**. A server needing secrets should use a secure external page instead.
+
+Accepted form answers are encrypted in storage and sent to the requesting server, not added to your transcript or the agent's model context. The server still receives your answers and could include them in its own results, so share only what you intend that server to receive.
+
+### External pages
+
+A server sometimes needs you before it can finish a call: to sign in to another service, approve a payment, or enter a secret that should not pass through Octomerge. It sends Octomerge a web page for you to open, and the call waits for you.
+
+The chat then shows a card with the server's name, its message, and the page's full address with the host highlighted. The message comes from the server, not from Octomerge. Check the address before you open it.
+
+1. Select **Open page**. The page opens in a new browser tab; Octomerge never opens it on its own and cannot see what you do there.
+2. Finish on the page, then return to the chat and select **Continue**. Octomerge asks the server to complete the call, and the agent receives its result.
+3. If you do not want to go ahead, select **Decline** or **Cancel**. The server decides what happens next, usually ending the call.
+
+If the server still needs something after you continue, a new card appears. Only your answer in the card closes the request: your other messages, messages from other agents and platform notices don't answer it. A waiting request stays in the chat when you reload the page or come back later.
+
+The agent never sees the page's address or the server's message. It learns only that you were asked and whether you continued, declined or cancelled. Octomerge opens only HTTPS pages. Servers built for the earlier MCP revision may ask while a call is still running; answer those within about 90 seconds, after which Octomerge cancels the request.
+
+## Files
+
+Some servers exchange files through MCP's draft file transfer extension (SEP-2631). Octomerge supports it when the installation enables it; it is off by default. When disabled, tools requiring unsupported file inputs are unavailable; optional file inputs are omitted while usable non-file alternatives remain. When enabled, the agent can pass an authorized project/chat file to a compatible tool, and returned files are checked and saved with your chat's files.
+
+## Interactive views
+
+Some MCP tools come with an interactive view, such as a chart, a form, or a dashboard. Octomerge shows these views in the chat, below the tool call. With the buttons above a view, you can open it in full screen, or dock it as a picture-in-picture panel that stays visible while you scroll; for a view that says it supports only some of these modes, Octomerge offers just those. A view can also open itself in full screen, for example when you select its own **Edit** or expand button.
+
+Views require an enabled sandbox host and run in isolated frames on a site separate from octomerge.dev. Per-server origins separate different servers' DOM and storage. Network requests are restricted by the view's content security policy; this is not a guarantee against all browser side channels. Where r5d.app hosting is enabled, it is a shared untrusted-app domain, not a dedicated private domain. A view can:
+
+- call its own server's tools that are meant for views, and read its server's resources;
+- ask to open a link, which Octomerge shows to you for confirmation;
+- propose a message to the conversation, which Octomerge sends only after you confirm it.
+
+When you reopen a conversation, earlier views do not start again on their own. Select **Show view** to open one; it receives the original result and does not repeat the tool call.
+
+## Limitations
+
+- Octomerge connects to remote servers over HTTPS. Servers that run as a local process (stdio) are not supported.
+- Each server's tools are available to agents only while the server is enabled, reachable, and signed in.
+- A chat's agent can reach at most 128 MCP tools across its servers. Turn off servers a chat does not need in its context panel to bring others within reach.
+- Forms use a bounded subset of standard field types, not arbitrary nested schemas. Requests for model generation (sampling) are unsupported. A long-running task that asks for input is cancelled; interactive views cannot use the same durable input flow.

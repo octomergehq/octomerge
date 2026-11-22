@@ -1,0 +1,109 @@
+---
+title: "Shell environment"
+description: "Run tools in a conversation's isolated workspace."
+---
+
+Agent tools, the Terminal tab, and `otti shell` use the conversation's workspace. Each environment has its own storage, working directories, credentials, and execution ownership.
+
+Shells start with a small explicit environment: `PATH`, `LANG`, and `HOME` pointing to the workspace. Configured account and project credential bundles can add environment values and private files (see [Secrets](#secrets)). Private files are created for an admitted command and removed when it terminates. Host administration credentials are not inherited. Workers run with the permissions of the host account that starts them; a non-root account may have sudo access if you configured it on that host. Octomerge does not install Docker or grant sudo automatically.
+
+Agent shells receive the exact `otti` version bundled with their running worker, through a private worker-owned command wrapper. The worker verifies the CLI/worker version pair at startup and binds its CLI credential and server URL to that environment. A host-global `otti` from stage, production, or another review environment does not override the bundled command.
+
+## Secrets
+
+**Settings → Secrets** holds environment variables and files for the commands your agents run, in every project and workspace chat, on every worker connected to your account. Values are stored encrypted. The list, **Secrets and variables**, shows each entry's name, whether it is a variable (**Env**) or a file (**File**), and whether a value is saved.
+
+- Open an entry you added to see or copy its value, as on a project's [environment variables](#project-environment-variables) page: a variable's value stays masked until you choose **Show value**, and **Copy value** copies it without showing it. A file's contents stay hidden until you choose **Show**, and **Copy** copies them. Change the value or the contents to replace them when you save, or choose **Keep the saved value**. Only you can see values, in Settings in your browser: agents, workers and API keys get names and descriptions, never values, from `otti`.
+- A variable is set in the command's environment. A file is written privately for each command, and the variable with the entry's name holds its path, for example `KUBECONFIG`. The file is removed when the command ends normally; a worker crash can leave one behind.
+- A project's value overrides an account entry with the same name, and a value given to one command overrides both. Names that start with `R5D_` or `R5DCTL_` are reserved for Octomerge.
+- Changes, **Revoke value** and **Delete entry** apply to commands started afterwards. Running commands keep the values they started with, and copies already made on machines remain: rotate a credential at its provider if it may have leaked.
+- Credentials already on your worker can be used without uploading them. Refer to secrets by name, never by value, in instructions and chats.
+- An agent can also type a variable's value into a website's sign-in field with your browser, by name, without the value being in its tool call or result: only at the site you named, and never a file entry ([Filling in secrets](/get-started/browser#filling-in-secrets)).
+- **Deploy and cloud**, above the list, connects Vercel, Cloudflare, Fly.io, a kubeconfig or AWS ([Deploy access](/platform/deploy-targets)). A connection's entries, such as `VERCEL_TOKEN`, appear in the list marked with where they came from, for example **From Vercel sign-in**. They can't be edited or shown, and removing one disconnects the connection with all of its entries.
+
+`otti account env` and `otti account secrets` manage the same entries ([Use otti](/cli/otti#account-instructions-and-credentials)).
+
+### Project environment variables
+
+Open a project's **Settings → Environment variables** to manage values shared by its branches and sessions: on the [project's page](/platform/workspace-chats#a-projects-page) (select the project's name in a branch's or a chat's header), choose **Settings** in its header, then **Environment variables**. **Settings** at the top of the section leads back to the list of the project's settings.
+
+Choose **Add variable**, enter a name and description, and optionally supply a value. Expand a variable to edit it; long names wrap when expanded, and values stay masked until you choose **Show value**. Additions, edits and removals remain unsaved until you choose **Save all changes**. This saves every pending environment change in the section, not just the open variable. Changes apply to newly started commands.
+
+## Git identity and attribution
+
+Git commits use your Octomerge account's name and verified email as both author and committer, whichever way you sign in. Workers configure managed project checkouts automatically; new shells receive the same identity, including when you clone a repository yourself. This does not change your host's global Git configuration or rewrite existing commits. It does not enable commit signing.
+
+In **Settings → Git**, under **Attribution**, you can enable **Include Otti as a co-author** (off by default). Agents are then instructed to add `Co-authored-by: Otti <otti@octomerge.dev>` to new commits, and the Octomerge commit action adds the same trailer without duplicating it. The co-author is the installation's: on octomerge.dev it is Otti, Octomerge's octopus, and an installation without one doesn't show this setting. Commits made while the co-author was r5d.dev keep their trailer, `Co-authored-by: r5d.dev <github@r5d.dev>`. You remain the author and committer. Disabling it stops future automatic attribution; existing commits and other co-authors are preserved. The next agent request uses the new preference, and connected workers receive it on their next settings refresh. Commands already running keep their instructions. Ordinary terminal Git is not wrapped or modified by hooks, and this preference does not enable a GitHub Verified badge.
+
+Inside a project checkout, ordinary Git commands show that project's repository and its `origin`: the project's GitHub repository or SSH remote, or no `origin` for a project without a remote ([Projects and Git remotes](/platform/git-remotes)). Background workspace synchronization does not create commits in your project history or replace its remote.
+
+## Pull from the remote
+
+Open the branch's **Git** page and choose **Pull**, next to **Push**. Check the displayed project repository, remote branch, checkout, and worker before starting. This updates the project's Git history and the checkout's files; the files then reach your other workers like any other change.
+
+Pull fetches the remote branch and integrates it only when a fast-forward is possible. It never force-resets your branch or automatically resolves conflicts. Commit or stash local changes first. Pull waits until no command or agent runs in the project on the selected worker: stop them, or let them finish. Open **Shell** terminals do not hold a Pull; their shells see the pulled files, as after a fast-forward in your own terminal. If the histories have diverged, use the terminal to merge or rebase deliberately, resolve any conflicts, and retry. An already-current branch reports **Already up to date**; local commits ahead of the remote are preserved.
+
+The server tracks pending pulls across reloads and other browser tabs, and prevents duplicate in-flight pulls. Completion refreshes the Git page automatically. If the result is uncertain, let the original operation reconcile rather than starting another copy. Missing repository connections, unavailable workers, and authentication or network failures are shown with next steps.
+
+## Commit and push
+
+On the branch's **Git** page, **Commit** (under **Compare** → **Working tree**, optionally with **Push after commit**) and **Push** hand the change to the server, which runs it on the selected worker. The page shows each step (queued, committing, pushing) across reloads and other browser tabs, and refreshes the changed files and **History** when a step finishes. A commit that also pushes reports both results. If the commit succeeds but the push fails, choose **Retry push** to push the same commit again.
+
+Pull, commit, and push on the same branch wait for each other: while one is in progress, the others are disabled and the page explains why. If the worker disconnects or an outcome is uncertain, the page shows that the server is confirming it with the worker or the remote instead of repeating it. If the outcome is reported as unknown, check **History** before committing or pushing again.
+
+Under the number of changed files, the page says how the branch stands against the remote, as the branch's header and the sidebar do: **In step with the remote**, **2 not pushed**, **3 behind the remote**, **New commits on the remote** (pull to get them, or merge or rebase in the checkout if the branch has commits of its own), **Not on the remote yet**, and **Remote unavailable** with why and when the remote was last read ([Git remotes](/platform/git-remotes)).
+
+## Browse history and compare branches
+
+The branch's **Git** page has two views, **Compare** and **History**. A branch opens on **Compare**, **main** on **History**.
+
+- **Compare** compares the branch with another branch of the project, its primary branch (the remote's default branch, usually **main**) unless you choose another: how many commits each has that the other lacks, under **Files changed** the files this branch changed since the two diverged with their diffs, as a pull request shows them, and under **Commits** the commits it adds. **Working tree** shows the changes not committed yet, the checkout's files that differ from its last commit, with **Commit**. It needs no other branch: on the primary branch, **Compare** opens on **Working tree** until you choose a branch to compare with. The number of changed files at the top of the page opens it too.
+- **History** draws the branch's newest commits as a merge graph, as `git log --graph` does: each branch that was merged in has a colored line of its own from where it started to its merge, and a merge commit is a hollow circle. Labels show where this branch, its remote branch and the project's other branches point, and **Not pushed** marks the commits the remote branch doesn't have. **Show more** lists 100 more commits, up to 1,000.
+
+**History**, **Files changed** and **Commits** show the project's synchronized history, so they work without a worker and show committed work only. While the page is open they follow the branch without **Refresh**: a commit on it, from an agent, the **Shell** or another worker, shows within seconds, and so does a commit on the branch **Compare** compares with. **Not pushed** follows the remote as Octomerge reads it, as the line under the number of changed files does.
+
+Choose a commit in **History** or under **Commits** to see its changes: its message, author and parents, and each file it changes with its diff. A merge commit shows its changes against its first parent, the branch it was merged into. Choose a parent to go to that commit.
+
+In a wide window the commit opens beside the list, which stays in view with the commit marked: **↑** and **↓** in the list open the commit above or below, and **✕** closes it. In a narrower window the commit opens in the list's place; **History** or **Compare** at the top goes back to the list.
+
+The changed files are listed beside their diffs. Drag the list's edge to widen or narrow it, or focus the edge and use the arrow keys; double-click it to restore its width. Every list of changed files takes the width you chose, and this browser remembers it.
+
+**Split** and **Unified**, above each diff in **Working tree**, a commit and **Files changed**, show the two versions side by side or the changes in one column, with the line numbers of the old version and of the new one in two columns. The choice applies to every diff and this browser remembers it; a diff too narrow for two columns is unified.
+
+## Command lifecycle
+
+Each agent shell call includes a short description (up to 40 characters). Collapsed chat rows and the running-command banner above the composer show that description instead of a clipped command. Expand the call, or click the description in the banner, to inspect the command and its output.
+
+The keeper records a command before starting it. Closing the UI or releasing a new application generation does not silently rerun that command. Reconnect to its existing receipt to inspect output. If an outcome is uncertain, preserve the operation identity and reconcile it before starting another copy.
+
+Account instructions are in **Settings → Instructions** and apply on the next model request.
+
+### How long a command runs
+
+An agent's shell command runs until it exits or someone stops it. It has no time limit, and it keeps running after the agent's turn ends, after you stop the agent, and while the worker cannot reach Octomerge. The worker keeps the latest 64 MiB of its output; older output is dropped, and the command keeps running.
+
+- **Everything it starts ends with it.** Processes a command leaves running in the background when it exits (`&`, `nohup`, `timeout` or a subshell) are stopped with it, and its result lists them. An agent runs a dev server or another long job as a command of its own. A process that starts a session of its own (`setsid`, a daemon) is not tracked.
+- **Stopping processes is separate from stopping the agent.** Stopping an agent leaves its processes running. The banner above the composer lists the processes of the chat and of its subagents, with **Stop** and **Stop all**. **Settings → Workers → Worker processes** and `otti ps list` list them too, and `otti -s <session-id> ps stop --all --subagents` stops every process of a conversation and its subagents.
+- **A stop the worker can't confirm holds one slot.** Now and then a worker can't confirm that a stopped command's processes are gone: the host refused the signal, or a process is still there after SIGKILL, for example one stuck on a hung disk. The command is then listed as **Stop unconfirmed** (`unresolved` in `otti ps list`) with the reason, and keeps its own slot until its processes are gone; every other command and terminal on the worker keeps starting. The worker sends the stop again every 30 seconds. **Stop** or `otti ps stop <run-id>` tries again at once, and `otti ps release <run-id> --confirm` releases the command without waiting: the worker stops tracking it and frees its slot, and whatever of it still runs keeps running.
+- **Moving the chat leaves it where it runs.** When the chat moves to another worker, its commands keep running on the worker they started on. The banner, **Settings → Workers** and `otti ps list` keep listing them with that worker, and the agent can still read their output, write to them and stop them there, while that worker is connected.
+- **What else ends it.** Deleting its chat (the confirmation lists the processes it stops; a chat whose processes run on a disconnected worker can't be deleted until the worker reconnects or is removed), deleting or archiving the branch (the archive dialog and its `otti` preview list the processes it stops), and stopping or removing the worker.
+- **Waking the agent.** A command's exit wakes its agent only while the agent waits for it. A command that should wake the agent after its turn ended ends with `otti session prompt "$R5D_SESSION_ID" "<what happened>"`.
+
+A worker whose shell keeper started before this behavior (**Settings → Workers** shows the keeper's version) keeps that keeper's rules until the worker restarts while nothing runs: it ends a command after one hour, and ends every command when the worker loses its connection to Octomerge for longer than its lease. A command's result says so.
+
+## Terminals
+
+A terminal is the shell of the branch's **Shell** page, the **Shell** view beside a chat or `otti shell`. Like an ssh session, it lives for as long as a client is attached to it, however long it sits idle: a running dev server, build or `tail -f` keeps running.
+
+- **Detached for 10 minutes, it is hung up.** Closing the browser tab, leaving the **Shell** page or closing the panel, closing `otti shell` or losing its connection detaches the terminal. Ten minutes later, if nothing attached to it again, the worker hangs it up as a dropped ssh connection would: the shell and its jobs get SIGHUP. The next client to look at it reports why it ended. Use `nohup`, `tmux` or `screen` for jobs that should outlive their terminal.
+- **Reattaching keeps it.** Reloading the page, a new release of Octomerge and a worker update all keep the terminal running: the **Shell** page reattaches to the same shell, with its output, when it is back within those 10 minutes. Each browser tab remembers which worker its **Shell** page used for the branch, so a reload or a return to the page goes back to that worker's shell. A chat's shell is its own, on the chat's worker: closing the chat's **Shell** panel and opening it again shows the same shell, and so does the **Shell** page opened from the chat (**Expand** on the panel, or **Shell** in the chat's header where there's no room for the panel) until you choose another worker there ([Connect a worker](/get-started/add-worker#choose-a-default-worker)). Listing processes (**Settings → Workers**, `otti ps`) or an agent looking at the worker does not count as attached.
+- **Each worker runs up to 8 terminals.** They have slots of their own, apart from the agents' commands, so open terminals never hold up an agent. A ninth terminal is refused with a message that names the limit.
+- **`otti shell -c` from a script or an agent runs without a PTY.** A command that `otti shell -c` runs outside a terminal (from a script, a pipe or an agent's shell) gets no PTY, like `ssh host command`: its stdout and stderr stay apart and exact, and its standard input is `otti`'s. It is a terminal in every other way: it takes a terminal slot, and 10 minutes after its `otti shell` is gone it is stopped with SIGTERM. On a worker whose shell keeper predates this, such a command runs until it ends or is stopped instead.
+- **Stopping a shell.** Type `exit` in it, choose **Stop** on it in **Settings → Workers → Worker processes**, or run `otti ps stop <run-id>`; `otti ps list` shows its run id. A shell you end stays ended: the **Shell** page or panel shows how it ended and offers **Open new shell**, also after a reload or when you come back to it, and opens no shell by itself until you choose it.
+- **What else ends it.** A worker stop, and maintenance of its checkout: deleting or archiving the branch, a moved checkout directory, or the worker retiring a copy it no longer uses hangs up the terminals in that checkout. The terminal reports the reason when it ends. Its output beyond 64 MiB drops its oldest part; the terminal keeps running.
+
+A worker whose shell keeper started before this behavior (Settings → Workers shows the keeper's version) keeps that keeper's rules, including the one-hour limit for terminals, until the worker restarts while nothing runs.
+
+When opening Terminal on a new branch, the worker may need to prepare its checkout and synchronize files first. The shell view shows this preparation notice, elapsed time, and any connection retry status until the shell is ready. Retries retain the original open request so a slow response does not start a second shell.
+
+When the worker restarts or switches to an updated release, an open shell view waits for it to reconnect instead of needing a page reload. A shell that kept running across the switch reattaches with its output, also when the page reloads meanwhile, for example for a new version of Octomerge. Such a reload waits until you have stopped typing in the shell for a few seconds. When the worker ends a shell, for example because it stopped or restarted, or hung up a shell left detached, the view reports why it ended and opens a new shell by itself. A shell you end yourself (`exit`, Ctrl-D, a command that ends the shell, or **Stop**) stays ended, as above. If a shell cannot be opened, or a shell the view just opened ends right away, the view offers **Open new shell** instead of retrying on its own.

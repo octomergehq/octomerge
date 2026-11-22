@@ -1,0 +1,204 @@
+---
+title: "Projects and Git remotes"
+description: "Start a project from GitHub, from an SSH or HTTPS remote on any git host, or without a remote."
+---
+
+A project has at most one remote, its `origin`. When you start a project on **New project**, choose where it comes from:
+
+- **GitHub repository** (where your installation offers GitHub, as octomerge.dev does): an existing repository of a GitHub account, or a new one Octomerge creates. Octomerge imports, pulls and pushes with the GitHub account you connected for repository access (**Connect GitHub repositories**, also in **Settings → Git**), which can be any GitHub account, whichever way you sign in to Octomerge. Octomerge finds each branch's pull request, with its state, and opens one for you with **Create pull request**.
+- **SSH remote (any git host)**: a repository on GitLab, GitHub Enterprise Server, Gitea, Forgejo, Bitbucket or any other host that accepts SSH. Octomerge generates an SSH key for it.
+- **HTTPS remote (any git host)**: a repository on any host you reach over HTTPS, with a username and access token you enter for the project, or your account's for the host, or none for a public repository.
+- **No remote**: Octomerge creates the project with a first commit (a `README.md`). Pull, Push and reviews are unavailable until you add a remote.
+
+Each project name is unique in your account, and you cannot add the same repository twice, however its URL is spelled.
+
+## SSH remotes
+
+Enter the repository's SSH URL, either `git@gitlab.com:group/repo.git` or `ssh://git@git.example.com:2222/group/repo.git`. Once you have connected GitHub repositories, `github.com` repositories use the GitHub option instead; until then, and on an installation that doesn't offer GitHub, they are SSH remotes like any other host's.
+
+### The key
+
+If you have an account key for the host (see [Git hosts](#git-hosts-account-keys)), it is selected and the project needs no key step. Otherwise, or if you choose **Generate a deploy key for this project**, Octomerge generates a key for this project and shows its public key (`ssh-ed25519 AAAA… Octomerge <project>@<host>`). Copy it and add it on the host:
+
+- **GitLab:** the repository's **Settings → Repository → Deploy keys**, with **Grant write permissions to this key**.
+- **GitHub Enterprise Server, Gitea, Forgejo:** the repository's deploy keys, with write access.
+- **Hosts whose deploy keys are read-only** (for example Bitbucket Cloud access keys): add the key to a user account's SSH keys instead. The key then has that account's access.
+
+Each project has its own deploy key. Octomerge keeps the private key encrypted and never shows it; the project's settings keep showing the public key and its fingerprint.
+
+### The host key
+
+Octomerge reads the host's SSH key and shows its SHA-256 fingerprint. Compare it with the fingerprint the host's administrators publish, then choose **Confirm host key**. github.com, gitlab.com and bitbucket.org publish their keys, so Octomerge pins them without asking.
+
+If a host later presents a different key, Pull, Push and imports fail with a **host key changed** error, and the project's settings show the new fingerprint. Confirm it only if you know why the key changed.
+
+### Check access
+
+**Check access** tests read access, and write access with a dry run that changes nothing on the host. It names whatever is missing, for example a deploy key without write access. Once read access works, the same check imports the repository and then shows the project ready, or why the import failed; an empty repository starts with a first commit. Until then the project waits, and you can check again from the project's settings.
+
+### SSH host aliases
+
+If you reach a host at another address or port than the one your remote URLs name, as `HostName` and `Port` do in `~/.ssh/config`:
+
+```
+Host gitlab.example.com
+  HostName 192.168.2.19
+  Port 2222
+```
+
+add an alias in **Settings → Git → SSH host aliases**: the host as your URLs name it (`gitlab.example.com`, with `:port` only for `ssh://` URLs that name one) and the address Octomerge connects to (`192.168.2.19:2222`, a host name or an IP address). Remote URLs stay as the host shows them, such as `git@gitlab.example.com:group/repo.git`, and so do the host's keys and its pinned host key: a machine at the alias's address must present the host's own key.
+
+Octomerge then connects to that address everywhere it runs SSH for you: from its server for the host key, Check access, imports and reading the remote, from your workers for Pull and Push, and in your agents' git commands that use Octomerge's keys. Each of these must reach the address, so an address only your office network reaches works only where Octomerge and your workers run inside it. When the address changes, edit the alias. A worker needs a current otti-worker for Pull and Push through an alias.
+
+## HTTPS remotes
+
+Enter the repository's HTTPS clone URL, as the host shows it: `https://gitlab.com/group/repo.git`, `https://git.example.com/acme/website.git`. On GitLab it ends in `.git`: Octomerge follows no redirect. Enter the username and password separately, never in the URL; plain `http://` isn't accepted.
+
+### Credentials
+
+Enter a username and an access token (or a password, where the host accepts one for git):
+
+- **GitLab:** a personal, project or group access token with `read_repository` and `write_repository`. Any username works.
+- **GitHub** (where you haven't connected GitHub repositories): a fine-grained personal access token with read and write access to the repository's contents. Any username works.
+- **Gitea, Forgejo:** an access token with read and write access to repositories, with your username.
+- **Bitbucket:** an access token with the username `x-token-auth`, or an app password with your username.
+- **Others,** such as git-mcp: whatever the host takes for git over HTTPS. Without a username, Octomerge sends `git`, which hosts that read only the token accept.
+
+Leave both empty for a public repository you only pull from: pushing needs a token. If you have an account credential for the host ([HTTPS hosts](#https-hosts-account-credentials)), it is selected and you enter nothing, unless you choose **Enter a username and token for this project**.
+
+Octomerge keeps tokens encrypted and never shows them again. A token goes to its host only: from Octomerge's server, from your workers for Pull and Push, and from your agents' git commands. Octomerge checks access as soon as you add the project and imports the repository once it can read it; if it can't, the project's settings say why, for example **The host asks for credentials** or **can read the repository but not push to it**.
+
+### Hosts Octomerge's server reaches
+
+Octomerge's server reads the repository itself (imports, Check access, the remote's branches), so it must reach the host over HTTPS with a certificate a public CA signed. It reaches public hosts; a host on a private network only where your installation's administrator allows it (Admin settings, internal hosts). A self-signed certificate, one a company's own CA signed, an expired one or one for another host name fails with **couldn't verify the host's TLS certificate**.
+
+## Pull, Push and agents
+
+Pull and Push on a branch's **Git** page work for SSH and HTTPS remotes as for GitHub. Your agents' own `git fetch`, `git pull` and `git push` in the project's checkout use the project's key without any SSH setup on the worker. A key Octomerge chooses is used alone, with the host key you confirmed.
+
+### Reviews on an SSH remote
+
+Octomerge doesn't look up the merge requests or pull requests of an SSH remote's host. When a conversation opens one (an agent with the host's CLI, such as `glab`, or you in the host's web pages), it attaches the link to the conversation, and the branch shows it as its review, without its state:
+
+```bash
+otti session work-items add --url https://git.example.com/group/repo/-/merge_requests/12 --icon pull-request
+```
+
+Agents are told this, and how the host labels its reviews, once the host has a [kind](#host-kinds). The link is labelled as the host writes it, `!12` on a GitLab, `#12` elsewhere; without a kind it reads as its host and path.
+
+Other remotes you add yourself with `git remote add`, and any host Octomerge has no key for, use your own SSH keys and `~/.ssh/config` on the worker.
+
+Over HTTPS, your agents' `git fetch`, `git pull` and `git push` in the project's checkout use the remote's credential, and `git clone` of another repository on a host with an account credential works anywhere, for example in an account workspace chat. Hosts Octomerge has no credential for use your own credential helpers on the worker.
+
+Commands Octomerge runs on the worker can read the key and credential files Octomerge delivers: the project's key or token in that project's conversations, and your account keys and HTTPS host credentials in all of your conversations. Octomerge never puts a key or token in a prompt or transcript.
+
+## What Octomerge reads and fetches from the remote
+
+Octomerge shows how each branch stands against the remote's branch of the same name: in step, commits not pushed, commits behind, or diverged, in the sidebar (**↑2** on a session's row, the rest in its card), in the branch's header and on its **Git** page, which always agree. To know, it reads the heads of the remote's branches, all of them in one request, and keeps those of your project's branches: after a conversation finishes, after Pull and Push, when you open a branch, and every few minutes while the project is in use. When a read fails, Octomerge keeps what the last read said and adds **Remote unavailable**, with why and when the remote was last read.
+
+When a branch on the remote has commits Octomerge doesn't have, because someone pushed them from outside Octomerge (a teammate, CI, the host's web editor), Octomerge fetches those commits to count them:
+
+- **Without file contents**: only the commits and their folder listings, never the files.
+- **Only what Octomerge needs**: the remote's heads of the branches your project has in Octomerge, its primary branch among them; and, for [branches only on the remote](#branches-only-on-the-remote) of an SSH or HTTPS remote, the last commits of those branches, a few at a time, while you look at them.
+- **With the project's own access**: the GitHub account connected for repository access, the project's SSH key with the host key you confirmed, or the HTTPS remote's credential.
+- **Kept only to count**: the fetched commits stay in a temporary copy on Octomerge's server, which holds no file contents. They are not added to your branch, its checkout or any worker; **Pull** brings them into the branch.
+
+A fetch stops after 30 seconds or 32 MiB. Octomerge fetches from a project's remote at most once a minute and at most 64 MiB an hour, and after a failure it tries again later, from 5 minutes up to 6 hours apart.
+
+Until a fetch has succeeded, and on a host that can't leave file contents out of a fetch, the branch says **New commits on the remote**: the remote has commits this branch doesn't have. Pull to get them. Pull only fast-forwards: if the branch also has commits of its own, merge the remote's into it in the checkout (an agent can), then push.
+
+### A git server of your own
+
+Octomerge fetches only from a host that offers to leave file contents out of a fetch (Git's partial clone filter), as GitHub does. On a server of your own that serves Git over SSH, allow it for every repository, or in one repository's config:
+
+```bash
+git config --system uploadpack.allowFilter true
+```
+
+Hosting software such as GitLab or Gitea has its own setting for partial clone. Without it, Octomerge fetches nothing from that host, and a branch someone pushed to from outside Octomerge says **New commits on the remote** until you Pull.
+
+## Branches only on the remote
+
+Someone pushed a branch that Octomerge doesn't have: a teammate, a collaborator who doesn't use Octomerge, a bot, or you from another machine. On the project's **Branches** page, **Only on GitHub** (or on your SSH or HTTPS remote's host), beside **In Octomerge** at the start of its toolbar, lists the remote's branches that your project has no branch of, live or archived, with who made each one's last commit and when, its message and its pull request. The switch shows how many of them aren't merged:
+
+- **Not merged** (the default): branches with commits your primary branch doesn't have, and no pull request merged or closed at their last commit (a branch pushed again after its pull request was closed, or a new branch that reuses an old name, is listed). **With a pull request** and **All** list more; the end of the list says how many more are merged or closed.
+- **Find a branch** by part of its name, or **paste a link**: a branch's page (`…/tree/ft/checkout-v2`) or a pull request (`…/pull/409`) finds its branch.
+- **Add** adds the branch to Octomerge under its own name, at the remote branch's latest commit. It then shows under **In Octomerge**, ready for a session; Pull and Push go to the same branch on the remote, and its pull request is the branch's review. If adding it fails, the row says why, with **Retry**.
+- The row's menu: **Add to Octomerge**, the same; **New branch from it…** under another name (pushes then go to that name); the pull request; the branch on the remote's site; **Copy name**.
+
+Afterwards it is a branch like any other: when its author pushes again, the branch shows how many commits it is behind, and **Pull** on its **Git** page brings them in.
+
+New chat's branch menu lists the same branches under **Only on GitHub**, after yours, and typing searches them too; picking one adds it when you send your message. Pasting a link there works as well. In the Projects tab, a project's **New session on** lists the five newest under **Only on GitHub**, after your latest branches: choosing one adds it and opens a new chat on it.
+
+To start a branch of **another name** from one of them, use **New branch…** with **Repository branch**: it lists the remote's branches to start from (or type any branch's name), and says where pushes go: to the new branch's name, not to the branch it starts from.
+
+**A pull request from a fork** isn't a branch of your repository. Adding it, with **Add as pr/412-fix-typo** for a pasted link or by picking it in New chat's branch menu, starts a branch in your repository from the pull request's commits, under a name Octomerge proposes (`pr/412-fix-typo`): your pushes go there, not to the pull request. Because that code is the fork author's, Octomerge asks first, naming them: "This code comes from priya-shah's fork (priya-shah/storefront). Its AGENTS.md and skills will guide agents on this branch, with your credentials. Use it only if you trust it." Choose **Use it** only if you do; a branch of your own repository is added without asking. Only you, in Octomerge's web app, can start a branch from a fork's pull request: otti, launch links and agents can't.
+
+**How Octomerge reads it**: when you open the project's Branches page or a list of them, unless it read the remote in the last three minutes (Refresh reads again). On GitHub it asks GitHub for each branch's last commit, pull request and whether `main` has its commits: for the branches pushed since its last read, and for all of them every half hour. On an SSH or HTTPS remote it reads who made each last commit and when from the commits themselves, fetched without file contents, as [above](#what-r5d-reads-and-fetches-from-the-remote), a few dozen branches at first and then up to a few hundred a minute while the list is open; there are no pull requests there until a branch is in Octomerge, and a squash-merged branch looks unmerged, since nothing records the merge. Of more than 1,000 branches, the list shows those pushed since its last read first, then the newest: on GitHub Octomerge reads every branch's date (a few thousand at a read, and on a remote of tens of thousands of branches spread over hours, so that it doesn't use up a large share of your GitHub API limit at once), and a branch it hasn't dated yet comes after the others, by name. On an SSH or HTTPS remote Octomerge knows the dates of the commits it has fetched, so it shows the branches it hasn't fetched yet first, by name, and fetches them while the list is open, until the list holds the newest. Until Octomerge has read every branch's last commit, the list says how far it has read ("Read 320 of 2,400 branches on…") and that it isn't complete yet. The field finds any branch on the remote by its name, or by a link. When the remote can't be read, the list says why and when it was last read, and keeps showing that list.
+
+From the command line:
+
+```bash
+otti -p my-project get branches --remote          # not merged
+otti -p my-project get branches --remote --all    # every branch only on the remote
+otti -p my-project create branch ft/checkout-v2 --source remote:ft/checkout-v2
+```
+
+## Branch history on every worker
+
+Every worker keeps a checkout of every branch of your projects, set up in the background and kept current as branches move, whichever worker their conversations run on. A checkout starts with the branch's latest 50 commits. Older history and earlier versions of files come from Octomerge when a Git command needs them, through the checkout's `r5d` remote, so `git log -p` and `git blame` work as usual. For more history at once:
+
+```bash
+git fetch --deepen=200 r5d my-branch
+git fetch --unshallow r5d my-branch
+```
+
+The `r5d` remote only fetches, and only while the worker runs; your commits reach Octomerge when the worker publishes the checkout. `git fetch --all` leaves it out.
+
+## Project settings
+
+The project's **Repository** settings show the remote, the key it uses with its fingerprint and last use, the host key, and the last Check access. There you can:
+
+- **Replace key**: Octomerge generates a new key and switches to it once Check access succeeds with it. The old key keeps working on the host until you remove it there. **Cancel replacement** discards the new key and keeps the current one.
+- **Use account key** or **Use a deploy key instead**: switch between the project's own key and your account key for the host. Switching to the account key first checks that it can read the repository.
+- **Remove remote**: the project keeps its branches and history and has no remote afterwards. Octomerge deletes the project's deploy key; remove it on the host too. Deleting the project also deletes its key.
+- **Add a remote** to a project without one: a GitHub repository (where your installation offers GitHub), an SSH remote or an HTTPS remote. The project keeps its history; Octomerge only records the remote.
+
+For an HTTPS remote they show which credential it uses, the project's own or your account's for the host, and when it was saved and last used. **Replace credentials** checks the new ones before switching to them while the remote works; **Use account credential instead** deletes the project's own token. Removing the remote deletes the project's token: revoke it on the host too if nothing else uses it.
+
+## Git hosts (account keys)
+
+If you work with many repositories on one host, add an account key for the host once instead of a deploy key per repository: **Settings → Git → Add host**, with the host name and its SSH port if it is not 22.
+
+Octomerge generates a key and shows its public key. Add it to your user account on the host (on GitLab: **User settings → SSH Keys**), confirm the host key, and choose **Check access**. A repository path is optional; with one, Check access also tests read and write access to that repository.
+
+An account key acts as you on that host: it reaches every repository your account there can reach. A deploy key reaches one repository, which is why deploy keys stay available and take precedence: a project with its own deploy key keeps using it.
+
+With an account key:
+
+- adding a project from that host needs no key step, only Check access;
+- agents can use the host anywhere, for example `git clone git@gitlab.company.com:group/other.git` in an account workspace chat.
+
+**Replace key** and removal work as for project keys. Removing a key that projects use lists them and asks for confirmation; those projects then have no key until you give each one a deploy key or add an account key again.
+
+## HTTPS hosts (account credentials)
+
+If you reach many repositories on one host over HTTPS, save its credential once instead of one per project: **Settings → Git → HTTPS hosts → Add host**, with the host name (and `:port` if its HTTPS port isn't 443), a username and an access token. Every HTTPS remote on that host without credentials of its own uses it, and so do your agents' git commands anywhere. **Check access** with a repository path tests reading it and a dry-run push.
+
+An account credential acts as you on its host, with everything your token can reach there; a project's own token can be narrower, which is why it takes precedence. Removing a credential that projects use lists them and asks for confirmation; they then reach their remote without credentials until you give them some.
+
+## Host kinds
+
+Octomerge labels a link to an issue or a review as its host writes it, names reviews as the host does and links to the host's branches and commits once it knows what the host is: its **kind**. **Settings → Git → Host kinds** lists your git hosts with their kinds:
+
+| Kind | Reviews | A link reads |
+| --- | --- | --- |
+| GitLab | merge requests | `group/repo!12`, or `!12` where room is short; issues `#12` |
+| Gitea or Forgejo | pull requests | `owner/repo#12`, `#12` |
+| GitHub Enterprise Server | pull requests | `owner/repo#12`, `#12` |
+| Bitbucket Server or Data Center | pull requests | `KEY/repo#12`, `#12` |
+| Other | reviews | its host and path |
+
+github.com, gitlab.com and bitbucket.org are built in, so a `github.com` pull request reads `#418` even when you reach github.com over SSH. Your installation's administrator can set a host's kind for everyone (**Admin settings → Git hosts**); such a host shows **this installation** and keeps that kind. Choose a kind for any other host in its row, or enter a host and its kind and choose **Set kind**, with the host name alone (`git.example.com`, without `ssh://`, a user or a port); only you see the kinds you set, and links you already have are relabelled. Without a kind, a link reads as its host and path, and Octomerge makes no links to the host.
+
+If a host's web pages have another name than its SSH host, set the kind of that name too: links are labelled by the name in their URL.

@@ -1,0 +1,165 @@
+---
+title: "Teams"
+description: "Share sessions, branches or whole projects read-only with your team, mention a session so your agent reads it, link a branch's team page from a pull request, and connect issue trackers."
+---
+
+A team lets teammates follow agent work in Octomerge. You share a session, every session on a branch, or every session of a project **read-only** with a team. Its members read the conversation live, with its status, work items and pull request, and can [mention it](#mention-a-session) so their own agent reads it. They can't send messages, answer the agent's questions, stop or fork a session, or reach your workers.
+
+## Create a team and invite members
+
+Open **Teams** from the sidebar's **More** tab, then **Create a team**. A dot on the **More** icon means an invitation is waiting for you. Give it a name and a URL: `https://octomerge.dev/t/<url>`. The URL is permanent, because branch links use it. A team link made before Octomerge moved to octomerge.dev names r5d.dev and keeps working: r5d.dev redirects it to the same page on octomerge.dev. You become the team's admin.
+
+On the team's page, **Invite** (or the **Members and shares** tab) invites people, as members or admins: by their handle when they have an Octomerge account, or by email address when they don't. Every account has a unique handle, shown as `@handle` on team pages and in **Settings**, chosen when it signed up ([Signing up](/#signing-up)). They see the invitation on their **Teams** page after signing in to Octomerge, and accept or decline it there. An invitation also lets its invitee in right away: someone without an Octomerge account skips the waitlist, and someone waiting on it is let in at their next sign-in.
+
+Admins invite and remove members, change roles, remove shares, archive or remove a branch for the team ([below](#archive-or-remove-a-branch-for-the-team)) and delete the team. Every team keeps at least one admin, so the last admin can't leave until another member is an admin. Anyone can leave a team; what they shared with it stops being shared. When someone [deletes their account](/get-started/sign-in#deleting-your-account), a team only they are in is deleted with it, and a team whose only admin they are gets its longest-standing other member as admin.
+
+## The Team plan
+
+Where Octomerge sells plans, a team's admin can buy **the Team plan** for the whole team: one subscription that lets every member of the team run agents, admins included, each with the Standard plan's limits ([Usage](/platform/usage)). It costs $30 per member a month, or $300 per member a year.
+
+- **Buying it.** On the team's **Billing** tab, choose monthly or yearly billing and continue to Polar's checkout, for every member the team has. The plans page offers it too: choose **For a team**, then one of the teams you're an admin of, or make a new one there. Polar, Octomerge's merchant of record, takes the payment. The subscription belongs to the team, under the team's name, and you become its billing contact at Polar.
+- **The bill follows the team.** Each person who accepts an invitation adds a seat to the subscription, and each member who leaves or is removed takes one away; Polar prorates each change on the next invoice. Pending invitations cost nothing.
+- **Who is covered.** Every member, from the moment they join until they leave. **Settings → Billing** names the team that covers you. A plan of your own stays yours and keeps billing you until you cancel it there. A member of several covered teams is covered by the one that subscribed first, and each of those teams pays for them.
+- **Managing it.** Every member sees on the **Billing** tab whether the team is covered. Its admins also see the price, the status and how many members it bills, switch between monthly and yearly billing (the new period starts at once, prorated), and open **Manage billing**, Polar's portal for the team: the payment method, invoices and receipts, and cancelling. A cancelled plan runs until the end of its period. When a payment fails, members keep running agents while Polar tries again, and the team's admins see a banner until the payment method is updated.
+- **Seats.** Octomerge takes a limited number of paying accounts at a time, and each member a team's plan covers is one of them: a team can buy the plan while there are enough free seats for its members. Once the plan runs, members who join later are always covered.
+- **Deleting the team** needs its plan cancelled first, on the **Billing** tab.
+
+## Share
+
+Open the menu (**⋯**) of a chat in the sidebar's list, where **Share…** is under its branch's name, or of a project, or the menu of an open chat, and choose **Share…**. Pick a team and what to share:
+
+| Scope | What the team can read |
+| --- | --- |
+| **This session** | The session and the subagents it starts. |
+| **All sessions on this branch** | Every session on the branch, earlier and later ones, with their subagents. A branch that is deleted and created again under the same name isn't shared. |
+| **All sessions in this project** | Every session of the project, on every branch, earlier and later ones, with their subagents. |
+
+A subagent you [detach from the chat that started it](/platform/workspace-chats#order-paging-and-subagents) is no longer one of its subagents. A team that could read it only as part of that chat keeps reading it: the detach gives it a share of its own with that team, which you can revoke like any other.
+
+The whole transcript becomes readable to the team's members, including tool output such as command results and file contents, and what the agent was sent: its system prompt (your instructions) and its tool definitions, which `otti` shows them ([Reading it with otti](#reading-it-with-otti)). What the agent looked up is tool output too, such as the names and descriptions of your environment variables, never their values. Share only what the team may read. The models the session ran on show by the display names you gave them in your model settings, such as **Claude Opus 5.5 · High**, as they do in your own chat. Your [tags](/platform/workspace-chats#tags) and which chats are unseen for you stay private: team members never see them, and their reading a shared chat doesn't mark it seen for you.
+
+A shared chat shows **Shared** in its top bar (on phones, **Share…** in the chat menu says who can read it). Point at it to see which teams can read the chat and how it is shared; click it to manage sharing. In the sidebar, an open project's chip names the team that reads it or has sessions in it, such as "Acme", and a session's card says which teams it is shared with. Select the chip to see which team reads what, to open a team, or to manage sharing.
+
+The share dialog lists every share of a session, including the branch or project shares and the shares of the session that started it, and **Revoke** stops any of them. Revoking takes effect at once. Team admins can also remove shares from the team's **Members and shares** page.
+
+A [launch link](/platform/launch-links) can ask to share the session it starts; the dialog preselects the team when you are a member of it. When the branch or project the session starts in is already shared with a team, the dialog shows that share instead and adds none. Until its first message is sent, no team can read a launched session, even on a shared branch or in a shared project, and the sidebar marks no sharing on it.
+
+### Share from otti
+
+`otti` shares too, and says what became readable:
+
+```sh
+otti -s SESSION_ID share session --team acme   # the session and the subagents it starts
+otti -s SESSION_ID share branch --team acme    # every session on its branch
+otti -p my-project share project --team acme   # every session of a project
+otti -s SESSION_ID share list                  # the shares that reach a session
+```
+
+Sharing something that is already shared changes nothing. In an agent's shell, these commands act on the agent's own session unless `-s` names another, so you can ask an agent to share its session with a team, for example to show its work on an issue in your tracker. An agent shares, and reads what your teams share, as you do ([Agents use otti like you](/cli/otti#agents-use-otti-like-you)). Revoke a share in the share dialog.
+
+## The team page
+
+`https://octomerge.dev/t/<team>` is the team's list of everything shared with it, yours included, drawn like your sidebar's list. Its tabs are **Active**, **Archive**, **Members and shares**, **Integrations** and, where Octomerge sells plans, **Billing** ([The Team plan](#the-team-plan)).
+
+**Active** has one line a session, grouped by repository, the latest activity first. The page is wide, so a line also says whose session it is and its status in words, such as "Priya Shah · waiting for Priya" or "You · working", the branch it works on, the branch's pull request (a review on other hosts) in the colour of its state, and when it was last active. Every status has its colour. Sessions are grouped by the project's repository, so two members' sessions on the same repository appear together, also repositories you have no project for; a project without a remote is listed by its owner and name. Pointing at a line shows its card: the whole name, how long it has had its status, its branch and who reads it, and how many of its subagents aren't shared with the team.
+
+The row above the list filters and groups it:
+
+- **Asking** shows the sessions that wait for their owner's answer, and **Running** those at work, each with how many there are.
+- **Everyone**, or one member's sessions.
+- **More**: sessions that wait (for a timer or their subagents), stopped or are done, a name, or a filter you write, such as `webhook and not stopped`.
+- The grouping: by repository, member, branch or status, sorted by latest activity, creation or name.
+
+A group shows its ten latest sessions; **n more** shows more. While a filter is on, the list ends by saying how many sessions match.
+
+Opening a line of yours opens your chat, and its menu (**⋯**) is the one your sidebar has. Opening a teammate's line opens their session read-only (see below). A session with subagents has an arrow before its icon that shows them under it, as in your sidebar: its five most recently active ones, finished ones too, then **10 more**, with those still at work always shown, each on a line from the icon of the session that started it. While they are hidden and some work, the line shows how many, at any depth, with a spinner while one of them is running; click the count to show the way to all of them. A subagent that works on another branch or in another project says where.
+
+**Archive** lists the branches that are archived for the team, or that their owners archived, by repository, with who archived them, how many sessions they hold and when.
+
+The page follows the team's work live: sessions appear, change and leave as they do.
+
+Each branch has a permanent page:
+
+```text
+https://octomerge.dev/t/<team>/<repository>/tree/<branch>
+https://octomerge.dev/t/acme/github.com/acme/api/tree/issue/42-fix-login
+```
+
+Link it from a pull request description so reviewers can follow every session shared with the team on that branch. Agents do this themselves: before an agent opens a pull request, it looks up which teams its chat is shared with and their branch pages with `otti share list`, which also prints the pages for you. The link works before anything is shared and keeps working as sessions come and go. The page is the branch's overview for the team: its sessions, listed as on the team page with the subagents they started (a subagent that works on another branch is listed on its own branch too), its pull request, who reads it, **Copy branch link**, and, for whoever may, archiving or removing it for the team (below).
+
+## Teammates' sessions in your projects
+
+When a teammate shares sessions of their project for a repository you have a project for too, those sessions also show in your sidebar's list: in your project, among your own sessions, by their activity, whatever the list's grouping. **Whose** in the list's head shows everyone's, only yours, or only one team's. **Create my branch…** in the menu of one of their sessions starts a branch of your own from the repository's branch of that name, once your teammate has pushed it.
+
+A teammate's session is the lightest row in the list: a grey status icon, a lighter name, and its owner's initial after it. Its card says whose it is and its status in words, such as "Alex Kim · working", "Priya Shah · waiting for Priya" or "Sam Lee · done", and while its subagents are hidden and some of them work, the row shows how many, in grey, with a grey spinner while one of them is running. The rows follow the sessions live, and a session leaves your sidebar as soon as it is no longer shared with you.
+
+Opening a teammate's row opens their session read-only (see below), highlighted in your sidebar while it is open. Their menus have none of the owner's actions (rename, delete, share, stop, archive), and **Open in** each of your teams that reads the session instead of a preview. Their rows have no tags or unseen marks, and can't be pinned or checked. When several of your teams can read a session, it opens in the team whose share is nearest to it.
+
+Sessions are matched by the project's remote repository, so only projects with a remote show teammates' sessions; the sessions of a project without a remote are on the team page only.
+
+A teammate's sessions follow their branch, not yours. When you archive your branch, their sessions on it stay in your list (**Unarchive my branch…** in their menu brings yours back). When a teammate archives their branch, or someone archives it for the team (see below), its sessions leave your list for the team archive: your project's **Archived and hidden** row counts them, and opens the project's [**Branches** page](/platform/workspace-chats#a-projects-branches), which lists the branch under **Team archive** with whose it is and why it is there. You can't archive a teammate's branch in their project, but you can hide it: **Hide from my sidebar** in the menu of one of its sessions takes them out of your list, and the **Branches** page lists the branch under **Hidden by you**, where **Show in my sidebar** brings it back.
+
+### Archive or remove a branch for the team
+
+A team's admins, and the members whose work on a branch the team can read, can tidy up the team's view of that branch for everyone. Open the menu (**⋯**) of one of its sessions, on the team page or in your sidebar, where they are under **For everyone in Acme**, or the menu of the branch on the team page's **Archive** tab or on the branch's own page:
+
+- **Archive for Acme…** moves the branch into the team archive: on the team page, to its **Archive** tab, and in every member's project, under **Archived and hidden** on its **Branches** page. Nobody's own branch changes: members keep working on theirs, and their sessions stay readable in the archive. New work on the branch stays in the archive too, until someone brings it back with **Unarchive for Acme**. When your own shared work is on a branch archived for a team, the project's **Branches** page marks your branch with an archive icon that says so.
+- **Remove from Acme…** stops sharing the branch with the team: it revokes every member's share of their branch of that name and the shares of single sessions on it, whoever made them. The dialog lists them first, and members can share their work again later. A project share shares every branch of its project, so a branch it covers stays on the team page until that project share is removed on **Members and shares**; so do sessions on the branch that the team reads because the session that started them, on another branch, is shared. The dialog says when either is the case.
+
+Integrations hear about both: removing reports the revoked shares, and archiving and unarchiving are events of their own ([Team integrations](/cli/api-client#team-integrations)).
+
+## Reading a shared session
+
+A shared session opens at `https://octomerge.dev/t/<team>/s/<session>`. It updates live, and you can search it and browse its branches, its parent session and its subagents. There is no message box, and nothing on the page changes the session or reaches its owner's workers: interactive app views aren't shown, and questions the agent asks are shown for information only.
+
+Each session has one driver, its owner, whose name is over their messages. Where your message box would be, a line says so: "Alex Kim drives this session. You follow it live." To use its work, point your agent at it: **Copy link** copies the session's link, and pasted into a message in any chat of yours, New chat included, it becomes a mention ([Mention a session](#mention-a-session)), so your agent reads the session. You can't continue a teammate's session itself: a session of yours wouldn't have their worker or their files.
+
+Its header is a branch's header without the branch's views ([A branch's header and pages](/platform/workspace-chats#a-branchs-header-and-pages)): below the session's name, the project, the branch, which opens its team page, and whose session it is; then the branch's pull request and the session's links. **Read-only**, where a chat of yours shows **Shared**, says who shared it, with which team and how.
+
+Images show as the agent's model received them, from the copies Octomerge keeps with the conversation: in the transcript, and under **Viewed images…** in the top bar's menu. An image Octomerge didn't keep, such as one from before Octomerge kept these copies, stays on its owner's worker and shows as not shared.
+
+To return to your original chat, choose **Open source session** in the header (on a phone, in **Read-only**), or at the bottom of the page, where the line says "You drive this session." It appears when you have access to the source session. The shared view itself stays read-only.
+
+### Reading it with otti
+
+You and your agents read a teammate's shared session with the same `otti` commands as your own history, by its session ID, for example to build on a decision or a commit from it:
+
+```bash
+otti get sessions my-project                        # your sessions and your teammates', for the same repository
+otti conversation overview SESSION_ID --skeleton --tail 12
+otti conversation SESSION_ID --last
+otti conversation SESSION_ID --tools --system       # the transcript as its agent's model saw it
+otti -s SESSION_ID conversation -f                  # follow it live
+otti conversation inspect-node SESSION_ID NODE_ID   # a node from Copy reference in a message's menu
+otti conversation inspect-work SESSION_ID WORK_ID --summary
+otti sessions children SESSION_ID
+```
+
+Before the output, a line on stderr says whose session it is and the team you read it through, such as "Alex Kim (@alex) shares this session read-only with team Acme (acme)", with its team page; `--json` returns it as `shared`. When several of your teams can read the session, otti reads it through the team whose share is nearest to it, as your sidebar does. Reading changes nothing in the session and reaches none of its owner's workers: `inspect-work` gives a command's outcome only when the conversation records it. Each command checks again that a share still covers the session, so once it is revoked the commands answer `Conversation not found`.
+
+`get sessions` lists your teammates' top-level sessions on the project's repository next to yours, as your sidebar does, with `@alex/storefront` as their project; `--mine` lists only yours. Projects without a remote list only their own sessions. Prompting, stopping and moving the head of a teammate's session stay its owner's. [`otti search`](/cli/otti#search-conversations) finds the sessions your teams share with you too. With a [team API key](#integrations), the conversation commands and `sessions children` read the team's shared sessions the same way.
+
+## Mention a session
+
+To point your agent at a teammate's work, or at another session of yours, type `@` in the message box. **Mention a session** lists the sessions you can read that match what you type after the `@`, most recently active first: each with its status and name, and under it whose session it is with its status in words, such as "Alex Kim · working" or "You · done". A bare `@` lists your five most recent ones. Pick one with the arrow keys and Enter or Tab, or click it; Escape closes the list. Below the sessions, **Reference a workspace project** still offers `@project/branch` references.
+
+The session goes into your message as a chip with its owner's initial and its name. Backspace removes the chip whole, and undo brings it back. In the sent message the chip opens the session: a teammate's on its team page, yours in its chat.
+
+When you send the message, your agent reads that conversation with `otti conversation overview <id> --skeleton`, as it reads its own history, and uses what it finds, such as a decision or a commit. It reads only what you can read, and nothing changes in the mentioned session: its owner gets no message or notification, and their agent isn't woken.
+
+The message holds only the session's link: for a teammate's session the address **Copy link** gives, at the bottom of their session or in the share dialog (`https://octomerge.dev/t/<team>/s/<session>`), for yours its chat's own address. A link like that shows as a chip wherever the chat shows it: pasted into a message, sent with `otti session prompt`, or written by an agent in its reply. So does a session's full ID on its own, such as `4261d23f-c0e5-4f66-8682-1f71aca2cc59`, once Octomerge finds that it names a session you can read; any other ID stays text. A Markdown link to a session, such as an agent's `[the review session](…)`, stays a link, and a link or ID in code keeps its text. Someone who reads your conversation but can't read the mentioned session, such as a member of another team you share your conversation with, sees "Session you can't open" instead of its name and owner.
+
+## What the agent knows
+
+The agent of a shared session is told which teams can read its conversation and the team page of its branch, so it can link that page in a pull request description.
+
+## Integrations
+
+Issue trackers and other tools can follow what is shared with a team too. On the team's page, open **Integrations** (`https://octomerge.dev/t/<team>/integrations`). Admins manage two things there:
+
+- **API keys**: read-only credentials of the team. A key reads exactly what a member reads, through the [team API](/cli/api-client#team-integrations): shared sessions and branches with their status, work items, pull request and links, a conversation overview for summaries, and the team's event feed. It can't act on anything, and every request that would change something answers `403`. Each key is shown once, when it is created; the list shows when it was last used, and **Revoke** stops it at once. A key belongs to the team: it keeps working when the admin who created it leaves, until an admin revokes it.
+- **Webhooks**: URLs that receive every event of the team, signed with a secret: a session was shared, a share was revoked, a session's status changed, a session's work items or name changed, or a branch's pull request was opened or updated. Each webhook has a **delivery log** with every attempt and its response. A failed delivery is retried for about eleven hours; you can also deliver an event again, or send a test `ping`.
+
+Members see the API and feed addresses on the same page. An integration that Octomerge can't reach, such as a tracker behind a firewall, follows the event feed instead of a webhook.
+
+Octomerge's own [GitHub App and Threadline plugin](/platform/integrations) use a team API key: connect them to the team, and the issues and pull requests that sessions work on show their status.

@@ -1,0 +1,44 @@
+---
+title: "Build and push with GHCR"
+description: "Use GitHub Container Registry from your workers and configure deployment access separately."
+---
+
+GitHub Container Registry (GHCR) can be used independently of a Kubernetes cluster or other deployment destination.
+Workers use your connected GitHub account for registry operations where the granted scopes permit them.
+
+## Worker authentication
+
+When you connect GitHub repositories (**Settings → Git**), Octomerge provides that GitHub credential to connected macOS and Linux workers. It can be any GitHub account, whichever way you sign in to Octomerge.
+The worker configures Docker and containers-auth credentials and provides `GH_TOKEN` for the GitHub CLI, along with registry
+and namespace metadata such as `R5D_GHCR_REGISTRY` and `R5D_GHCR_NAMESPACE`.
+
+With Docker installed on the worker, you can build and push an image:
+
+```bash
+GIT_SHA="$(git rev-parse --short=12 HEAD)"
+IMAGE="${R5D_GHCR_REGISTRY:-ghcr.io}/${R5D_GHCR_NAMESPACE}/api:${GIT_SHA}"
+docker build -t "$IMAGE" .
+docker push "$IMAGE"
+```
+
+Keep credentials out of output and repositories. If authentication fails, check the command's error and GitHub scopes;
+do not print or decode the registry auth files. Your GitHub connection needs package write access to push and package
+read access to consume private images. Signing in again can refresh granted scopes; follow worker credential-rotation
+diagnostics before expecting the new generation to be available.
+
+## Authenticate your deployment destination
+
+Your deployment destination needs its own access to private images. For Kubernetes, configure a namespaced image-pull
+secret or the registry integration supported by your cluster provider, and reference it from the workload. For Docker
+or another host, configure its registry login using the service account and credential mechanism you choose.
+
+You own the destination's credential lifecycle. Octomerge does not automatically install or rotate credentials in arbitrary
+clusters, hosts, or services.
+
+## GitHub Actions
+
+Publishing an image and authenticating a deployment are separate steps. A workflow may publish to GHCR with a
+`GITHUB_TOKEN` that has `packages: write`. After publishing, authenticate to your destination using its supported workload
+identity or secret mechanism, then deploy an immutable image reference.
+
+Choose CI actions and permissions appropriate to your deployment destination.

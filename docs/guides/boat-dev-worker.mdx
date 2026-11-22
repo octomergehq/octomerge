@@ -1,0 +1,190 @@
+---
+title: "Run a worker on a boat.dev sandbox"
+description: "A worker on a boat.dev virtual machine that stops when you aren't using it and starts again from boat's dashboard, with a skill that keeps it running while agents work."
+---
+
+[boat.dev](https://boat.dev) sandboxes are Ubuntu virtual machines with git, Docker and Node.js, billed by the second while they run. A stopped sandbox keeps its disk, and boat stops a sandbox at its auto-stop time: an hour after you start it, unless something extends it. That makes a sandbox a worker you pay for only while you use it.
+
+This guide sets up a sandbox as an Octomerge worker that stops cleanly whenever boat stops it and connects again when you start it. An optional skill then keeps it running while agents work on it, and lets boat stop it once it's idle.
+
+## What you need
+
+- A boat.dev account with a plan or its free trial. The trial allows 2 sandboxes running at once, 25 hours of compute and an auto-stop time of at most 2 hours.
+- An Octomerge installation that offers worker templates: **Settings → Workers** shows **Cloud server** and **boat.dev** when you create an enrollment token.
+
+## How it works
+
+Octomerge writes a setup script around a one-time enrollment token. boat runs it once in the new sandbox, as the sandbox's user `user`, who has passwordless `sudo` and the `docker` group. The script:
+
+1. installs Bun at the version Octomerge pins, checked against its published checksum, and the CLIs at your environment's version;
+2. enrolls the sandbox as your worker with the token (`otti-worker auth --enroll`);
+3. runs the worker as the systemd service `otti-worker`, with the sandbox's ID in its description (`boat.dev sandbox bx_…`) and in `/home/user/.boat/sandbox-id`;
+4. adds boat's pre-stop hook, `~/.boat/pre-stop`.
+
+boat runs the pre-stop hook before every stop: yours, the dashboard's and the auto-stop, for up to 60 seconds. A stop doesn't signal the sandbox's programs, and a worker that is simply cut off can't tell how the commands it ran ended (its next start moves its workspace lock aside, but their outcomes stay unknown), so the hook stops the worker first: it ends what runs on it and releases its workspace before boat saves the disk.
+
+When you start the sandbox again, the worker connects by itself:
+
+- **Within 10 minutes of the stop**, boat gives you the same machine back, as it was. The hook left a timer that starts the worker as soon as the machine wakes up: it connects within a few seconds. Started again only seconds after it stopped, the machine may not notice it slept, and the worker connects within 3 minutes.
+- **Later**, the sandbox starts on a new machine from the saved disk. The worker waits until boat has restored your home folder, then connects, usually within 15 seconds.
+
+While the worker is offline, chats on it pause with **Paused until worker '…' reconnects** and continue by themselves once it connects ([When the chat's worker is unavailable](/platform/workspace-chats#when-the-chats-worker-is-unavailable)). You can't send a new message to a chat whose worker is offline: start the sandbox first.
+
+## Create the sandbox
+
+1. In **Settings → Workers → Enrollment tokens**, enter a label for the worker, such as `boat-1`, choose **Worker** and create the token. In the setup checklist, choose **A boat.dev sandbox** under **Where will your agents run?** instead.
+2. Choose **boat.dev** and copy the setup script, `r5d-boat-setup.sh`. The token in it works once, within an hour, so create the sandbox within that hour.
+3. In boat's dashboard, open **Sandboxes → Advanced create** (the button beside **New**):
+   - choose a size; `default` (4 vCPU, 8 GB) suits most work;
+   - keep **Auto-stop after** at 1 hour, or set a longer time;
+   - turn on **No env**, so your boat secrets, GitHub access and agent logins stay off a machine where Octomerge's agents run;
+   - paste the script under **Setup script**, and create the sandbox.
+
+   With the boat CLI, download the script instead and run, in its directory:
+
+   ```bash
+   boat new --no-env --name "Octomerge boat-1" --setup-file r5d-boat-setup.sh
+   ```
+
+4. The worker shows under **Your workers** within about a minute. To follow the setup, `boat info <sandbox>` shows whether it succeeded, and `boat ssh <sandbox> journalctl -u otti-worker -f` the worker's log.
+
+## Start and stop it
+
+- **Stop** it in boat's dashboard, with `boat stop <sandbox>`, or let the auto-stop come. Whatever runs on the worker ends; chats on it pause.
+- **Start** it with **Resume** in the sandbox's menu in boat's dashboard, or `boat resume <sandbox>`. Chats on it continue once the worker connects.
+
+The worker publishes its changes to Octomerge as it goes, so your other workers have them. To publish everything right before you stop it, choose **Sync workspace** in the worker's menu in **Settings → Workers** (or run `otti workspace sync --worker boat-1`); the keep-alive skill below does this before every stop.
+
+boat keeps a stopped sandbox's disk for at least 14 days. To keep it longer, save a snapshot in boat before then. boat doesn't save `/tmp`, `/var/tmp` or caches such as `~/.cache`.
+
+## Keep it running while you use it
+
+boat's auto-stop doesn't know about Octomerge: at its time, boat stops the sandbox even while agents work there. A workspace chat on the worker can watch it for you with the `boat-keepalive` skill below. Ten minutes before each auto-stop time, the chat checks the worker:
+
+- **In use**: an agent works there, a command runs for an agent (also a background process such as a dev server), or a terminal runs a command or printed something in the last 30 minutes. The chat moves the auto-stop time to an hour from then and says why in one line, such as *Extended to 15:42 UTC: 2 agents working, dev server on :3000*.
+- **A terminal idle for more than 30 minutes** doesn't count: the chat closes it and says so.
+- **Not in use**, and no command ended in the last 15 minutes: the chat publishes the worker's workspace and stops the sandbox. It then pauses with the worker, and continues by itself once you start the sandbox again.
+
+If a check fails, for example because your model provider is down, the sandbox simply stops at its auto-stop time, cleanly.
+
+### Set it up
+
+1. **A boat API key.** In boat's dashboard, open **API keys**, choose **Custom** and select only `sandbox.read`, `sandbox.update` and `sandbox.stop`. Under **Restrict to specific sandboxes or environments**, select your Octomerge sandboxes (left empty, the key covers all your sandboxes), then give it an expiry and create it. The key can only read, extend and stop sandboxes.
+2. **An account secret.** In Octomerge, open **Settings → Secrets** and add the key as the environment variable `BOAT_API_KEY` ([Secrets](/platform/shell-environment#secrets)). Every agent of your account can use it in its commands; agents never see secrets in chat.
+3. **The skill.** Open **Skills** from the sidebar's **More** tab, choose **New skill**, name it `boat-keepalive` and replace its `SKILL.md` with the text below ([Create a skill](/platform/agent-instructions-and-skills#create-a-skill)).
+4. **The chat.** In the sidebar's list, point at **Workspace chats** and choose its **+**, choose the boat worker in the composer's worker menu, and send:
+
+   > Use the boat-keepalive skill to keep this worker (boat-1) alive while it's in use, and let boat stop it when it's idle.
+
+   Keep one such chat per boat worker. It must run on that worker: it looks at the worker's terminals on the machine, and pauses and continues with it. Each check makes several model requests on the chat's model, which is why it starts ten minutes before the auto-stop time.
+
+````markdown SKILL.md
+---
+name: boat-keepalive
+description: Keeps an Octomerge worker that runs on a boat.dev sandbox alive while it is in use, and lets boat stop it when it is idle. Use in a workspace chat that runs on that worker when asked to watch, keep alive or look after a boat.dev worker.
+---
+
+# Keep a boat.dev worker alive while it is used
+
+boat.dev stops a sandbox at its auto-stop deadline (`archiveAfter`, one hour
+after it was started or last extended). You run in a chat on the boat worker
+itself. Before each deadline you decide whether the worker is still used:
+then you move the deadline, otherwise you let boat stop the sandbox. You never
+start the sandbox (the user does, in boat's dashboard) and never delete it.
+
+Every stop is clean without you: the sandbox's `~/.boat/pre-stop` hook stops
+the worker before boat saves the disk. If you miss a deadline, the sandbox
+simply stops.
+
+## What you need
+
+- `BOAT_API_KEY`: a boat API key with the actions `sandbox.read`,
+  `sandbox.update` and `sandbox.stop`. It is in your shell's environment
+  (account secrets); never print it. If it is missing, say so and stop.
+- The sandbox's ID, which Octomerge's setup script wrote to
+  `/home/user/.boat/sandbox-id` on this machine. If that file is missing, you
+  are not on a boat worker set up by Octomerge: say so and stop.
+- Your worker's label: `otti --json describe session "$R5D_SESSION_ID" | jq -r .workerLabel`.
+
+The deadline, and the two things you do with the sandbox (each command is
+complete; run it as it is, alone in its tool call):
+
+```bash
+# Read the state and the deadline.
+curl -fsS -H "Authorization: Bearer $BOAT_API_KEY" "https://boat.dev/api/v1/sandboxes/$(cat /home/user/.boat/sandbox-id)" | jq '.sandbox | {state, archiveAfter, ttlSeconds}'
+# Extend: the deadline becomes now + 1 hour, and every later start gets 1 hour too.
+curl -fsS -X PATCH -H "Authorization: Bearer $BOAT_API_KEY" -H 'Content-Type: application/json' -d '{"ttlSeconds":3600}' "https://boat.dev/api/v1/sandboxes/$(cat /home/user/.boat/sandbox-id)" | jq -r .sandbox.archiveAfter
+# Stop the sandbox now. Its pre-stop hook stops this worker first, so this chat pauses right after.
+curl -fsS -X POST -H "Authorization: Bearer $BOAT_API_KEY" "https://boat.dev/api/v1/sandboxes/$(cat /home/user/.boat/sandbox-id)/stop" | jq -r '.sandbox.state // .type'
+```
+
+Never shorten the auto-stop time to stop the sandbox: a sandbox keeps its
+auto-stop time for its next start, and would stop again minutes after the
+user starts it.
+
+## What runs on the worker
+
+Leave out your own session (`$R5D_SESSION_ID`) and the commands you run for
+these checks.
+
+- `otti --json ps list --worker <label>`: agent commands and open
+  terminals (run IDs `terminal:…`) running now. `pid` is the process on this
+  machine.
+- `otti --json ps history --worker <label> --limit 30`: commands that
+  ended recently (`completedAt`).
+- `otti --json sessions recent --limit 30` lists project chats, without
+  their worker: run `otti session status <id>` for those updated in the
+  last hour. A session whose `Worker` is your label and that is running or
+  queued works there. Workspace chats aren't listed: one that works on this
+  worker shows in the two lists above.
+- You run on this machine, so you can look at a terminal's shell (its `pid`)
+  directly: `pgrep -P <pid> -a` shows the command it runs (nothing: it waits
+  at its prompt), and
+  `echo $(( $(date +%s) - $(stat -c %Y "$(readlink /proc/<pid>/fd/0)") ))`
+  how many seconds ago it last printed.
+
+## The loop
+
+1. **Read the deadline.**
+2. **Wait** with the `wait` tool until 10 minutes before `archiveAfter`
+   (`timeout_ms` = deadline − now − 10 minutes; when that is less than a
+   minute, check at once). A wait that ends early (a message, a wake) goes
+   back to 1: the deadline may have moved.
+3. **Check what runs on the worker** (above), and decide with judgment:
+   - In use: an agent working on this worker, a command running for an agent
+     (also a background process an agent left running, such as a dev
+     server), or a terminal that runs a command or printed in the last 30
+     minutes.
+   - Stale: a terminal that runs nothing and printed nothing for more than 30
+     minutes. Close it with `otti ps stop <run-id>` and say so in one line;
+     it does not count as use.
+   - Not in use: nothing above, and no command ended in the last 15 minutes.
+4. **In use: extend**, and write one line with the new deadline (UTC) and
+   why, such as "Extended to 15:42 UTC: 2 agents working, dev server on
+   :3000". Go back to 1.
+5. **Not in use: stop.**
+   1. `otti workspace sync --worker <label>` publishes the worker's changes,
+      so other workers have them while this one is stopped.
+   2. Write one line, such as "Idle since 14:20 UTC: stopping boat-1. Start
+      it again in boat's dashboard."
+   3. Stop the sandbox, then `wait` with a 30-minute timeout. This chat
+      pauses until the worker connects again. When you continue, the user has
+      started the sandbox again: go back to 1.
+
+Keep to one line per check. Do not stop or extend anything else, and do not
+change the worker's setup.
+````
+
+## Delete it
+
+Delete the sandbox with **Delete permanently** in its menu in boat's dashboard, or `boat delete <sandbox>`. That deletes its disk and snapshots, with anything the worker hadn't published. Then, in Octomerge:
+
+- revoke its sign-in under **Settings → CLI & API → Authorized devices**, where it is listed as **Only boat-1**;
+- stop or delete its keep-alive chat;
+- revoke the boat API key in boat's dashboard once no sandbox needs it.
+
+## If something goes wrong
+
+- **The worker doesn't connect after you create the sandbox.** `boat info <sandbox>` shows the setup's status and error. A token works once, within an hour: create a new token, copy the new script into the sandbox and run it there (`bash r5d-boat-setup.sh` in `boat ssh <sandbox>`). Running the script again finishes what a failed setup left.
+- **The worker doesn't connect after you start the sandbox.** `boat ssh <sandbox> journalctl -u otti-worker -n 50` shows why; `systemctl status otti-worker` whether it runs.
+- **The sandbox stopped while agents worked.** Its auto-stop time came. Start it again: the chats continue. Add the keep-alive skill, or give the sandbox a longer auto-stop time in boat's dashboard (**Stops in** on its row).

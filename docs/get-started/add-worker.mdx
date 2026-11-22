@@ -1,0 +1,221 @@
+---
+title: "Connect a worker"
+description: "Run project commands on your own machine and select it in Octomerge."
+---
+
+A new account starts with no workers. A worker runs commands and retains project workbenches on your own Mac, Linux machine, or VPS. The machine needs Bun 1.3 or newer, Node.js 18 or newer with npm, and Git 2.42 or newer: Bun installs and runs the worker; Node.js runs its command's launcher, `otti` and the worker's terminals; npm installs its automatic updates; and Git keeps its workspace. Install the CLIs on the machine once with Bun, then sign in and start the worker:
+
+```bash
+bun install --global --backend=copyfile @octomerge/otti-worker@<version> @octomerge/otti@<version> --registry https://npm.octomerge.dev
+otti-worker auth
+otti-worker start --label my-laptop
+```
+
+**Add worker or remote**, at the bottom of a conversation's worker menu, and **Settings → Workers** show these commands with the exact version your environment runs in place of `<version>`, and its `--base-url`; copy them from there. Octomerge's CLIs come from its own npm registry, `npm.octomerge.dev`, which sends requests for their dependencies on to npmjs.com, so `--registry https://npm.octomerge.dev` is all Bun needs. The install needs no root access: it gives you the `otti-worker` and `otti` commands in Bun's directory for them, `~/.bun/bin` (`bun pm bin -g` shows it). `--backend=copyfile` makes Bun copy the package files: by default its global install hard-links them from its cache, and the worker refuses to run from hard-linked package files. `auth` alone is `auth login`. To start the worker again later, run the same `otti-worker start` command: it needs no registry. On a machine without Bun, `otti-worker` says how to install it.
+
+Bun's own installer puts `~/.bun/bin` on your `PATH`; a Bun from Homebrew or npm doesn't. If `otti-worker` isn't found after the install, or `command -v otti-worker` shows an older copy elsewhere (such as one npm installed), put that directory first on your `PATH`, for example with `export PATH="$HOME/.bun/bin:$PATH"` in `~/.zshrc` or `~/.bashrc`.
+
+To keep the worker running in the background and across reboots, run it as a service: [Run the worker as a service](/get-started/worker-service).
+
+The worker runs Git as `/usr/bin/git`, whatever else is on your `PATH`, so that is the Git that must be 2.42 or newer; `/usr/bin/git --version` shows it. Debian 13, Ubuntu 24.04 and newer releases ship one. Debian 12's Git 2.39 and Ubuntu 22.04's Git 2.34 are too old: a newer `git` package, such as the git-core PPA's on Ubuntu, replaces it at `/usr/bin/git`. On a Mac, `/usr/bin/git` is the Git of Xcode or its Command Line Tools; update them if it is older. A worker with an older Git still starts, says so in its log and synchronizes its workspace, but it cannot handle tracked files over 128 MiB or Git LFS pointers: `otti workspace status` names that limitation until `/usr/bin/git` is updated and the worker restarted.
+
+Approve the sign-in on the page that showed its command. The `auth` command that **Add worker or remote**, **Settings → Workers** and the onboarding show carries a one-time `--pair` token, so the code `otti-worker auth` prints appears there among two others: pick the one your terminal shows and approve ([Approving on the page](/cli/otti#approving-on-the-page)). Without `--pair`, approve the matching device code in the browser instead. A worker needs a sign-in with **Full access**, which `otti-worker auth` asks for: a worker holds your workspace and runs agents with all your credentials, so run one only on a machine you trust. Signing in authorizes Octomerge's commands on the machine: `otti-worker auth`, `otti auth login` and `otti-browser auth` save the same credential, shared by `otti`, the worker and the browser on that machine. A machine that already signed in with one of them is asked only to add Full access to that sign-in, and the other clients there keep working ([What a sign-in may do](/cli/otti#what-a-sign-in-may-do)). Signing in starts nothing; `otti-worker start` connects the worker, and `--label` names it. Use a separate label for each machine; do not copy a worker's retained data directory to another machine while it is connected. If a copy does run, the worker started last serves the label: the other one stops taking work, names in its log the host that took the label over, and waits for you to stop it (starting it again takes the label back). To move a label to a new machine, stop the old worker, then sign in on the new machine (if it has not) and start the worker there with the same label: it takes over the label. A worker that stops gives its label up, so the new one connects at once. One that did not stop (it crashed, or its machine lost its network or went away) keeps the label until 45 seconds after its last check-in: the new worker says so, waits, and connects then. While the old worker still runs, the new one keeps waiting: stop the old one, or give the new one another label. On a machine, `otti-worker auth status` (or `otti auth status`) shows whose sign-in it holds and what it allows, and `auth logout` on any of the three revokes it: the worker and the browser on that machine can then no longer connect until you sign in again. You can also revoke it under **Settings → CLI & API → Authorized devices**, which has the same effect, or sign the machine out with **Disconnect** in its [settings](#a-machines-settings).
+
+For stage or another installation, keep its credential in its own configuration file and name the same file and base URL in both commands:
+
+```bash
+otti-worker auth --config ~/.config/r5d/stage.json --base-url https://stage.octomerge.dev
+otti-worker start --config ~/.config/r5d/stage.json --base-url https://stage.octomerge.dev --label stage-laptop
+```
+
+`auth` saves the credential together with the server it was issued for. The worker connects to `--base-url`, else the `--config` file's server, else `R5D_BASE_URL`, else the default configuration's (`~/.config/r5d/r5dctl/config.json`). Its credential is `--token`, else the `--config` file's, else `R5D_TOKEN`, else the default configuration's. A file named with `--config` replaces the `R5D_*` variables entirely. A saved or inherited credential is only sent to the server it was issued for: when the chosen credential belongs to another server, the worker stops before contacting anything and names both servers. When a server refuses the credential, at start or later because it was revoked or lost Full access, the worker says where it came from and how to sign in again, and stops with exit code 78, so that a service manager does not start it again until you have.
+
+Before Octomerge moved to octomerge.dev, its address was `https://r5d.dev`. A machine signed in there keeps working as it is: r5d.dev still serves workers, browsers and `otti`, so there is no need to change it. Its sign-in is for r5d.dev: a command with `--base-url https://octomerge.dev` is refused there until you sign in again with that `--base-url`. A worker keeps its workspace per server address and label, so once moved it starts with a new copy of the workspace from the server. Before you move one, let it publish its changes (`otti workspace sync --worker <label>` does it at once), then stop it: what stays in the old directory isn't synchronized any more.
+
+An agent's shell carries `R5D_BASE_URL` and `R5D_TOKEN`, the conversation's own credential for the environment the agent runs in. That credential never connects a worker. To start a worker from an agent's shell, sign in with `--config` as above and pass the same `--config`.
+
+Open **Settings → Workers** to confirm the worker is connected. The **Add worker or remote** dialog follows along as you run its commands: it checks off the install once the sign-in arrives, and the sign-in once you approve it. When a worker with the name you chose connects, the dialog shows it as the worker menu will, asks what it is for (its [description](#describe-a-worker)), and **Use in this chat** selects it. Otherwise select it in the conversation's worker menu: your next message moves the conversation there ([Moving a chat to another worker](/platform/workspace-chats#moving-a-chat-to-another-worker)), also when its current worker is offline or was removed. Octomerge verifies the actual destination workbench and publishes source changes before completing a transfer; stop active commands before changing workers.
+
+### The worker menu
+
+The worker button in a conversation's composer opens the worker menu: the workers you can choose come first. A green dot means a worker is ready, so only other states are named: **Not responding** (amber; you can still choose it), **Update required** (red), and **Disconnected**, with when it was last seen (grey). Under a connected worker, one line shows how many of your agents run on it, its [command slots](#command-slots) in use (such as `0/16`), and how busy its CPU, memory and disk are, as small bars. A stat turns amber when it is used up or nearly so: every command slot in use, the CPU at 100 % or more (work waits for a CPU), memory or disk at least 90 % full. Point at the line for the exact numbers, and for what each icon stands for. When your account or the Octomerge server is at or near its limit of [agents running at once](#agents-running-at-once), a notice at the top of the menu says that a new agent would wait.
+
+At the bottom of the menu, **Add worker or remote** opens the dialog with the commands for another machine, and the cog opens **Settings → Workers**. With no worker yet, the menu offers the dialog. The **Shell** page's menu shows its terminals in use instead of command slots.
+
+Your [remotes](/get-started/add-remote) have a section of their own under your workers. A conversation can't run on a remote, so in a conversation's menu they are only listed, to show what agents can reach from it: point at a remote's stats to see how agents use it (they name it with the `worker` parameter of their tools). The section starts folded into one line, such as **Remotes · 2 connected · 1 offline**; open it and the menu remembers that on this device. A restricted remote has a **Restricted** badge. On the **Shell** page, which opens shells on remotes, you choose a remote as you choose a worker, and its section starts open.
+
+Every row has a cog, shown when you point at the row or reach it with the keyboard, and always on a touch screen. It opens that machine's [settings](#a-machines-settings) and doesn't select it.
+
+### A machine's settings
+
+The cog next to a worker or remote, in any worker menu or in **Settings → Workers**, opens its settings. Changes save as you make them; anything that disconnects something asks first. The name (label) of a machine can't change here: it is the name the machine starts with.
+
+- **What is it for?** Its [description](#describe-a-worker).
+- **Command slots.** How many agent commands it runs at once ([Command slots](#command-slots)).
+- **Access.** The sign-in the machine uses: its name, when you approved it and last used it, what it allows, and what else on the machine uses it, such as `otti` or a browser. **Lower access…** takes access away in place, after a preview of what that changes: what can't connect any more, and for a remote, how much of your secrets still reaches it; for a remote it lists its level and those below it, **Full access**, **With your secrets** and **Restricted** ([What a remote gets](/get-started/add-remote#what-a-remote-gets)). Settings never add access: a sign-in on the machine does. For a remote below Full access, **Give it your secrets** and **Give it Full access** show that sign-in's command, which you approve right there.
+- **Disconnect**, while it is connected: signs the machine out, so it disconnects at once and can't come back until someone signs in on it again. A worker's chats wait for it or move to another worker. When its sign-in serves more than this machine's worker or remote (`otti` on the machine, or a browser), you choose: disconnect only this one, which takes away just the access it needs while the rest stays signed in, or sign the whole machine out, which revokes the sign-in. A remote that shares the sign-in keeps your secrets; one with Full access drops to **With your secrets** ([What a remote gets](/get-started/add-remote#what-a-remote-gets)). A machine enrolled with a token is simply signed out.
+- **Forget**, once it is offline: takes it off your lists (the worker menus, **Settings → Workers**, and what agents see in `otti account workers list`) and signs it out, with the same choice. When its sign-in serves more than this machine, you can also choose **Keep the sign-in**, which only takes it off your lists and leaves the sign-in as it is. That choice is already selected when the others would sign something else out, as with a remote you started again on the same computer under a new label: both labels use one sign-in, so taking the old label's access away would sign out the new one too. Chats keep the history of what ran there; its registration and update history is deleted. `otti account workers forget gpu-box` does the same: by default it takes away only what gpu-box needed of its sign-in, `--sign-out-machine` signs the whole machine out, and `--keep-sign-in` leaves the sign-in as it is ([Account workers](/cli/otti#account-workers)). A machine you forget comes back only if it signs in and connects again; if you kept its sign-in, connecting again is enough.
+
+### Enroll a machine with a token
+
+A server or container that nobody signs in on, such as one a cloud template or a script starts, connects with a one-time **enrollment token** instead of `auth`. In **Settings → Workers → Enrollment tokens**, or in the onboarding's Host step, enter the machine's worker label, choose what it connects as, and create a token:
+
+- **Worker**: a worker with a workspace, with Full access for that worker only. Agents there run with your secrets, so use it only for a machine you trust.
+- **Remote**: a [remote](/get-started/add-remote) for agents' commands and file tools, which receives none of your secrets. Check **With your secrets** under it for a container or cloud remote that builds with your variables and git access: its commands then get your secrets, never your account ([What a remote gets](/get-started/add-remote#what-a-remote-gets)).
+
+The page shows the token only once, in the commands that use it: copy them before you leave the page. On the machine, install the CLIs as above, then run:
+
+```bash
+otti-worker auth --enroll r5de_… --base-url https://octomerge.dev
+otti-worker start --label gpu-server --base-url https://octomerge.dev
+```
+
+`auth --enroll` exchanges the token for the machine's sign-in, with no approval and no browser, and saves it as `auth` does. If it can't save the configuration file, it says so before it uses the token. A remote then starts with `start --remote --label gpu-server`. A token works once, within an hour of its creation, for its label only. Revoke a token that is still open in **Settings → Workers**. Once used, it is that machine's sign-in, listed under **Settings → CLI & API → Authorized devices** with the badge **Only gpu-server**; revoking it there disconnects the machine.
+
+The enrolled sign-in connects only that worker, as the token chose. It can't connect another label or a browser, use `otti`, approve sign-ins or create API keys, and no later `auth login` adds to it. To use `otti` or `otti-browser` on the same machine, sign them in with a configuration file of their own (`--config`, as above).
+
+On a machine enrolled for that label already, `auth --enroll` changes nothing and leaves the token unused, so a boot script or a container's entrypoint can run both commands on every start; keep `~/.config/r5d` on a volume, so that a new container for the same worker needs no new token. On a machine enrolled for another label, or signed in otherwise, it refuses, says which, and shows how to sign out first (`auth logout`) or enroll with a configuration file of its own. A token from another environment, such as stage, and an expired, used or revoked one, is refused with what to do. A worker from before enrollment tokens refuses `--enroll` and signs nothing in: install the version the page shows.
+
+For a new cloud server, **Settings → Workers** also writes a cloud-init or Terraform/OpenTofu file around the token, which sets the server up and connects it on its first boot: [Start a worker on a cloud server](/get-started/cloud-server).
+
+### Docker
+
+Run the worker as a user who can use Docker, so that agents can build and run containers on it. The worker starts without Docker too; agents then can't use containers there.
+
+- **Linux:** a member of the `docker` group: `sudo usermod -aG docker $USER`. The change applies from your next login, so start the worker from a new login (or a new service start; see [Run the worker as a service](/get-started/worker-service#docker)).
+- **macOS:** the user who runs Docker Desktop or OrbStack.
+
+Agents look for commands in `/usr/local/bin`, `/usr/bin` and `/bin` only, after Octomerge's own, so `docker` must be in one of them. Linux packages put it in `/usr/bin`. On macOS, Docker Desktop links it into `/usr/local/bin` when its command-line tools are installed for the system (**Settings → Advanced**, **System**), and OrbStack when you allow it to install its tools there; otherwise they are in `~/.docker/bin` or `~/.orbstack/bin`, where agents don't look, and terminals on the **Shell** page find them only through your `PATH`. Docker access amounts to root access on that machine: one more reason to run a worker only on a machine you trust.
+
+### Tools agents find
+
+**Settings → Workers** shows each worker's tools (open the worker): the versions of `git`, Node.js and Bun that agents' commands run, and whether Docker works there. A worker checks them where agents look, in `/usr/local/bin`, `/usr/bin` and `/bin`, as its own user, so a tool only in your `PATH`'s other directories, such as Homebrew's `/opt/homebrew/bin`, `~/.bun/bin` or `~/.nvm`, shows as **not found where agents look**: agents can't run it by name there. Link it into `/usr/local/bin` if agents need it (this may need `sudo`). On a worker whose shell is zsh, agents' commands also read `~/.zshenv`, which can add directories to their `PATH`; the check doesn't, so a tool found only that way shows as not found. For Docker, the worker runs `docker version`:
+
+- **Docker** and its version: it works, and agents can build and run containers on that worker.
+- **Docker found, but…**: `docker` is there, but this user can't use it. The reason says why: no permission on its socket (on Linux, add the user to the `docker` group and start the worker from a new login, see [Docker](#docker)), its daemon isn't running (start Docker Desktop or OrbStack, or the `docker` service), or it didn't answer within 5 seconds. Docker's own message is shown below it.
+- **Docker not found where agents look**: there is no `docker` there. A [worker in a container](/get-started/worker-container#no-docker-inside) has none.
+
+The worker checks when it starts and again after it reconnects, at most every five minutes; restart it to check again at once, for example after you installed a tool. A worker on a release from before tools were reported shows them as **Unknown**, which says nothing about what the machine has: it reports them once it updates. `otti --json account workers list` returns them too, as `identity.tools`.
+
+### Terminals
+
+Terminals (the **Shell** page and `otti shell`) work on macOS and on Linux with glibc 2.28 or newer (Debian 10, Ubuntu 20.04, RHEL 8 and newer), on x64 and arm64: the worker ships prebuilt binaries for them, so the machine needs no compiler. On musl systems such as Alpine Linux, and on other CPUs, the worker still connects and runs agent commands and file tools, but opens no terminals: it says so when it starts, and the **Shell** page shows the reason when you open one. An automatic update never takes terminals away from a worker that has them.
+
+Bun doesn't run `node-pty`'s install scripts (`bun pm untrusted` lists them): the worker needs neither, since `node-pty`, which opens the terminals, ships its binaries prebuilt.
+
+### Describe a worker
+
+Give each worker a one-line description of what it is for, such as "Mac with Xcode and the iOS simulator" or "GPU server for training runs". Agents read the descriptions of your connected workers when they decide where to run something or which worker to switch to, and every worker menu shows them. Set it when you start the worker:
+
+```bash
+otti-worker start --label my-laptop --description "MacBook with Xcode and Docker"
+```
+
+or edit it in the worker's [settings](#a-machines-settings) (the cog next to it in a worker menu or in **Settings → Workers**; it saves when you leave the field or press Enter), in the **Add worker or remote** dialog once the worker connects, or with `otti account workers set my-laptop --description "…"`. A description is at most 200 characters on one line; an empty one clears it. Octomerge keeps it for the worker's label, so later starts without `--description` keep it, and an edit in Settings stays when the worker restarts with the same `--description` (automatic updates included). Starting the worker with a different `--description` replaces it. Agents can change it too, with `otti` in their shell ([Agents use otti like you](/cli/otti#agents-use-otti-like-you)).
+
+### Command slots
+
+A worker runs a limited number of agent commands at once: its **command slots**, 16 unless you choose another number. Every conversation on the worker shares them; terminals (the **Shell** page and `otti shell`, `-c` commands included) have 8 slots of their own. A command that finds every slot in use is refused before it starts, without affecting what already runs; the agent is told the limit and starts it again later. Builds, servers and polling commands each hold a slot until they end, so a worker that runs several agents, each with sub-agents, fills its slots quickly.
+
+Sub-agents start on the worker of the conversation that starts them, so the slots also set how many sub-agents a conversation on the worker can have queued, running or waiting at once: as many as the worker has slots, less one for the conversation itself (15 with the default 16). A further sub-agent is refused before anything is created, and the agent starts it once one of the others finishes. Raising the slots lets each conversation on the worker have more sub-agents; lowering them below what a conversation already has stops none of them, and it starts more once enough have finished.
+
+Choose the number for each worker in its [settings](#a-machines-settings) (the cog next to it in a worker menu or in **Settings → Workers**), or with `otti account workers set my-laptop --command-slots 32`: from 1 to 100, or `default` for 16. The worker applies it within seconds. Commands that already run are not affected: with fewer slots than running commands, new commands are refused until enough of them have ended. A worker whose shells still belong to a keeper of an earlier release (see [Automatic updates](#automatic-updates)) applies the new number once that keeper is replaced, the next time the worker starts while nothing runs; Settings says so until then. Agents can change command slots too, with `otti` in their shell.
+
+Each worker reports the load of its machine beside its slots: the CPU load average and how many CPUs it may use, the memory in use (a container's own limit when it runs in one), and the space on the disk that holds its root. Memory in use is what the system cannot give to new work without swapping: on Linux, all but what the kernel reports available; on a Mac, its wired and compressed memory, the share that `memory_pressure` does not count as free, since macOS makes room for new work by dropping caches and compressing app memory. **Settings → Workers** and the conversation's worker menu show them with the slots in use (the menu as small bars, with the numbers when you point at them), so you can tell whether a machine has room for more commands before you raise its slots, and which worker has free slots before you send a prompt. `otti account workers list` shows them too, and agents read them there when they choose a worker.
+
+### Agents running at once
+
+Your account runs a limited number of agents at once, set by your plan, and an Octomerge server also limits how many run at once for all of its accounts together. Each worker in the conversation's worker menu shows how many of yours run on it, and when your limit or the server's is reached, or nearly so, the menu says so at its top; **Settings → Usage** shows your agents against your limit. When your limit or the server's is reached, new prompts, wakes and sub-agents wait in a queue and start by themselves, in turn, as runs end; nothing is refused. Another account at its limit never holds yours back. An agent that waits (for its sub-agents, a command or a wake) holds no run while it waits.
+
+### Choose a default worker
+
+In **Settings → Workers**, choose a **Default worker**. This is saved to your account and survives reloads. Change it there at any time, or select **No default worker** / **Clear default** to remove the preference.
+
+New chats preselect your default when it is eligible, even with several workers connected. The dialog of a [launch link](/platform/launch-links) prefers the link's worker, the project's launch default and your last choice there before your default. Choose another worker in the conversation's worker menu to override it for that session only; this does not change your saved default or move existing conversations. A pending send or launch keeps its original worker when you retry.
+
+If no default is set, or it is disconnected, removed, or still preparing its workspace, Octomerge selects the sole eligible worker or asks you to choose when several are available. With no eligible workers, connect one before sending.
+
+Octomerge records a connected worker's check-in at least every 20 seconds. A worker whose last recorded check-in is 35 seconds old is shown as **Not responding**, with when it was last seen. You can still select it; work sent to it waits until it responds or is disconnected. Once its last recorded check-in is 45 seconds old it is **Disconnected** and cannot be selected until it reconnects. The otti-browser status follows the same rules.
+
+The branch **Shell** page opens its shell on the worker chosen in the menu at the top of the page, and opening a shell on a worker prepares the branch's checkout there. Opened from a chat (**Expand** on the chat's **Shell** panel, or **Shell** in the chat's header where the window has no room for the panel; on a phone, in its menu), the page uses the chat's worker and shows the chat's shell, as the panel does. Otherwise it chooses by itself only when the choice is clear: the worker this browser tab used for the branch before, or your only worker. With several workers, also ones that aren't connected now, it opens no shell until you choose one; your default worker doesn't choose it. The **Git** page reads the server-synced checkout and does not require a worker selection.
+
+Keep the worker process running. A server deployment or temporary network outage reconnects its transport while local processes and source remain on the machine. Stopping or rebooting the worker itself is different: unfinished commands may need reconciliation on restart. Retained work is stored under `~/.local/share/r5d/personal` by default; `--root` (or `R5D_WORKER_ROOT`) chooses another private directory. Several workers may share a root. A root inside another worker's root, inside an agent's workspace (`R5D_ROOT`), or inside a `.r5d` directory (which marks the legacy worker's data) is refused.
+
+### Shell
+
+Terminals and agent commands run in the worker's shell: your login shell (`$SHELL`, or the one your account is set up with) when it is bash or zsh. A login shell that is plain `sh` is replaced by bash where bash is installed, and one that is neither bash, zsh nor sh (fish, for example) or that is not installed falls back to bash, then sh. To choose another, start the worker with `--shell`, naming bash, zsh or sh or the path to one:
+
+```bash
+otti-worker start --label my-laptop --shell zsh
+otti-worker start --label my-laptop --shell /opt/homebrew/bin/bash
+```
+
+A terminal starts the shell as a terminal window does, so it reads your startup files (`~/.zshrc` or `~/.bashrc`). Commands, including `otti shell -c` and the agent's, run with `-c` and skip them. **Settings → Workers** shows each worker's shell and why it was chosen (open the worker, then its version details), and agents are told which shell each connected worker uses. A single terminal or agent command can ask for bash, zsh or sh instead (`otti shell --shell bash`); a shell the worker does not have falls back to bash, then sh.
+
+### Changes made while the worker was stopped
+
+While a worker is stopped, its checkouts can change: files edited directly on the machine, or a branch another worker published in the meantime. `--initial-sync` says what the start does with those changes:
+
+- `--initial-sync merge`, the default, merges them with the server's copy. When both sides changed the same lines, or lines next to each other (Git counts those as a conflict too), a conflict remediation opens on the worker, as for a running worker. A worker that has never synchronized this workspace makes its first copy instead: a file already on its disk that differs from the server's copy stops it for a review, so neither version is lost.
+- `--initial-sync reset` deletes every project checkout on the worker and copies it afresh from the server, like `rm -rf` followed by a fresh copy. Everything in the checkouts that the server does not have is deleted: unpublished changes, and ignored files such as `node_modules/` and `.env`. No backup is kept. Reinstall dependencies and recreate local configuration such as `.env` afterwards. The worker resets its checkouts one at a time while it starts synchronizing, so changes made in a checkout while the worker was stopped may still reach your other workers before the reset reaches that checkout, and are then kept rather than deleted. Where they overlap changes made meanwhile, a conflict remediation opens on the worker instead: the reset still replaces the checkout with the server's copy, but the worker's other chats stay paused until the remediation finishes.
+
+```bash
+otti-worker start --label my-laptop --initial-sync reset
+```
+
+The reset applies to that start only: later starts, including automatic update restarts, merge. The account workspace around the checkouts is not reset. `otti workspace reset` resets the checkouts of a running worker the same way.
+
+If a reset stops part way, for example because the server could not be reached or a file could not be deleted, the checkout shows as blocked in `otti workspace status` (`reset_unfinished`, with what stopped it). Nothing needs to be done unless the message names a cause to fix: the worker finishes the reset the next time the checkout is used or its history is synchronized, and when it starts.
+
+### The worker's log
+
+`otti-worker start` writes its log to its output: the terminal it runs in, a file you send it to, or where a [service](/get-started/worker-service) puts it. The worker, its [life vest](#the-life-vest) and its keeper, which runs the shells and terminals, write to it, and each line starts with the time it was written, in UTC:
+
+```text
+2026-11-07T17:00:02.413Z [otti-worker] workspace snapshots: the workspace synchronizes as snapshots now (snapshot 67; case-insensitive file system)
+2026-11-07T17:00:02.968Z [r5d-keeper 55529] ready (release 0.0.196)
+```
+
+A log that records the time of each line itself gets the lines without it, so that no line shows two: systemd's journal (`journalctl` shows the times) and a container's log (`docker logs -t`, `kubectl logs --timestamps`). To decide yourself, set `R5D_LOG_TIMESTAMPS` in the worker's environment: `on` adds the time to every line, wherever the log goes, and `off` to none. A keeper an earlier release started writes its lines without the time until the worker replaces it ([Automatic updates](#automatic-updates)).
+
+## The life vest
+
+Agents' commands run as the worker's own user, so a command can stop or end the worker together with everything else of that user, by mistake or not: `kill -STOP -1`, `pkill -u`, `killall bun` (on Ubuntu, even `kill -STOP -1234` run from a program means `-1`). A stopped worker never exits, so nothing would notice it. `otti-worker start` therefore runs the worker under a *life vest*: the process you start watches the worker, which it runs as a second process, and brings it back without anyone logging in to the machine:
+
+- **Stopped.** Every 2 seconds it checks. When it finds the worker or its keeper (which runs the shells and terminals) stopped, it resumes them, along with every other process of the user that the same stop froze, such as agents' dev servers. A process that was already stopped before stays stopped. On Linux the life vest also resumes itself, so a stop of every process of the user doesn't keep it stopped; on macOS it can't, and such a stop freezes your whole session anyway.
+- **Exited.** A worker that exits by itself (a crash, a kill, a failed start) is started again after 2 seconds, then after longer waits, up to 5 minutes, while it keeps failing.
+- **Hung.** A worker whose heartbeat stops for 2 minutes, or whose connection loop stops for 10, is stopped (killed when it doesn't stop within 2 more minutes) and started again. A worker killed outright leaves its workspace lock, and its next start moves the lock aside, since the process that held it no longer runs ([Run the worker as a service](/get-started/worker-service)); a remote has no such lock.
+
+It updates with the worker. **Ctrl+C**, `SIGTERM` or a closed terminal stop both, and a refused sign-in ends both with exit code 78. A workspace lock that an older release left, which can't say whether its worker still runs, is asked about in the terminal you started the worker from: move it aside and start, or exit (exit code 79). On Linux, **Ctrl+Z** doesn't keep the worker suspended: the life vest resumes it, in the background. Nothing on the machine survives a `kill -9` of every process of its user; to have the worker come back from that too, run it as a [service](/get-started/worker-service), which restarts it. **Settings → Workers** shows in a worker's details what its life vest last did and when, for example "Resumed it after a signal stopped it (17 processes) · 2 minutes ago".
+
+## Automatic updates
+
+A worker updates itself; `otti-worker start` needs no extra option. While connected, it checks for the environment's selected release once a minute and downloads it in the background. Once the update is ready, new shells and workspace operations wait while the worker finishes the workspace operations already running, then it restarts into the new release. Running shells, terminals and long-running servers keep running and move to the updated worker; agents pause at their next step and continue after the switch. **Settings → Workers** shows download status, pending updates and failed attempts, and the outcome of the worker's last update: the version it updated to, or the version it failed to install and how many times.
+
+The worker's shells and terminals belong to a separate keeper process, which Settings lists with its own version. A keeper started by an earlier release keeps running across updates so that your shells survive; the worker replaces it the next time it starts while nothing runs, and Settings notes the older keeper until then.
+
+The worker and its bundled `otti` switch together. Credentials, labels and workspace files stay in place. The worker briefly disconnects and reconnects, and failed installations leave the current version running and retry after five minutes. Automatic restarts do not repeat an initial `--initial-sync reset`.
+
+Updates use npm and private version directories beneath the worker's state root; they do not need root access or replace globally installed commands. They download from the npm registry your environment names (`npm.octomerge.dev` for octomerge.dev). Your terminal's separate global `otti` installation remains managed by your package manager. The installed `otti-worker` stays the worker's launcher: on later starts, including when a service starts it, it runs the updated version. Installing another version with Bun replaces the launcher, and the next start runs that version. A worker installed under the earlier names, `r5d-worker` and `r5dctl`, keeps those commands and updates as before; to switch, install `@octomerge/otti-worker` and `@octomerge/otti` as above and run `otti-worker start` with the same options, which keeps the worker's sign-in, workspace and identity.
+
+To turn automatic updates off, start the worker once with `--no-auto-update`, using the same label, environment and root:
+
+```bash
+otti-worker start --label my-laptop --no-auto-update
+```
+
+The choice is saved locally for that worker, so later starts without the option keep updates off. Start it once with `--auto-update` to turn them back on. A worker installed before automatic updates were on by default needs one more manual upgrade (**Update CLIs** below, then a restart); from then on it updates itself, unless you turned updates off with `--no-auto-update`.
+
+## Updating and syncing from Settings
+
+In **Settings → Workers**, a connected worker's **⋯** menu can also update its CLIs on demand with **Update CLIs**, and publish its workspace with **Sync workspace**. Both run on the server and the worker rather than in the browser. Their progress stays visible after a reload and in other tabs, and a Sync shows each worktree as it is published. An installation can take a few minutes. When it finishes, stop active commands and restart `otti-worker` to use the new version. **Update CLIs** installs the CLIs on the worker's machine the way the `otti-worker` on the worker's `PATH` was installed: with Bun's global install (`bun install --global --backend=copyfile`) when it is Bun's, else with `npm install -g`, so no second copy ends up where your `PATH` doesn't look. The manual update command Settings shows follows the same rule. Update CLIs is offered for a worker that runs those installed CLIs; for a worker started another way, the worker's details show the install command, after which you start the installed `otti-worker`. A worker with automatic updates applies updates by itself, so Settings shows its update status instead of **Update CLIs**. If the worker disconnects while an update or sync runs, Settings says so, and the work continues when the worker reconnects. A failed installation or a version mismatch shows what to do next, such as running the manual update command on that machine.
+
+## Update available and Update required
+
+An older worker usually keeps working: Settings marks it **Update available** and it updates when it can. Occasionally a release of Octomerge needs a newer worker than the one a machine runs. Settings then marks that worker **Update required**, says why, and shows the step that resolves it: an automatic update already in progress, **Update CLIs**, or a command to run on that machine. Until it updates, the worker takes no new shells, terminals or workspace operations, and conversations cannot switch to it; the worker menu in a conversation shows it as unavailable with the reason. Shells and servers it already runs keep running, you can still read its files and output, stop its processes, and update it. When the reason is its keeper (the process that owns its shells), let those shells finish and restart the worker. A browser can be marked **Update required** the same way; it then takes no new actions until you install the shown version and restart it.
+
+When a release of Octomerge needs newer workers, connected workers and browsers with automatic updates download the new version ahead of time and switch to it together with Octomerge itself. During the switch, new shells and workspace operations wait (usually under a minute; agents pause at their next step and continue by themselves), while running shells and servers keep running. A browser restarts after its current action and keeps Chrome open. A worker that was offline, or that has automatic updates turned off, is marked **Update required** when it reconnects. To update it by hand on that machine: stop it, install the version Settings shows (Settings also shows the command), and run `otti-worker start` again with the same options. Use the same steps with `otti-browser` for a browser.
+
+Account environment entries and secret files are delivered only to commands for your account. Updates apply to newly started commands. Revoke the machine's sign-in under **Settings → CLI & API → Authorized devices** when it should no longer connect; that signs out its worker, its browser and `otti` together.
+
+You provide and pay for the worker machine and your model access. Configure your own model provider in **Settings → Models**, with the models you want to use, before sending a prompt.

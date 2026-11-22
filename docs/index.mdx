@@ -1,0 +1,83 @@
+---
+title: "Welcome to Octomerge"
+description: "An agent workspace using your machines and model access."
+---
+
+Octomerge brings project files, conversations, and agent tools into one workspace. Sign in with Google, Apple or GitHub, configure your own model provider, and connect otti-worker on a machine or VPS you control. New accounts start with no workers. Choose your worker and a project, then ask the agent for a useful change.
+
+<Columns cols={2}>
+  <Card title="Conversations and files" icon="message" href="/platform/workspace-chats">Continue from durable conversation history and synchronized project work.</Card>
+  <Card title="Use otti" icon="terminal" href="/cli/otti">Prompt an agent, follow its history, or run a workspace command from your terminal.</Card>
+  <Card title="Connect a worker" icon="server" href="/get-started/add-worker">Connect your own machine and choose where project commands run.</Card>
+  <Card title="Persistence" icon="database" href="/platform/persistence">Understand which data is durable and how interrupted work is reconciled.</Card>
+</Columns>
+
+### Signing in
+
+On octomerge.dev you sign in with Google, Apple or GitHub, through Octomerge's sign-in service, auth.octomerge.dev, and you can add the others to your account later in **Settings → Sign-in methods**. Signing in with GitHub gives Octomerge no access to your repositories: that is a separate grant in **Settings → Git**. auth.octomerge.dev keeps you signed in for seven days, so other apps that sign in with it don't ask again in that browser. An installation with other ways to sign in lists them on its first page, and **Sign in** then asks which one. See [Sign in](/get-started/sign-in).
+
+**Log out** (in the sidebar's **More** tab and in **Settings → Sign-in sessions**) also ends that sign-in in the browser. **Sign out all devices** does the same and also ends your Octomerge sessions in every other browser. Neither touches your `otti` credentials or API keys, nor your sign-in at Google, Apple or GitHub itself.
+
+### Signing up
+
+The first time you sign in, Octomerge asks you to choose your **handle**, how people find you on Octomerge: in team invitations and on team pages. It's suggested from your GitHub username or your email (from your name when Apple hides your email), and you'll be able to change it later. On octomerge.dev it also asks how you heard about Octomerge; answering is optional. Your name and picture follow the way you signed up each time you sign in with it (signing in with another method you added leaves them alone); your email stays the one you signed up with. On octomerge.dev a new account then joins the **waitlist**: expect an invite by email soon, then sign in to start using Octomerge. A team invitation lets you in right away.
+
+### Set up your workspace
+
+After you sign in, Octomerge opens **Set up your workspace**: a checklist of six steps, one open at a time. **Models** adds a model connection, as **Settings → Models** does. **Host** chooses where agents run: a machine you have, such as your laptop, a home server or a VPS; or, where your installation offers them, a new [cloud server](/get-started/cloud-server) from a template or a [container](/get-started/worker-container). For those two, Octomerge makes a one-time enrollment token for the worker's label and writes the file around it in the page; the token stays only in that page, so a reload forgets it and you can make a new one. A container usually can't run Docker, so agents on it can't build or run containers. **Connect** shows the commands that install `otti-worker`, sign the machine in and start it, and the worker appears there when it connects, with the git, Node.js and Bun its agents' commands find and whether they can use Docker; for a cloud server or container, it waits for that label instead, shows whether its token was used, and **Use another machine instead** shows the commands. **Access** (optional) gives every agent the same access in place: the GitHub repository grant (where your installation offers GitHub), account SSH keys for git hosts, [deploy targets](/platform/deploy-targets) (a sign-in to Vercel or Cloudflare returns to this step), secrets and variables, and your account `AGENTS.md`. **Browser** (recommended) shows the commands for otti-browser on your Mac, and skipping it asks first. **Ready** sums up what you set up and starts your first task, in one of your projects, a GitHub repository (where your installation offers GitHub), an SSH remote or a new project without a remote, with a model, an effort and a worker; starting without a browser asks once more (unless you skipped **Browser**), and the chat opens once the task is sent. Its **Follow from anywhere** shows a QR code that opens Octomerge on your phone and the `otti` commands to follow and steer a task from a terminal.
+
+Without an account `AGENTS.md`, Access drafts one from your setup: your workers and which of them can build and run containers, your models with their efforts, the browser, git access, the variables deploy targets add and the ones you added, by name and never by value, and three working agreements you can change. **What this AGENTS.md covers** lists each topic as included, connected but not in the file (**Add it** adds it), or not included. **Fresh draft** writes the editor's text again from your setup, **Preview** shows it as **Settings → Instructions** does and **Markdown** edits it as text. Nothing is written until you choose **Save**, which never overwrites a change made meanwhile in another tab or by an agent; an existing `AGENTS.md` is shown as it is.
+
+A step is done when what it sets up exists, so steps you have already set up show as done, and the checklist resumes where you left it. It opens after sign-in while you have no model connection, worker or chat, until you choose **Close setup**. Reopen it any time from **More → Set up your workspace** in the sidebar.
+
+Open **Settings** for your model connections, account instructions, secrets, MCP servers, workers, browser, notifications, privacy, Git and CLI access. Its first page shows each area's state, such as your default model or how many workers are ready. On octomerge.dev, **Settings → Privacy** turns **Help improve Octomerge** on or off: the records of your account's setup steps and use that show Octomerge where people get stuck, described in the [Privacy Policy](https://octomerge.dev/privacy). Turning it off deletes them. Production and stage have separate sessions, workspaces, storage, and credentials.
+
+### AI connections
+
+**Settings → Models** lists all your AI connections, each with its type (Anthropic, OpenAI, AWS Bedrock or OpenAI-compatible) and its models. Turn on the switch beside a connection to **enable** it: enabled connections are the model providers your chats and agents can choose. One of them is the **default**, marked and listed first, with its **Default model** below it: a chat runs on that model until you choose another, and so does a session an agent or `otti` starts without naming one. Choose another connection in the list (or **Make default** in its **⋯** menu), then confirm **Make default** to change the account default; it runs on its first model until you choose its default model. The default is always enabled, and the previous default stays enabled. **Add connection** asks for the type, then its name and credentials, then its models. A connection you add is enabled, and one you add while none is the default, such as your first, becomes the default. If you delete the default, another enabled connection becomes the default; without one, chats have no model until you add one, and the composer links to **Settings → Models**. A project or branch can have a different default connection and default model, chosen in its own settings.
+
+### Models and efforts
+
+A connection offers models by their IDs, such as `claude-opus-4-6`. A model can accept reasoning **efforts**, how much it thinks before it answers: **None**, **Minimal**, **Low**, **Medium**, **High**, **XHigh** and **Max**, as far as the provider takes them (Anthropic and AWS Bedrock Low to Max, OpenAI None to XHigh, an OpenAI-compatible endpoint any of them). Each message runs on one model at one of its efforts, and Octomerge sends that effort with every request. A model without efforts, such as an ID that pins one (`claude-opus-5-5-max`), takes none.
+
+In a connection's editor each model has its **Model ID**, an optional display name and description, the **efforts it accepts** and its **default effort**, its context window and an optional output limit; **Advanced: provider options** holds the provider's own options as JSON. Write the description for agents: say what the model is for, for example "Long investigations and design work". Agents read it in `otti get models`, and the model pickers show it. Descriptions are optional and at most 500 characters. New Anthropic, OpenAI and AWS Bedrock connections start with a few models you can change.
+
+For an OpenAI-compatible connection, **Load models** lists the models its endpoint offers (`/models` under its base URL, read with its headers). Choose the ones to add: when the endpoint lists a model's efforts, they are filled in with its default effort; otherwise tick them after adding.
+
+You choose a model and effort for each message in the composer, and for a launch link or a project's launch defaults. A connection saved before models had efforts used five tiers; when your installation updated, models that differed only by effort became one model with those efforts, each tier's description became its model's, and the model of the **Max** tier became the first. If a connection's models can't be read, it shows **Models need saving**: open its editor and add its models again. Octomerge doesn't run models of its own: a new conversation is named after the start of its first message until its agent names it ([chat names](/platform/workspace-chats#chat-names)).
+
+### Choosing a model and effort in a chat
+
+The model button at the bottom of the composer shows the model and effort your next message runs on, for example **Claude Opus 4.6 · High**. It opens the models of your enabled connections, grouped by connection, each with the efforts it takes and its description; your default model is marked **default**. Below the list, choose the effort; the model's default effort has a dot, and a model without efforts says so. Switching models keeps the effort when the new model takes it, and otherwise uses the new model's default. Your choice applies from the next message you send, and the agent keeps working on it until another message changes it.
+
+A model shows its maker's mark next to its name when its display name, its ID or its connection's name says who makes it, with one of these words:
+
+- Claude's mark, for Anthropic: claude, opus, sonnet or haiku
+- OpenAI's: gpt, codex or o3
+- Qwen's: qwen or qwq
+- DeepSeek's: deepseek
+- Kimi's, for Moonshot AI: kimi or moonshot
+- Z.ai's, for Zhipu's GLM: glm
+- Mistral's: mistral, mixtral, codestral, devstral or magistral
+- Meta's, for Llama: llama
+- Gemini's, for Google: gemini or gemma
+
+Every model of an Anthropic or OpenAI API key shows its company's mark. A model an endpoint serves under an ID of its own gets its mark from a display name that says it, set in **Settings → Models**.
+
+You can change the model, effort and worker while the agent is running. These are choices for your **next message**, not changes to work already in progress. Choose a worker and confirm **Use for next message**; the workspace moves only when that message is delivered. When the agent isn't running (it finished its turn, asked you something or was stopped), choosing another worker asks **Move this chat to …?**: sending your next message moves the chat there first, also when its current worker is offline or was removed, and the agent continues there ([Moving a chat to another worker](/platform/workspace-chats#moving-a-chat-to-another-worker)). **Queue** waits until the current turn finishes, while **Steer** uses the next model request after tool results. Each queued card shows its saved provider, model, effort and worker, and later composer changes do not change messages already queued. If the target worker disconnects or needs conflict resolution, the transfer waits rather than running on another worker. A move refused for a moment, because storage or the target worker is busy, is tried again for about a minute; if it still cannot go ahead, the chat stops with a notice saying what refused it and that nothing moved: **Resume** a minute later to try the move again.
+
+What you send outside the composer chooses its model and worker too: your answers to the agent's questions, the environment values it asks for, dismissing either request, a message an MCP App view sends for you and **Resume** each show the model and worker chips, which start as the composer's choice and change only that one reply, message or resume.
+
+A chat shows the model and effort of its last message. A new chat starts with the model and effort of the last message you sent from a composer, or with your default model at its default effort when you have not sent one yet or its connection is no longer enabled.
+
+Agents choose models too. Ask, for example, "ask GPT to review the solution": the agent looks up your models with `otti get models`, each with its connection, efforts and description, and can start a subagent on any of them. A subagent it starts without naming a model runs on the conversation's own model and effort. `otti session start` and `session prompt` take `--model <id>` and `--effort <effort>` (see [otti](/cli/otti#models)).
+
+### OpenAI-compatible connection headers
+
+In **Settings → Models**, **Edit** in an OpenAI-compatible connection's **⋯** menu shows saved header names with hidden values. Untouched headers keep their saved values. Type a replacement to change just that header, or choose **Keep saved value** to undo a replacement. To rename a saved header, remove it and add the new name and value. **Clear all headers** explicitly removes the entire set when you save; **Reset header changes** discards header edits.
+
+Choose **Reveal** beside a saved header to view its raw value. Only the signed-in connection owner can reveal values in the browser; CLI, API-key and agent credentials cannot. A reveal fetches only that header, does not mark it as edited, and is not included in normal settings responses. **Hide** masks it again; revealed values also hide after 30 seconds, when the tab becomes hidden, or when you close the editor. Typing into a revealed value is an explicit replacement.
+
+Every agent request to an OpenAI-compatible connection also carries `X-Conversation-Id` (the chat's session ID) and `X-Conversation-Request-Id` (the agent step it belongs to), so a server or proxy you run can attribute token usage and prompt-cache statistics to a chat. Servers may ignore them; Anthropic, OpenAI and AWS Bedrock connections do not receive them.
+
+Model tests use your unsaved header changes without storing them. **Save** applies edits without requiring a successful model request, so you can also remove authentication headers. New connections are validated before creation. **Clone** copies saved headers on the server without downloading their values unless you choose **Reveal**; edits in the clone form affect only the new connection.

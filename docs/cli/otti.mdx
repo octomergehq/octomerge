@@ -1,0 +1,531 @@
+---
+title: "Use otti"
+description: "Manage projects, conversations, account settings, and workspace commands from your terminal."
+---
+
+Install the client with Bun from Octomerge's npm registry, `npm.octomerge.dev`, and sign in:
+
+```bash
+bun install --global --backend=copyfile @octomerge/otti@<version> --registry https://npm.octomerge.dev
+otti auth login
+```
+
+**Settings → CLI & API** shows the install command with your environment's version in place of `<version>`, and the sign-in with its `--base-url`. It needs Bun 1.3 or newer to install and Node.js 18 or newer to run. Bun puts the command in `~/.bun/bin` (`bun pm bin -g` shows it); if `otti` isn't found afterwards, add that directory to your `PATH`, as [Connect a worker](/get-started/add-worker) says. A machine that runs a worker already has `otti`: the worker's install includes it.
+
+Octomerge may stop accepting changes from an `otti` that is too old for it. Such an `otti` can still read, but every command that changes something is refused with `otti X is older than Y, the oldest release this server accepts changes from … (r5dctl_update_required)`, before anything happens. A worker with automatic updates brings the `otti` its agents use up to date by itself, usually within a minute or two of a new Octomerge release; update an `otti` you installed yourself with the install command above, or a worker without automatic updates with **Update CLIs** in its menu on **Settings → Workers**, then restart that worker. A CLI installed under its earlier name, `r5dctl`, keeps that command; to switch, install `@octomerge/otti` as above, and `otti` uses the same sign-in and configuration.
+
+Approve the matching device code in the browser. The CLI saves its credential in `~/.config/r5d/r5dctl/config.json`, readable only by your account. One sign-in per machine is enough: `otti auth login`, `otti-worker auth` and `otti-browser auth` (`auth` alone is their `auth login`) save the same credential, which `otti`, the worker (`otti-worker start`) and the browser (`otti-browser start`) on that machine share. Device credentials stay valid until revoked or signed out. `auth logout` revokes the credential, which signs out the worker and the browser that used it too; **Settings → CLI & API → Authorized devices** does the same.
+
+### What a sign-in may do
+
+When you approve a sign-in, you choose what its credential may do:
+
+| Access | Allows |
+| --- | --- |
+| **Browser** | connecting `otti-browser`, so agents can use this machine's Chrome |
+| **Remote** | connecting this machine as a [remote](/get-started/add-remote) (`otti-worker start --remote`), which gets none of your secrets |
+| **Remote**, with your secrets | the same, and the remote's commands get your secrets (environment variables and secret files, your projects' variables, git access), never your account: `otti` doesn't work there ([What a remote gets](/get-started/add-remote#what-a-remote-gets)) |
+| **otti**, read only | reading your projects, conversations and settings with `otti` or a script |
+| **otti** | reading and changing everything `otti` reaches, such as starting agents on any of your workers |
+| **Full access** | all of the above, connecting a worker with a workspace, approving sign-ins and managing API keys |
+
+Each client asks for what it needs, and the approval page preselects it: `otti auth login` asks for otti (`--read-only` for read only), `otti-browser auth login` for Browser, `otti-worker auth login` for Full access, `otti-worker auth login --remote` for Remote and `otti-worker auth login --remote --secrets` for Remote with your secrets. `--access` on any of them asks for something else, for example `--access browser,r5dctl` or `--access remote:secrets`. Grant a machine only what it needs: a laptop that only runs the browser needs Browser, a machine you are debugging needs Remote, and a build box that needs your variables and git access needs Remote with your secrets. A server whose database doesn't take Remote with your secrets yet doesn't offer it, and refuses a sign-in that asks for it, saying so.
+
+A later `auth login` on the same machine adds access to its credential instead of replacing it, so the other clients there keep working: on a machine signed in for the browser, `otti-worker auth login` asks you to add Full access. When the machine's sign-in already allows what the client needs, `auth login` says so and asks nothing. `auth status` shows what the sign-in allows. **Settings → CLI & API** shows each device's access and what uses it, and **Change access** takes access away; adding access is always a sign-in on the machine.
+
+A client whose sign-in lacks the access it needs says which and how to add it, for example: `This machine's sign-in can't connect a worker with a workspace: it allows Browser. Run otti-worker auth login there and choose Full access`.
+
+### Approving on the page
+
+**Settings → Workers**, **Settings → Browser** and the onboarding's Connect and Browser steps show the sign-in command with `--pair <token>`: a one-time token that pairs the sign-in with your account and with the access the command asks for (Full access for `otti-worker auth`, Remote for `otti-worker auth --remote`, Remote with your secrets for `otti-worker auth --remote --secrets`, Browser for `otti-browser auth`). Run it, and its code appears on that page among two others. Pick the one your terminal shows, check what the sign-in may do, and approve. Picking another code refuses the sign-in: run the page's new command then. Only your account sees a paired sign-in, on that page and on the approval page alike.
+
+A paired command works once, for 15 minutes, and the page shows a new one once it is spent or expired. Running the same command twice refuses both sign-ins, in case a copy of it ran somewhere else. With `--pair`, `auth login` always asks, so that the page sees it: on a machine whose sign-in of yours already allows that access, approving changes nothing. A machine signed in to another Octomerge account is refused until you run `auth logout` there. Every client takes `--pair`. An older one refuses the page's command, as an unknown auth command (`r5dp_…`) or an unknown flag, so install the release the page shows first. Without `--pair`, you approve the code on the approval page instead.
+
+For another installation, include its URL when signing in. Give it its own configuration file to keep your production credential:
+
+```bash
+otti --config ~/.config/r5d/stage.json --base-url https://stage.octomerge.dev auth login
+otti --config ~/.config/r5d/stage.json auth status
+```
+
+Production and stage have separate credentials and data. `--no-open` skips opening a local browser; `--no-qr` prints the approval link and code without a QR image.
+
+### Server and credential
+
+`auth login` saves the credential together with the server it was issued for. Each command connects to `--base-url`, else the `--config` file's server, else `R5D_BASE_URL`, else the default configuration's (`~/.config/r5d/r5dctl/config.json`), else https://octomerge.dev. Its credential is `--token` or `--api-key`, else the `--config` file's, else `R5D_TOKEN` or `R5D_API_KEY`, else the default configuration's. A file named with `--config` replaces the `R5D_*` variables entirely, so it resolves the same in every shell.
+
+`--config` takes any file you can write, in `/tmp` too. Only your account can read the file. A directory the command creates for the file is private to you, and one that exists already, such as `/tmp` or your home directory, keeps its permissions. `auth login`, `otti-worker auth --enroll` and `auth api-key create --save` check that they can save the file before anything is issued: a file they can't save fails before a code is shown, the enrollment token is used or the key is created. If saving still fails afterwards, for example because the disk filled up, the command revokes the credential it was just issued and says so. If that fails too, it names the credential to revoke in **Settings → CLI & API**.
+
+A saved or inherited credential is only sent to the server it was issued for: `R5D_TOKEN` and `R5D_API_KEY` to `R5D_BASE_URL` (https://octomerge.dev when unset), a configuration file's to its own server. When the chosen credential belongs to another server, otti stops before sending anything and names both servers; pass `--token`, or a `--config` file signed in to that server. `auth login` sends no credential, so it always works. `auth status` shows the server and where the credential came from, and `auth logout` clears a configuration file only when its credential was the one revoked.
+
+A configuration saved before Octomerge moved to octomerge.dev names its earlier address, `https://r5d.dev`, and keeps working: r5d.dev still serves `otti`, workers and browsers. Signing in again with `--base-url https://octomerge.dev` replaces that sign-in, which the machine's worker and browser share too: a worker or browser moved to octomerge.dev starts afresh, so let the worker publish its changes and stop it first ([Connect a worker](/get-started/add-worker)).
+
+## Scheduled sessions
+
+```bash
+otti -p my-project session start --worker laptop --worktree main --delay 10m "Review CI failures"
+otti -p my-project session start --worker laptop --worktree main --model claude-opus-5-5 --effort high --schedule 2030-06-01T09:00:00Z "Prepare release notes"
+otti -p my-project session start --worker laptop --worktree main --effort low --cron "0 9 * * 1-5" --timezone Europe/Stockholm "Review open issues"
+otti --json schedule list
+otti --json -p my-project schedule list --worker laptop
+otti schedule remove SCHEDULE_ID
+```
+
+Choose exactly one of `--delay`, `--schedule`, or `--cron`. Delays are positive integers with `s`, `m`, `h`, or `d` units (1 second–365 days). One-off timestamps must include `Z` or an explicit UTC offset; the server validates the absolute timestamp and requires it to be in the future. Cron uses five numeric fields (minute, hour, day, month, weekday), with wildcards, lists, ranges and steps; names, macros and seconds fields are unsupported. When both day-of-month and weekday are restricted, either matching day satisfies the schedule (OR); a wildcard-bearing day field uses AND. `--timezone` is only for cron and accepts an IANA zone; the default is UTC. A spring-forward missing local minute is skipped; a fall-back repeated minute runs only once.
+
+Scheduling requires an existing `--worktree`; `--new-worktree`, `--follow`/`--watch`/`-f`, and `--tools` are rejected. Explicit `--parent-session` is supported. Use `--request-id <UUID>` on session start to retain a creation identity. After an uncertain response, retry the identical command with the same request ID; start and schedule errors print the generated ID if you did not supply one. Do not generate a new ID for that retry. The creation process can exit immediately: schedules are persisted and dispatched by the server, not your terminal.
+
+Offline workers and transient pre-launch failures retry approximately every minute, for at most 24 hours from the occurrence's due time. Revoked/replaced worker enrollments, deleted/replaced worktrees, lost project access, or a deleted explicit parent permanently fail the schedule; recreate it with a valid target. Prompts are limited to 120 KB of JSON-encoded text. Missed cron occurrences within the 24-hour retry window coalesce into one run, followed by the next future occurrence. A stale cron occurrence older than 24 hours is skipped without launching a session, and advances to the next future occurrence. While its prior session is unfinished (working, queued, stopping, recovering, paused, or waiting for a timer, an event, its model provider or your answer), an occurrence is skipped, not queued; its last result names that session and what it is doing, for example `skipped_overlap: previous session SESSION_ID is waiting for your answer`. A prior session that completed or was stopped doesn't hold the schedule back, even when notices reach it after its Stop, such as a command that exits or a subagent that finishes: they wait for that session's next run, which starts only when you continue it. Each successful occurrence creates a fresh session using the saved prompt, worker and worktree, on the model and effort the schedule saved. A schedule created with `--model` saves that model (resolved when you create it, on its provider); without one, each occurrence runs on the branch's default model at that time, at the `--effort` you gave when that model takes it. `completed` on a one-off schedule means the prompt was accepted, not that its task succeeded: inspect the linked session for execution errors, including an unavailable worker checkout.
+
+A list spans your projects and workers unless `-p` or `--worker` narrows it, also in an agent's shell. Removing a schedule blocks unclaimed occurrences. An already-claimed dispatch may still complete, and removal never stops an already-launched session. Use `session stop` separately if needed. `--json` returns the complete schedule, including next/last run times, last result and last session ID.
+
+### View scheduled jobs in the web app
+
+Open **Scheduled jobs** from the sidebar's **More** tab, or visit `/schedules` on your installation. The read-only viewer lists your persisted schedules across projects and refreshes every five seconds while open. Filter by project or worker; filter choices come from saved schedules, not just currently connected workers.
+
+Select a job to inspect its saved prompt, schedule ID, creation time, project, worker, worktree, model and effort (or the branch's default), timing/timezone, status and next run. Its last result, last run time and linked session show what happened at dispatch. `launched` (or `completed` for a one-off) means the prompt was accepted, **not that the task finished successfully**. Open the linked session to check execution and results; a session ID during a retry can refer to an empty session before prompt acceptance. A job whose latest occurrence was skipped shows **Skipped**; when the previous launch's session held it back, its details say what that session was doing, and the linked session is that one.
+
+Offline workers and removed schedules remain visible while their project is still owned by your account. Removing a schedule retains its record; it does not stop a session. The viewer cannot create, edit, remove, run or stop jobs—use the CLI commands above for scheduling and removal, and `session stop` to stop execution.
+
+The web viewer uses your signed-in account on that installation, with the same ownership checks as account-authenticated `schedule list`. It does not need a CLI token or a live worker connection. A project or worker filter only narrows the list; it never grants additional access.
+
+## Projects and branches
+
+```bash
+otti get projects
+otti describe project my-project
+otti -p my-project get branches
+otti -p my-project get sessions --branch main
+otti -p my-project create branch fix/tests \
+  --source worktree:main --working-tree carry
+```
+
+`-p` accepts a project ID or the project's slug (its name within your account, as `otti get projects` lists it). `--working-tree carry` starts the branch at the commit Octomerge last synchronized from the source checkout, with the source checkout's synchronized uncommitted changes still uncommitted, like `git switch -c`; `clean` starts from that commit. A worker synchronizes a change within seconds of making it. When an agent runs the command in its shell, the branch starts from the source as the agent's worker has it at that moment, unpushed commits and an edit made a second before included. A branch from the remote (`--source remote:BRANCH`) always starts clean, and `--working-tree` defaults to `clean` for it. The command answers once the branch is ready and prints it, or says why it was refused, for example when the name is taken or the source branch has never synchronized. Every worker receives the new branch's files and sets up its checkout by itself; `otti -p PROJECT -b BRANCH checkout path` from a conversation on a worker sets it up there at once.
+
+`otti -p PROJECT get branches --remote` lists the branches of the project's remote that Octomerge has no branch of, someone else's or yours from another machine: each with its last commit's date and author, its pull request (`review=#409 open`, on GitHub) and its first message line, newest first. By default only those not merged (commits the primary branch doesn't have, and no pull request merged or closed at their last commit); `--all` lists every one, `--name TEXT` those whose name contains it. Octomerge reads the remote when asked, unless it did in the last three minutes (`--refresh` reads it again), and the command waits up to a minute for the read. A read-only sign-in (`auth login --read-only`) can't ask for a read: the command then prints the list as last read, and says so. A branch name that holds a control or bidirectional character, which anyone who can push to the remote can give a branch, is printed quoted with that character escaped (`"fix/c1\u0085x"`), so it can't act on your terminal or reorder the line; `--json` keeps it as it is. Continue one with `create branch NAME --source remote:NAME`: under the same name, Pull and Push go to the same branch on the remote. See [Branches only on the remote](/platform/git-remotes#branches-only-on-the-remote).
+
+When something that clears by itself stands in the way, such as a source that has not synchronized yet, `--no-wait` refuses at once and `--wait` waits until it clears. Without either, your own credential is refused at once and an agent waits. A wait that takes longer than the request prints what it waits for and keeps waiting until the branch is created; Ctrl-C cancels it. The same `--wait` and `--no-wait` work with `delete branch` and `delete project` (a conversation still running), `session start --new-worktree` and `session set-worker`.
+
+With your own credential, the operation waits only while the command waits for it: the command reads its state again and again, and when nothing has read it for a minute (the command was stopped, or could not reach Octomerge all that time), Octomerge cancels it and none of it runs. The command then says so. An agent's wait goes on without it: the operation runs as soon as what it waits for changes, and the agent receives its outcome as a wake.
+
+When an answer gets lost on the way (a network error, a gateway timeout, Octomerge switching to a new release while the operation runs), the command asks again with the same request, which continues the same operation and answers its outcome; it never runs twice, and stderr says that it is asking again. A refusal ends the command at once with a non-zero exit and its reason, followed by its code in parentheses, for example `Branch feat already exists (branch_exists)`. That includes an answer that nothing was changed, for example when storage did not answer (`storage_unavailable`) or Octomerge switched releases before the operation started (`server_handover`): run the command again later.
+
+`otti -p PROJECT delete branch BRANCH --confirm` deletes the branch, its sessions and its history on Octomerge's server (commits no other branch holds are gone from Octomerge; what you pushed stays on your remote) and answers once it is deleted, or says why it was refused (for example a running conversation, unless you pass `--wait`). Without `--confirm` it only shows what would be deleted. If a step of the deletion fails, the branch shows **deletion failed** and running the command again finishes it. A branch whose conversation started running again after its deletion began is reported as still being deleted: the deletion finishes by itself once that conversation stops. The same holds for `delete project`. When Octomerge switches to a new release in the middle of a deletion, the command says what it already recorded; the deletion finishes there, and running the command again shows the outcome.
+
+`otti -p PROJECT archive branch BRANCH --confirm` archives a branch you no longer work on: its checkout leaves every worker and its files stop counting toward your workspace limits, while Octomerge keeps its files, commits and conversations (read-only) until you unarchive it with `otti -p PROJECT unarchive branch BRANCH`. Without `--confirm` it previews what would happen. `get branches --archived` lists archived branches, `get branches --idle 30d` the candidates, and `otti -p PROJECT -b BRANCH files ls` and `files cat PATH` read a branch's files as Octomerge holds them, archived or live, without a worker. `archive project` and `unarchive project` do the same for a whole project. See [Archiving branches and projects](/platform/archiving).
+
+### Branch names
+
+Branch names follow GitHub's rules: any name Git accepts for a branch (no spaces, no `~ ^ : ? * [ \`, no `..`, no part that starts with `.` or ends with `.lock`, not starting with `-` or ending with `.` or `/`), at most 244 bytes, not 40 or 64 hexadecimal digits, and not starting with `refs/`. So `release/2.4.0`, `feat#12`, `Fix-Login` and `café/übung` are all fine. Because every worker, Macs included, keeps a checkout of every branch, Octomerge also refuses a few names GitHub takes: a name that differs from another branch of the project only in upper and lower case or in how its accented letters are encoded, also as part of a longer name (`Feature` beside `feature`, `Fix` beside `fix/login`), a name not in Unicode's composed form (NFC), a name with a code point Unicode doesn't assign (macOS can't store it in a file name), `@`, and names with control characters or characters that reverse the direction of text. The same rules apply to `session start --new-worktree` and to the branches agents create with `start_subagent`. Octomerge refuses any other name before it creates anything, with an error that says what is wrong with the name. Branches you already have keep working under their names, also names an earlier version of Octomerge accepted. On an Octomerge installation whose storage hasn't been upgraded for these names yet, Octomerge says so when you name a new branch outside the earlier rule (ASCII letters, digits, `-` and `_` in `/`-separated segments that each start with a letter or digit, at most 150 characters), and creates nothing; such names work once its storage is upgraded. A name may hold characters your shell treats specially, such as `#`, `$`, `(` or `'`: write it as one shell word, in single quotes with each `'` in the name written as `'\''`, as Octomerge does in the commands it shows (`otti -p PROJECT unarchive branch 'feat#12'`).
+
+## Find sessions and follow their children
+
+```bash
+# Only top-level sessions, including sessions with no children:
+otti get sessions my-project
+otti -p my-project get sessions --branch main
+otti get sessions my-project --mine   # without teammates' sessions
+# Equivalent long form:
+otti projects sessions list my-project --branch main
+
+# One generation per call; repeat at any depth:
+otti sessions children PARENT_SESSION_ID
+otti sessions children CHILD_SESSION_ID
+otti sessions children GRANDCHILD_SESSION_ID
+
+# Read any selected session without starting or resuming it:
+otti conversation SESSION_ID --last
+otti conversation overview SESSION_ID --skeleton --tail 12
+otti conversation SESSION_ID
+otti conversation inspect-node SESSION_ID NODE_ID
+otti conversation inspect-work SESSION_ID WORK_ID --full
+```
+
+`conversation SESSION_ID --last` prints only the agent's latest message with text, such as its final report, and nothing else on stdout, so you can pipe it. If the conversation did not end with that message (the message calls tools or something followed it), the session was stopped (a stopped reply can be cut off), or the session is still running, a note on stderr says so and gives the session status. `--json` returns the message with its node ID, timestamp and `final` flag, together with the session status.
+
+`conversation SESSION_ID` prints the conversation as the agent's model sees it: its latest model request on the current branch of the conversation (after a rewind or an edit, the branch you moved to), then what came after that request under **After the request**: the agent's response, tool results and your later messages. A header names the request's mode, model, effort and thinking setting. Earlier history that the agent's context was reset from appears as the summary it was given. By default the output is readable text: tool calls and results are rendered as text, and messages without text are left out. `--raw` prints every message part as JSON instead, `--tools` adds the tool definitions the request sent and `--system` its system prompt; `--raw --tools --system` is the exact request. This can be long; for a summary use `conversation overview`.
+
+`conversation`, `conversation overview`, `inspect-node`, `inspect-work` and `sessions children` also read a session a [team](/platform/teams#reading-it-with-otti) shares with you, read-only, by its ID, and `conversation -f` follows it live. A line on stderr first says whose session it is and the team you read it through, with its team page (`shared` in `--json`). `conversation SESSION_ID` shows it as its agent's model saw it, `--tools` and `--system` included. Nothing reaches its owner's workers: `inspect-work` gives a command's outcome only when the conversation records it (`outcome_unavailable=owner_worker` otherwise) and `--full` shows no output from the worker.
+
+Project lists contain only sessions without a recorded parent. Filtering by branch never promotes a child whose parent is on another branch, deleted, or inaccessible. Child lists follow the actual parent relationship across worktrees, branches and projects you own; they ignore the current `-p`, `-b`, and `-s` context. Deleted/internal sessions are excluded from both lists and counts.
+
+A project's list also has the top-level sessions your [teams](/platform/teams#teammates-sessions-in-your-projects) share with you on the project's repository, as your sidebar shows them: their `PROJECT` is `@<owner>/<their project>`, such as `@alex/storefront`, and `--json` gives their `owner` and `shared`, the team you read them through and their team page (their `projectId` is null). A teammate's subagent shared without the session that started it is listed at the top level. `--mine` leaves teammates' sessions out. `sessions children` of a teammate's session lists its subagents your team reads. A project without a remote lists only your own sessions.
+
+Both lists use these stable columns: `ID`, `PROJECT`, `BRANCH`, `STATUS`, `UPDATED_AT`, `CHILDREN`, `NAME`. `CHILDREN` counts **direct**, visible children across all authorized projects and branches, not all descendants. Workspace children show `(workspace)` as their project and `-` as their branch. Unnamed sessions show `(unnamed)`; an empty name shows `""`.
+
+“Most recent” means the session's **own catalog `updatedAt`**, newest first, with session ID ascending to break ties. `UPDATED_AT` is an ISO 8601 UTC timestamp such as `2026-09-04T09:00:00.000Z`. It is not a liveness check or the latest descendant activity. `STATUS` is the current execution state; JSON also includes `lastActivityAt` (last runtime update, falling back to the catalog timestamp).
+
+Output is plain text with no ANSI formatting, borders, truncation, or inserted line wrapping. In the default space-aligned table, spaces inside fields are escaped as `\x20`, so each record has seven whitespace-separated fields. Use `--tsv` to keep ordinary spaces within tab-separated fields. Both forms escape literal backslashes as `\\`, tabs as `\t`, newlines as `\n`, carriage returns as `\r`, and other control/whitespace characters as `\uXXXX`. Use `--json` for original, lossless field values, including `parentSessionId`, `projectId`, and numeric `childCount`.
+
+```bash
+# Roots with children, using the default table's fixed field positions:
+otti get sessions my-project --no-headers | awk '$6 > 0 { print $1 }'
+
+# Names containing spaces stay in field 7:
+otti sessions children PARENT_SESSION_ID --tsv --no-headers \
+  | awk -F '\t' '$6 > 0 { print $1, $7 }'
+otti get sessions my-project --tsv --no-headers | grep -F 'Fix sync'
+otti --json sessions children PARENT_SESSION_ID
+```
+
+`--no-headers` suppresses the header. Empty lists succeed, print a notice on stderr, and leave stdout with just the header (or nothing with `--no-headers`). JSON empty results are `[]` without the notice. A missing, deleted, internal, or inaccessible parent fails with `Conversation not found`, rather than pretending it has no children. Listing and the conversation-reading commands above are read-only: they never wake or resume an agent and do not require its worker to be online.
+
+## Search conversations
+
+```bash
+# Which session asked for this branch, ran this command or hit this error?
+otti search issue/my-org/406-seed-contract-verify
+otti search "repository_too_large" --kind error
+otti -p my-project -b main search "create branch" --since 7d
+otti search c4799752a   # a commit hash, a session, run or operation ID, or the start of one
+
+# The next page, and the hit itself:
+otti search "create branch" --cursor TOKEN
+otti conversation inspect-node SESSION_ID NODE_ID
+```
+
+`otti search` searches every conversation you can read: your own, in every project and branch and in your account workspace, and the sessions a team shares with you (`--mine` leaves those out). It finds three kinds of entries, newest first:
+
+- **message**: your prompts, other agents' messages to a session, and agents' replies;
+- **tool**: a tool call, its tool's name and input (a shell command, a file path, `start_subagent`'s branch and prompt), each capped at a few thousand characters;
+- **error**: a tool's error and a model provider's failure.
+
+Tool outputs (shell output, files and pages agents read) are not searched. Before text enters the search index, Octomerge replaces the values of your account and project environment variables and anything shaped like a credential (tokens, keys, passwords in URLs and assignments) with `[redacted]`. Deleted conversations are never found, and their entries are erased with them. A conversation whose history moved to [slower storage](/platform/persistence) stays searchable.
+
+Every word must match, in any order, and the last word of each matches as a prefix: `fail` finds `failed`, and the first characters of a commit hash or an ID find it. Punctuation separates words, so a path, a URL, a UUID, a run ID or a branch name matches as a phrase, and so do words in quotes (`"create branch"`). Use `--query TEXT` for a text that starts with a dash.
+
+Narrow a search with `-p PROJECT` (a slug or ID), `-b BRANCH`, `-s SESSION_ID`, `--kind message,tool,error`, and `--since` and `--until`, which take an ISO time or a duration back from now (`30m`, `12h`, `7d`, `2w`). `--limit` sets the hits per page (20, at most 100); when there are more, the output ends with the command for the next page, which reads the same time window as the first page even when it took a duration. The first page also lists sessions whose name holds every word, or whose ID you searched for.
+
+Each hit names when it happened, what it is (a message and who wrote it, a tool call or an error, with the tool), its session's project, branch, name and ID, a snippet, and how to open it: `otti conversation inspect-node SESSION_ID NODE_ID`, also for a session a team shares with you, whose hits name its owner and team page too. `--json` returns the hits with their `sessionId`, `nodeId`, `kind`, `snippet` and the match's offsets in it, and `nextCursor`. A conversation's newest messages reach the search index within seconds; when some of yours have not yet, the output says how many.
+
+Records also say who asked for them: `describe branch` names who created the branch (an agent session, you, or a launch link), `describe branch-deletion` and `describe branch` who asked to delete it (`describe branch-deletion` also once the deletion completed), and `workspace status` who started each worker operation in progress and each worker's latest sync.
+
+## Start and continue a conversation
+
+```bash
+otti -p my-project session start \
+  --worker WORKER_LABEL --worktree main \
+  "Investigate the failing tests"
+
+otti session status SESSION_ID
+otti -s SESSION_ID conversation -f
+
+otti session prompt --delivery steer SESSION_ID \
+  "Also check the related API call"
+otti session stop SESSION_ID
+otti session resume SESSION_ID --confirm
+```
+
+Choose an available worker in **Settings → Workers**. Without `--model`, `session start` runs on the project and branch's default model at its default effort; to choose a model and effort, see [models](#models).
+
+`session prompt` reaches the session on the worker it runs on now, which `session status` shows, and never moves it, whether you or an agent sends it. The output names that worker. Two flags name a worker:
+
+- `--worker WORKER_LABEL` only checks. When the session runs on another worker, the prompt is refused with the worker it runs on, and nothing is delivered or moved. Use it when the message only makes sense on that worker, for example a check of a macOS path.
+- `--move-to WORKER_LABEL` moves an idle or stopped session to that worker first, as `session set-worker` does, then delivers the prompt. The output says the session moved, and so does the message the session's agent reads, so the agent knows its commands now run on the new worker.
+
+A session without a worker takes a prompt only with `--move-to`. A session whose worker is offline, or no longer one of your workers, takes none without `--move-to`: the refusal says which of the two it is, when an offline worker was last seen, and that a running or waiting session has to be stopped (`session stop`) before it moves. `answer-questions`, `answer-env-request` and `dismiss-request` take `--worker` and `--move-to` the same way. A command prompting its own session (`$R5D_SESSION_ID`) is how a long command wakes the agent that started it once the agent's turn has ended, since a command's exit wakes its agent only while the agent waits.
+
+`session prompt --sender TITLE` adds a display title of at most 200 characters to the message; a longer one is refused before anything is sent. The title never stands for the sender: the recipient sees the sending session, or you, as the credential proves. In an agent's shell the title defaults to the agent's session name, shortened to 200 characters when the name is longer.
+
+`session prompt --kind KIND` says what the message asks of the session it goes to. Agents give their messages to other sessions a kind, and you can too:
+
+- `direction`: it changes or adds to the recipient's work: an instruction, a decision, someone's answer passed on, or a change to or the end of an earlier direction.
+- `question`: it needs the recipient's answer or decision.
+- `answer`: it answers a question the recipient asked in a message.
+- `report`: progress, results or findings.
+- `notification`: an acknowledgement, or a notice that something is ready or has started; it asks nothing new of the recipient.
+
+A message that mixes them takes the kind that asks the most. The recipient's agent reads the kind with the sender above the message, and the chat labels the message with it, such as **Agent report**. The kind also decides what a subagent's agent keeps word for word when its context is compacted: the latest directions, questions and answers from the agent that started it, while reports are shortened and notifications left out ([long conversations](/platform/workspace-chats#long-conversations)). A message without `--kind` counts as before: one from the agent that started the subagent as a direction, any other agent's as a report. Your own messages are always kept, whatever their kind.
+
+```bash
+r5dctl session prompt --kind direction SESSION_ID "Use the staging database from now on"
+```
+
+```bash
+otti session prompt --prompt-file - SESSION_ID <<'EOF'
+Remove exactly those: `docker rm -f -v <name>`, plus the directory in $TMPDIR.
+EOF
+otti session prompt --prompt-file message.md SESSION_ID
+```
+
+A prompt you give as an argument passes through your shell first. Inside double quotes the shell expands `$VAR`, backticks and `$(…)`, and when a substitution fails it prints an error but still runs otti with that part of the message missing: the session gets a different message than you wrote, and the command succeeds. Give a message with code, commands, paths, `$` or backticks on stdin instead. `--prompt-file -`, or `-` in place of the prompt, reads it from stdin, and a heredoc with a quoted delimiter (`<<'EOF'`) passes it exactly as written. `--prompt-file PATH` reads it from a file. `session start` takes the same options, and `answer-questions -a1 -`, `answer-env-request --context -` and `dismiss-request --note -` read their text from stdin; a command reads at most one text from stdin. The text must be UTF-8 without NUL characters. Leading and trailing whitespace is dropped, and an empty text, such as the closed stdin of an agent's command, is refused before anything is sent.
+
+A prompt to an existing session, and `answer-questions`, `answer-env-request` or `dismiss-request`, keeps the session's current model and effort unless you pass `--model` or `--effort`. Passing them switches the session's model or effort from that message on, like choosing them in the composer; `--effort` alone keeps the model. When one agent sends another a progress report or coordination message, leave `--model` and `--effort` out so the recipient keeps the model its user selected.
+
+Add `--parent-session PARENT_SESSION_ID` to start the session as a subagent of an existing conversation in any of your projects. It is grouped under that conversation, which is notified when the run finishes. A conversation can have as many queued, running, or waiting subagents as its worker has [command slots](/get-started/add-worker#command-slots), less one: 15 with the default 16.
+
+```bash
+otti session detach SESSION_ID
+```
+
+`session detach` detaches a subagent from the conversation that started it, for example when you take a side task over and talk to the subagent directly. It becomes a conversation of its own: its turns and questions no longer wake or reach the conversation that started it, its questions go only to you, and session lists show it as a top-level session. The conversation that started it is told once if it is working at that moment, so it stops waiting for the subagent; one that is idle isn't woken, and one that detaches its own subagent isn't told. The subagent keeps its conversation, branch, worker and its own subagents, and its agent is told that it works with you directly now. A team that could read it only as part of the conversation that started it keeps reading it, through a share of its own. An agent can detach its own subagents the same way. A detached subagent can't be attached again; detaching it again changes nothing, and a session that was never a subagent is refused. The chat menu's **Detach from parent…** does the same ([subagents](/platform/workspace-chats#order-paging-and-subagents)).
+
+`session resume SESSION_ID --confirm` continues retained work on the session's existing worker without sending another prompt or changing its model. The resume itself adds no message to the conversation; if the agent had already finished its last answer, there is nothing to continue and the resume is applied without running the model. Use it only when the user has authorized resuming that session; agents must have that authorization before passing `--confirm`. It preserves queued messages, and uncertain tool outcomes still require reconciliation. A resume neither waits for nor answers the agent's open questions and requests: they stay open until you reply, or another agent answers or dismisses them with `answer-questions`, `answer-env-request` or `dismiss-request` ([when the agent asks you something](/platform/workspace-chats#when-the-agent-asks-you-something)).
+
+`answer-questions` replies to the session's newest open questions and `answer-env-request` to its newest open environment request; with none open, they are refused. An agent can reply with them too, from its shell: its answer counts like yours, and the asking agent and the chat say which agent answered, not you. A message sent with `session prompt` never answers a request.
+
+```bash
+otti -s SESSION_ID dismiss-request --note "Answered in my message: use Postgres"
+otti -s SESSION_ID dismiss-request --tool-call-id TOOL_CALL_ID
+```
+
+`dismiss-request` closes an open question or environment request without answering it, like **Dismiss** in the chat: the one whose call `--tool-call-id` names (`conversation overview` shows each request's tool call ID), else the newest open one; with none open, it is refused. The asking agent is told that the request was dismissed, followed by your `--note`, so the note can say where the answer is. An agent can dismiss a request too, for example one a subagent asked that no longer matters; the asking agent and the chat say which agent dismissed it, not you. An agent dismisses its own questions without `otti`, and an MCP server's request is answered only in the chat. The output names the request it dismissed.
+
+The result includes a resume request ID. `queued` means execution has not started; `applied` means the runner consumed that resume, and `blocked` means it is waiting on recovery or a later Stop. Check `session status SESSION_ID` for current run status. After a lost response, retry with the same `--request-id REQUEST_ID` and `--confirm` to avoid waking the session twice. The CLI prints the request ID on failure as well.
+
+`session status SESSION_ID` is read-only and works for UI-created sessions, CLI children, and workspace remediation sessions. It reports the execution phase, last recorded transcript/model/tool activity, durable waits and wake conditions, recovery blockers, queued inputs, and child activity. Project session listings preserve waiting and paused states. Status and transcript inspection do not wake the agent or require its worker to be connected.
+
+A `model_failure` blocker means the model could not answer and automatic retries have stopped. Transient connectivity, provider and rate-limit failures get at most three attempts; recovery after the first failure is limited to five minutes. Credential, billing and rejected-request errors stop without repeated attempts. Fix the connection or model in Settings, then explicitly resume. Child notices, new prompts and **Force now** do not clear this stop. Existing work and queued messages are retained, and the session's processes keep running: after the resume the agent can poll, write to or stop them, also when the resume moves the chat to another worker (while the worker they run on is connected), and you can stop them with `otti ps stop`. When email is configured, the conversation's owner is emailed about the stop (for a subagent, only if task email notification was turned on for it); the **When a chat stops unexpectedly** setting under **Settings → Notifications** turns these emails off. User-owned provider/configuration errors do not email administrators; platform-bug alerts are separate.
+
+A `maintenance` blocker, with execution phase `paused_for_maintenance` (or `pausing_for_maintenance` while the current step finishes), means planned maintenance holds the session. The blocker names when it started and its expected end, and the app shows a maintenance banner. The agent pauses after its current step and continues by itself when maintenance ends; queued messages stay queued and running processes keep running. Nothing needs resuming, and Stop still works.
+
+A `workspace_remediation` blocker means the workspace on the session's worker is under remediation (a sync conflict, large content or an unsafe file), and names the incident and its remediation session. A session the remediation holds has status `paused`: its agent paused after a step for it, or it has a queued message or a wait whose timer ran out. It continues by itself when the remediation ends; nothing needs resuming. The worker's other sessions keep their status, and the blocker says what the remediation means for them: a running agent pauses after its current step, and a waiting one stays `waiting` with its wait, but nothing wakes it until the remediation ends. A finished, stopped or idle session shows no blocker; `otti workspace status` shows the worker's remediation.
+
+The generation state describes one execution of the agent. `completed` does **not** mean the assigned task or milestone passed: status reports `taskOutcome: "unknown"`. Verify the task result separately. Queued input is accepted work, not proof that execution has started. A durable wait resumes on its timer or an interrupting input, including a child-completion notification; a queued prompt does not interrupt it. The wait is part of the agent's turn, so a queued prompt waits until that whole turn ends, and the agent's resumed waits tell it how many queued messages wait and who sent them. Status names the sender of each queued message.
+
+Use `otti --json session status SESSION_ID` for structured fields. Status returns metadata for up to 50 queued inputs and 50 children, with totals and explicit truncation flags. Prompt bodies and tool outputs remain in the transcript. The last progress timestamp means the last persisted event, not a liveness guarantee. Use the node ID with `conversation inspect-node` for details. The same overview, node and work inspection commands below support workspace remediation sessions you own.
+
+`conversation -f` prints the transcript and follows new output. Ctrl+C detaches; `session stop` stops the agent. `--delivery steer` (the default) delivers guidance during the current turn and wakes an agent suspended in a wait, `queue` defers work until that whole turn ends, and `force` interrupts the current round. A wait does not end a turn: an agent coordinating subagents can spend hours in waits, and a queued message reaches it only after all of that work. Use `queue` only for a follow-up meant for after the turn; a subagent's report or question to the chat that started it uses the default. The first line of the output is the delivery: how the message reaches the agent and, for a queued one, until when. The lines after it say whether `--move-to` moved the session, name the message, and give the worker it was delivered on and the agent's state; `session status` shows the rest. Accepted input may remain queued or blocked while earlier work needs attention.
+
+Repeating a prompt with a new request ID creates new input. `session prompt`, `answer-questions`, `answer-env-request` and `dismiss-request` accept `--request-id <UUID>`, and a call whose outcome is unknown (no answer, or a server error) prints the ID it used. After such an uncertain response, check `session status` or the conversation, then retry only the identical command with that same `--request-id`: the input is accepted at most once, and the same ID with a different payload is rejected. A refusal, such as invalid input or a session that does not exist, prints only its reason: nothing was accepted. If the input was accepted but the session status could not be read afterwards, the command still succeeds and prints the delivery receipt with `status unavailable` and the reason. The input was delivered; do not send it again, and check `session status` later. `session start` and `session resume` report an unavailable status the same way.
+
+```bash
+otti conversation overview SESSION_ID
+otti conversation inspect-node SESSION_ID NODE_ID
+otti conversation inspect-work SESSION_ID WORK_ID --full
+otti conversation fork SESSION_ID NODE_ID --name "Try another approach"
+```
+
+Forking or moving the conversation head changes the transcript. It does not undo file changes. Interrupted operations with an uncertain result need reconciliation of their original operation; a repeated prompt cannot establish whether an earlier effect completed.
+
+`conversation move-head` is refused while the agent runs or is about to start (stop the session first) and while messages wait in the chat's queue (remove them first); the refusal says which. Notices that reached a stopped session, such as a command exiting or a subagent finishing, don't hold it back: they stay queued, and the agent reads them first when it continues from the new head.
+
+A fork starts on the worker of the chat it forks. In an agent's shell, `session stop`, `conversation move-head` and `conversation fork` reach any of your chats, on any worker, as they do from your terminal.
+
+### Compact a conversation's context
+
+```bash
+otti session compact SESSION_ID
+otti session compact SESSION_ID --prompt "Keep the review findings; the deploy work is done"
+otti session compact SESSION_ID --prompt-file - <<'EOF'
+Keep the decisions about `--delivery`; drop the old naming rounds.
+EOF
+```
+
+`session compact` compacts a session's context as a full context window does: the session's model writes a summary of the conversation, and the session continues in a fresh context that starts from it ([long conversations](/platform/workspace-chats#long-conversations)). `--prompt` or `--prompt-file` (`-` for stdin) adds optional instructions for the summary, at most 2,000 characters, which the model reads as yours. The chat shows who asked and the instructions, then **Compacting context**, and the fresh context says that it was reset on request. What happens depends on the session, and the first line of the output says which:
+
+- **Compaction requested**: a working session compacts after its current tool round and works on from the fresh context. A stopped session (stopped with Stop, stopped by a model failure, or waiting for you to confirm running interrupted tool calls again) compacts when you continue it, before its next model step.
+- **Compaction started**: an idle session compacts right away and stays idle, without running the agent; your next message continues from the fresh context. A session suspended in a wait compacts right away and keeps waiting. Neither counts as a finished run: a subagent doesn't report it to the agent that started it, and **Notify me on completion** doesn't email you about it.
+- **Already compacting**: the session is compacting its context already. Nothing was recorded, the instructions weren't used, and the command exits with code 3.
+
+A session paused for recovery, a passive one, and one whose context has nothing to compact since it started or was last compacted are refused with the reason, and the command exits with code 1. If the summary can't be written, the chat stops as for a full context, and **Resume** tries again. You and your agents can compact any of your sessions; an agent can compact its own session (`$R5D_SESSION_ID`), which compacts once the command's tool call returns. After an uncertain response, retry the identical command with the `--request-id` it printed: a retry answers what the first request did. In the app, the chat menu's **Compact context…** does the same ([long conversations](/platform/workspace-chats#long-conversations)).
+
+## Models
+
+```bash
+otti get models
+otti -p my-project -b main get models
+otti -p my-project session start \
+  --worker WORKER_LABEL --worktree main --model gpt-6-astra --effort high \
+  "Review the solution on the review branch"
+otti session prompt --effort max SESSION_ID "Think this one through"
+otti --json describe session SESSION_ID
+```
+
+`get models` lists every model your enabled providers offer, the connections enabled in **Settings → Models** ([AI connections](/#ai-connections)): each model's ID, its provider, the efforts it accepts with its default effort marked `*`, and its description. With `-p` (and `-b`), the model marked `(default)` is the one that project and branch's sessions run on without `--model`; without them, your account's. `--json` adds each model's provider type, connection ID, display name and context window.
+
+`--model ID` on `session start` (including scheduled starts), `session prompt`, `answer-questions`, `answer-env-request` and `dismiss-request` names one of those models, and `--effort EFFORT` one of its efforts (`none`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max`); without `--effort` the model runs at its default effort. A model ID is looked up on your default provider first, then on the one enabled provider that offers it. When two providers offer the same ID, add `--provider NAME`: a provider's name in any case, the start of a name when only one provider begins with it, or a connection ID. A model no provider offers, or an effort the model does not take, is refused with the choices. A schedule shows the provider it resolved the model to. `describe session` shows the model, effort and provider a session runs on now.
+
+Agents look the models up the same way: `start_subagent` takes `model`, `effort` and `provider`, and a subagent started without a model runs on its conversation's model and effort.
+
+## Skills and MCP servers
+
+```bash
+otti get skills                          # in an agent's shell: its chat's skills; elsewhere, your account's
+otti -s SESSION_ID get skills            # a chat's skills
+otti -p my-project -b main get skills    # what a chat on that branch can use
+otti -s SESSION_ID get mcp-servers       # a chat's MCP servers, with their status and instructions
+otti -p my-project get mcp-servers       # the MCP servers of a project's chats
+```
+
+`get skills` lists the [skills](/platform/agent-instructions-and-skills) a chat can use: your account's and those of its project branch, project skills first, each with its scope, name, description and the path of its `SKILL.md`. Agents run it before a task instead of receiving a list of skills with every request. A skill whose front matter is invalid is listed apart, with why. `-s` names the chat (an agent's shell uses its own); `-p` and `-b` name a branch instead (`-p` alone, the project's primary branch); with neither, outside an agent's shell, only your account's skills are listed.
+
+`get mcp-servers` lists the [MCP servers](/get-started/mcp-servers) a chat can use: each server's name and the slug agents call its tools by, its status as last checked, the tools it offers (and those left out), whether the chat turned it off, and the server's own instructions, marked as third-party text. It is what the agent's own MCP lookup lists, for you and for scripts. It reads what Octomerge last fetched from each server and never contacts one. `-s` names the chat (an agent's shell uses its own) and `-p` a project's chats; with neither, outside an agent's shell, it lists the servers of your account workspace's chats.
+
+## Coordination claims
+
+```bash
+otti -s SESSION_ID session claim db-migration --ttl 20m --note "Applying migration 0142"
+otti -s SESSION_ID session claim db-migration --release
+otti -s SESSION_ID session claims
+```
+
+A claim gives one session a named topic on a project branch until it releases the claim or the claim expires; other sessions that try to take it are told who holds it. Agents use claims to take turns, for example before writing in another branch's checkout (`checkout`). See [Coordination claims](/platform/claims) for expiry, `--notify`, the implicit `checkout` hold and shared host resources.
+
+## Share with a team and show work items
+
+```bash
+otti -s SESSION_ID share session --team acme
+otti -s SESSION_ID share branch --team acme
+otti -p my-project share project --team acme
+otti -s SESSION_ID share list
+otti -s SESSION_ID session work-items add --url https://github.com/acme/api/issues/42 --title "Fix login" --icon issue
+otti -s SESSION_ID session work-items add --url https://git.example.com/group/repo/-/merge_requests/12 --icon pull-request
+otti -s SESSION_ID session work-items list
+otti -s SESSION_ID session work-items remove --url https://github.com/acme/api/issues/42
+```
+
+`share` shares a session (with the subagents it starts), its branch or its project read-only with a [team](/platform/teams) you are a member of, like the **Share…** dialog, and says what the team's members can now read: the whole transcript, including tool output. `share branch` and `share project` take the acting session's branch or project unless `-p` (and `-b`) name one. Sharing what is already shared changes nothing. `share list` lists the shares that reach a session, and the page of its branch on each of those teams, which a pull request description links ([a branch's team page](/platform/teams)). Agents look it up before they open a pull request.
+
+`session work-items` lists, adds and removes the tracker items a session works on, which Octomerge shows as badges on it and teams the session is shared with read ([work items](/platform/launch-links#work-items-on-sessions)). `--url` is the item's identity: adding a URL the session has updates that item. `--label` is shown where there is room and `--short-label` in compact rows such as the sidebar; without them Octomerge labels the item as its host writes it (`acme/api#42` and `#42` on github.com, `group/repo!12` and `!12` for a merge request on a host whose [kind](/platform/git-remotes#host-kinds) is GitLab), else by its host and path. `--title` shows on hover, and `--icon` is `issue`, `pull-request` or `link` (the default). A `pull-request` item makes the link the review of the session's branch where Octomerge doesn't find the branch's review itself (an SSH remote). A session has at most 20.
+
+Both use the acting session: the one `-s` names, else `R5D_SESSION_ID`, which in an agent's shell is the agent's own session.
+
+## Shells and processes
+
+```bash
+otti -p my-project -b main shell --worker WORKER_LABEL
+otti -p my-project -b main -s SESSION_ID shell -c "bun test"
+otti -p my-project -b main shell --worker WORKER_LABEL -c "git log -3" > log.txt
+otti -p my-project -b main shell --worker WORKER_LABEL --tty -c htop
+otti -p my-project -b main shell --worker WORKER_LABEL --shell bash
+otti -s SESSION_ID ps list
+otti -s SESSION_ID ps list --subagents
+otti session process-log RUN_ID --tail 200
+otti ps stop RUN_ID
+otti ps release RUN_ID --confirm
+otti -s SESSION_ID ps stop --all --subagents
+```
+
+`shell` needs a worker: `--worker WORKER_LABEL` names one, and `-s SESSION_ID` uses the selected conversation's worker and workbench, also shown by the UI's Code and Shell tabs. Include `-s` when choosing among conversations on one branch. An agent's shell uses its own worker without either. It opens the worker's shell (see [Connect a worker](/get-started/add-worker#shell)); `--shell bash`, `zsh` or `sh` asks for another, and a shell the worker does not have falls back to bash, then sh. An interactive shell reads your startup files, a `-c` command does not. An interactive shell runs in a PTY, which combines stdout and stderr. A `-c` command runs in one too when you type it in a terminal (`otti`'s input and output are both terminals), or with `--tty`. From a script, a pipe, a redirect or an agent's shell it runs without a PTY, like `ssh host command`: its stdout and stderr arrive on `otti`'s stdout and stderr exactly as it writes them (no carriage returns or echoed input), `otti`'s input is its standard input, and Ctrl-C stops it. When that input has already ended as `otti` starts (an agent's shell, `</dev/null`), the command starts with its standard input closed. Use `--tty` for a program that needs a terminal. Process logs expose r5d-managed command output; they do not list the host's general process table.
+
+`shell` exits with the remote command's status. A command ended by a signal exits with 128 plus the signal number: a stop with `ps stop` or a hangup exits 129, and Ctrl-C on a command without a PTY exits 130. When the worker ended the shell (a stop, a limit, a hangup), the reason is printed on stderr and the status is never 0. Stopping `otti shell` (SIGTERM, or SIGHUP when its terminal window closes) stops its shell too. Like the Shell page's terminals, a shell whose `otti shell` is gone is hung up 10 minutes later ([Terminals](/platform/shell-environment#terminals)).
+
+A session's processes outlive its agent runs: `session stop`, a model failure and **Force** stop the agent, not the commands it started, and a command has no time limit ([How long a command runs](/platform/shell-environment#how-long-a-command-runs)). `ps stop RUN_ID` sends every process of the command SIGTERM (a terminal's process group SIGHUP) and waits for it to exit; whatever still runs 10 seconds after the signal is killed, so servers and workers can release their locks first. `-s SESSION_ID ps stop --all` does that for every running process of a conversation, and with `--subagents` of its subagents too, as Stop does for agents; `ps list --subagents` lists them.
+
+Now and then a worker cannot confirm that a stopped command's processes are gone: the host refused the signal, or a process is still there after SIGKILL, for example one stuck on a hung disk. `ps stop` then says so and why, and exits 1; `ps list` shows the command as `unresolved`, and `ps inspect` says why. That command keeps its own command slot (a terminal, its terminal slot); everything else on the worker keeps starting. The worker sends the stop again every 30 seconds and lets the command go as soon as its processes are gone. `ps stop RUN_ID` on it tries again at once and answers with how that attempt went. `ps release RUN_ID --confirm` releases it without waiting: the worker stops tracking and signalling it, which may leave its processes running, and frees its slot. Release a command only when you know its processes are gone, or you accept that they keep running.
+
+A process belongs to the worker it runs on. When a conversation moves to another worker (`session set-worker`, a message or **Resume** on another worker, the agent's `switch_worker`), the commands it started keep running where they started: `ps list` keeps listing them with that worker, and `ps stop`, `ps release`, `session process-log` and the agent's `shell_poll`, `shell_write` and `shell_cancel` still reach them there while that worker is connected. A worker that is not connected, or was removed since, is named in the refusal.
+
+```bash
+otti session set-worker SESSION_ID --worker OTHER_WORKER_LABEL [--wait|--no-wait]
+```
+
+Changing a worker requires an idle conversation and workbench, and a target worker that is connected and ready: its first copy of the workspace is complete and it is not stopped for a remediation. When one of those does not hold yet, `--no-wait` refuses the switch at once with the reason and `--wait` waits until it holds; without either, your own credential is refused at once and an agent waits. Octomerge synchronizes the source worker, then has the target take in at least what the source synchronized, before it saves the new selection, and the command answers once the session is switched, usually within seconds. If the command is interrupted, the move still finishes on the server, and the chat shows it in progress until then. A wait that outlasts the request continues as a queued switch, which runs as soon as what it waits for changes; an agent also receives its outcome as a wake. A source that is disconnected cannot synchronize: the target then takes the workspace as last synchronized, and what the source never synchronized merges when it next does. A switch refused for a moment, because storage or a worker is busy, a branch's history changed while the target downloaded it, or the target has not started synchronizing yet, is tried again for up to 45 seconds; if it still cannot go ahead, the command says what refused it and that nothing moved: run it again in a minute.
+
+## Workspace status and synchronization
+
+```bash
+otti workspace status
+otti workspace sync --worker WORKER_LABEL
+otti -s SESSION_ID -p my-project -b main checkout path
+```
+
+`workspace status` starts with the account workspace's current snapshot on the server and when it was made (`Account workspace: snapshot N, made …`), or that it has none yet, because the account's first write makes it. Below that line come the branches the server could not give their checkout in the snapshot, one line each with what the branch needs, for example `Branch without its checkout in the snapshot (since 2026-11-08 21:30:00 UTC): projects/p/b: its directory holds a symbolic link (projects/p/b/link), so the server cannot make it the branch's checkout. Change that on the worker that holds the files; the server tries again by itself.` (this happens to an account whose branches existed before its workspace, for example one copied from another installation). Then it gives one block per worker. A worker's first line says whether it is connected, how many of its checkouts are ready, not set up yet or blocked, how many checkouts its latest `workspace sync` failed for if it failed, and plainly whether anything on it needs action. Below it:
+
+- **Blocked** checkouts, each with its block code, message and directory. Only a checkout whose hydration was interrupted (`hydration_incomplete`, `reset_incomplete`) comes with a `workspace recover-hydration` command; stop the commands running in that checkout first. A checkout whose reset stopped part way (`reset_unfinished`) needs nothing unless its message names a cause to fix: the worker finishes the reset by itself. Other blocks name what settles them.
+- **Publication**: what the worker keeps failing to publish, a checkout's history or the workspace as a whole (such as a workspace synchronization that could not open), each with its reason and since when.
+- **Workspace sync**: the snapshot the worker last took in and the newest it knows of (or that its first copy of the workspace is in progress), changed files still waiting to be taken, its last publication, whether it is stopped for a remediation (a conflict, large content or an unsafe path) and what watches its files. It also lists, per checkout, tracked files over the 128 MiB file limit (each worker has them from its own Git), Git LFS pointers that hold no content on that worker and how to get it, checkouts where `git check-attr` fails, with the files that worker holds back until it works again (this needs action), local files the worker keeps but never synchronizes, and names that differ only in case which that worker's file system cannot hold side by side. A worker whose Git is older than 2.42 says so: it synchronizes, but does not handle tracked files over 128 MiB or Git LFS pointers; install Git 2.42 or newer as `/usr/bin/git` (on a Mac, update Xcode or its Command Line Tools), then restart otti-worker. A connected worker whose workspace synchronization has not opened yet says **Workspace sync: not open on this worker yet**; one that could not open it (for example because its sync state is damaged) names the reason under **Publication**, and needs action. A worker whose release predates workspace snapshots says **Update this worker** instead: it takes no new work until it is updated. After the update it makes a first copy of the workspace, which publishes the files only it holds and stops for review at each file that differs from the snapshot. Settings → Workers shows every worker that needs an update.
+- **Not set up yet**: branches whose checkout the worker has not set up yet. A worker sets up a checkout of every branch by itself, in the background. Nothing needs to be done about them.
+- **Latest sync**: the worker's most recent `workspace sync`, when it ran and who asked for it, how many checkouts it published, and each one it could not publish by project and branch, grouped by reason. A failed sync needs action until a sync succeeds: run `workspace sync` again once its reasons are settled.
+
+Checkout records the worker keeps for deleted branches, and placeholders that were never used, are counted in the JSON output but not listed; they need no action.
+
+Workers synchronize by themselves within seconds of a change. `workspace sync` runs one synchronization cycle on the selected worker at once: it publishes the worker's changes, settled or not, takes in the other workers', then publishes each checkout's history. Its result names the snapshot the cycle reached and whether the cycle itself published anything (`published`, or `no_change` when there was nothing left to send). More than 5 MiB of new content that no checkout tracks or ignores, a conflict, or a path no publication can carry stops the worker for a workspace remediation, and a sync fails with that reason, or as under remediation once the remediation has started, until the remediation is confirmed. A blocked or uncertain operation must be resolved before further workspace changes. `checkout path` uses the acting conversation's worker and returns its exact checkout when the requested project and branch match that conversation. For a different branch it returns that branch's checkout on the same worker, setting it up first if the worker has none yet (every worker keeps a checkout of every branch, but sets each up in the background). If the checkout cannot be set up, `checkout path` says why and what to do; a branch still being created is refused until its operation is ready. A setup refused for a moment (storage or the worker busy, a branch's history that changed while the worker downloaded it, or a worker still starting its workspace synchronization) is tried again while the command waits. When `checkout path` still finds it busy, or `workspace sync` meets a busy storage or worker for a checkout, the command says what was busy and that nothing was admitted: run it again in a minute.
+
+`workspace sync`, `workspace reset` and `workspace recover-hydration` run as server-side operations. `otti` starts the operation, prints its progress on stderr (for example `Publishing 2/5: my-project main`) and, when it finishes, prints its result. If a worktree fails, the command exits non-zero and lists the affected worktrees. Pressing Ctrl+C stops following, not the operation: it continues on the server, and `otti workspace status` lists operations still in progress. Starting the same operation again while it runs on that worker joins it; a different operation on that worker is refused until the running one finishes. If the worker disconnects, the operation waits for it and resumes when it reconnects.
+
+For `--json` callers, `workspace status` returns `accountWorkspace` (`{ sequence, publishedAt, checkoutProblems }`: the current snapshot and when it was made, `publishedAt` null before the first one; `checkoutProblems` lists the branches the server could not give their checkout, each with `directory`, `reason`, `message` and `since`), `incident`, `operations` (the worker operations still in progress) and `workers`. Each worker has `needsAction` (`true`, `false`, or `null` when it is disconnected or has not reported its checkouts), `checkouts` (counts: `ready`, `pending`, `blocked`, `retired`, `unused`), `pendingCheckouts`, `blockedWorkbenches` (with `transactionId` only for an interrupted hydration), `publication` (`state`, `checkedAt`, when its last cycle completed: cycles run when something changes, so an old one doesn't mean the worker is stuck; the problems `workspace`, for the workspace as a whole, and `checkouts`, each with `code`, `message`, `since`, `actionNeeded` and, when a command settles it, `commands`; and `omitted`, the checkout problems beyond those listed), `latestSync` (`status`, `requester`, who asked for it, `startedAt`, `completedAt`, `worktrees` counts and `failures`), `workspaceSync` (the worker's report of its copy, `null` until it reports one: `baseSequence`, `hydrated`, `stopped` and the fields above, with `oversized`, `lfsPointers`, `lfsAttributesUnknown`, `localFiles` and `caseCollisions`, and `gitTooOld` (`{ version, minimum }`) only when the worker's Git is older than the minimum) and `workspaceUpdateRequired` (`true` when the worker's release predates workspace snapshots). Sync results name the snapshot as `publishedHead` (`snapshot:<sequence>`); `affectedProjects` contains project IDs.
+
+### Resetting a worker's checkouts
+
+```bash
+otti workspace reset --worker WORKER_LABEL --confirm
+```
+
+`workspace reset` deletes every project checkout on the worker (each branch with a conversation there) and copies it afresh from the server, like `rm -rf` followed by a fresh copy. Everything in those checkouts that the server does not have is deleted: unpublished commits and edits, and ignored files such as `node_modules/` and `.env`. No backup is kept, so the command requires `--confirm`. Stop the commands running in those checkouts first, and reinstall dependencies afterwards. Running it again deletes and copies the checkouts again. `otti-worker start --initial-sync reset` does the same when a worker starts, but changes made in a checkout while the worker was stopped may still reach your other workers before the reset reaches that checkout, or, where they overlap changes made meanwhile, open a conflict remediation on the worker ([Connect a worker](/get-started/add-worker#changes-made-while-the-worker-was-stopped)).
+
+The result lists each checkout's changed and untracked files under `Discarded paths`; ignored files are not listed. A checkout can hold something the worker does not list, such as more than 5 MiB that it neither tracks nor ignores, or a merge in progress. The reset deletes that checkout anyway, and `otti` prints a note naming the checkout and the reason its changes went unlisted; `localChangesDiscarded` is then `true` in the `--json` result.
+
+If a reset stops part way, for example because the worker could not reach the server or could not delete a file, that checkout fails with `reset_unfinished` and `workspace status` lists it as blocked with what stopped it. The worker finishes the reset by itself: the next time the checkout is used or its history is synchronized, and when the worker starts. Running `workspace reset` again finishes it too.
+
+`workspace recover-hydration` is not a reset of this kind: it keeps the checkout's current files beside the worker's state (under `reset-retained-…/source`, with a `recovery.json`) before it installs an interrupted checkout again. Copies that earlier releases kept on resets stay where they are.
+
+## Account workers
+
+```bash
+otti account workers list
+otti --json account workers list
+otti account workers set my-laptop --description "MacBook with Xcode and Docker"
+otti account workers set my-laptop --description ""
+otti account workers set my-laptop --command-slots 32
+otti account workers set my-laptop --command-slots default
+otti account workers forget old-gpu-box
+otti account workers forget old-gpu-box --sign-out-machine
+otti account workers forget old-gpu-box --keep-sign-in
+```
+
+Each line of `account workers list` shows, separated by tabs: the label, its role (`workspace`, or for a [remote](/get-started/add-remote) what its commands get: `remote (full)`, `remote (secrets)` or `remote (restricted)`, see [What a remote gets](/get-started/add-remote#what-a-remote-gets)), the connection state (`connected`, `stale` or `disconnected`), the platform, the `otti-worker` version it runs, its shell, the agent commands it runs of its command slots (`commands 3/16`), the load of its host (`cpu 13% mem 37% disk 47%`: the one-minute load average per CPU, and memory and disk in use, memory on a Mac as its memory pressure counts it) and its description. `--json` returns everything the list knows, including terminal slots, the measurements themselves and the tools agents find on each worker (`identity.tools`: see [Tools agents find](/get-started/add-worker#tools-agents-find)). `account workers set` describes what a worker is for, in one line of at most 200 characters; agents read the description when they choose a worker, and an empty one clears it. `--command-slots` chooses how many agent commands the worker runs at once, from 1 to 100, or `default` for the default of 16; the worker applies it within seconds. `account workers forget` takes a worker or remote that is offline off your lists until it connects again, and deletes its registration and update history; chats keep what ran there. It is refused while the machine is connected (45 seconds after its last check-in at the latest it is offline), and then nothing changes. Like **Forget** in the machine's settings ([A machine's settings](/get-started/add-worker#a-machines-settings)), it then takes the machine's access away from its sign-in: by default only what that worker or remote needed, so `otti` and anything else on that machine stay signed in, and a sign-in that nothing else uses, or an enrollment's, is revoked. `--sign-out-machine` revokes the sign-in, which signs out everything on that machine; `--keep-sign-in` leaves it as it is, like **Keep the sign-in** in the settings. The default also signs out another worker or remote that shares the sign-in and needs the same access, such as the same machine under its new label when you forget its old one; `--keep-sign-in` avoids that. It prints what the sign-in lost, or that it was revoked, which clients were signed out or stay signed in, and which remotes on it become restricted or keep your secrets without Full access (`--json`: `signIn`), and warns when that sign-in is the one this `otti` runs on. Reading and changing sign-ins takes Full access: without it, the command stops before forgetting anything (`--keep-sign-in` needs only `otti` access). See [Connect a worker](/get-started/add-worker#describe-a-worker) and [Command slots](/get-started/add-worker#command-slots).
+
+## Account browsers
+
+```bash
+otti account browsers list
+otti --json account browsers list
+otti account browsers default LABEL_OR_ID
+otti account browsers forget LABEL_OR_ID [--default LABEL_OR_ID]
+otti account browsers forget LABEL_OR_ID --sign-out-machine
+otti account browsers forget LABEL_OR_ID --keep-sign-in
+```
+
+Each chat uses its own browser, which you choose with the browser icon in its composer. `account browsers default` chooses your account's **default browser**, by its label or resource ID from the list: new chats, and chats that haven't chosen a browser, use it from their next browser action. Chats that chose their own browser keep it, and already-started actions stay on their original browser; choosing another default does not replay them. There is no automatic failover when a browser disconnects. If the result is uncertain, list browsers before retrying. See [Multiple browsers](/get-started/browser#multiple-browsers) and [Browser service](/get-started/browser) for setup.
+
+`account browsers forget` takes a browser that is offline off your lists until it connects again, and deletes its registration history. Chats that chose it use the default browser again, and they keep what ran there. Forgetting your default browser needs `--default`, naming the browser that becomes the default, unless it is your only one; without it, the command lists the browsers to choose from. It is refused while the browser is connected (45 seconds after its last check-in at the latest, it is offline), and then nothing changes. Like **Forget** in the browser's settings ([A browser's settings](/get-started/browser#a-browsers-settings)), it then takes the browser's access away from its sign-in: by default only Browser access, so `otti` and anything else on that computer stay signed in, and a sign-in that nothing else uses is revoked. A remote that shares the sign-in keeps your secrets; one with Full access drops to **With your secrets** ([What a remote gets](/get-started/add-remote#what-a-remote-gets)). `--sign-out-machine` revokes the sign-in, which signs out everything on that computer; `--keep-sign-in` leaves it as it is. It prints what the sign-in lost, or that it was revoked, which clients were signed out or stay signed in, and which remotes on it become restricted or keep your secrets without Full access (`--json`: `signIn`), and warns when that sign-in is the one this `otti` runs on. Reading and changing sign-ins takes Full access: without it, the command stops before forgetting anything (`--keep-sign-in` needs only `otti` access).
+
+Each line of `account browsers list` shows, separated by tabs: the resource ID, the browser's role (`default` for your default browser and, when an agent runs the command, `this conversation` for the browser its chat uses; `-` otherwise), the connection state, the `otti-browser` version the browser runs, its source revision, its automatic update setting, its label and its machine's host name. The update setting says whether updates are on or off, how that was chosen (`explicit`: a flag on this start; `saved`: kept from an earlier start; `default`: never chosen) and, while an update is under way, its state and version. With `--json`, each browser has `default`, `current` (for an agent: whether its chat uses it), `hostInfo` and an `identity` object with these details and the Chrome version. A browser running an older client shows what that client reports; details it does not report are `null` (or `unknown` in the text output).
+
+Agents use these too: a browser tool takes `browser`, a label from this list, to work in another browser than its chat's for one call.
+
+## Account instructions and credentials
+
+```bash
+otti account instructions get
+otti account instructions set --file AGENTS.md
+otti account env list
+otti account env set REGION --description "Default region" --value eu-north-1
+otti account env set SERVICE_TOKEN --description "Service access" --file ./token.txt
+otti account secrets set KUBECONFIG --description "Cluster access" --file ~/.kube/config
+otti account env revoke SERVICE_TOKEN
+```
+
+Account instructions live in the canonical `$R5D_ROOT/AGENTS.md` file. `get` writes the exact content without adding a newline; `--json` returns `{ content, updatedAt }`. `set --file PATH` and `set --stdin` preserve UTF-8 input, including whitespace; empty input clears the file. The limit is 100,000 characters. Both commands work with no worker online, regardless of project, branch, or session flags.
+
+Saving reads the current file's hash and saves over exactly that version, in the request: the command answers once the file is saved. If the file changed in between, the save is refused and nothing is written. A lost answer is asked for again with the same request ID, which answers that save's outcome and never saves twice; if the outcome stays unconfirmed, the CLI prints the request ID. Saves affect running agents on their next model request and reach workers within seconds; a worker that edited the file and had not synchronized that edit yet merges the two. See [AGENTS.md and skills](/platform/agent-instructions-and-skills) for scopes, editing, and conflicts.
+
+Account entries apply across your projects and workers. `env` entries become environment variables; `secrets` entries become protected files, with the variable containing the file path. Lists return metadata, not stored account secret values. Agents use `account env list` and `account secrets list` to find the names and descriptions of your entries when a task needs a credential, so write a description that says what an entry is for; adding or editing an entry doesn't change what running agents were sent. New commands receive the latest credential snapshot; running commands keep the snapshot they started with. Revocation prevents future delivery but cannot erase copies already held by a process.
+
+Entries from a [deploy connection](/platform/deploy-targets), such as `VERCEL_TOKEN` or `KUBECONFIG`, can't be set here: `set` is refused and says where the entry comes from. `revoke` or `delete` on one disconnects the whole connection, like **Disconnect** in Settings, and prints every entry it removed and whether the provider revoked Octomerge's access. With `--json`, each listed entry from a connection has a `source` (its provider and account), and `revoke` and `delete` answer `disconnected`.
+
+## Automation and API keys
+
+```bash
+otti auth api-key create --name ci --save
+otti auth api-key create --name dashboard --access r5dctl:read
+otti auth api-key list
+otti auth api-key revoke KEY_ID
+otti --json get projects
+```
+
+An API key has the same access choices as a sign-in ([What a sign-in may do](#what-a-sign-in-may-do)): otti, reading and changing, unless `--access` (or **Create API key** in **Settings → CLI & API**) chooses other access. Only a sign-in with Full access, your browser session or the credential of an agent's shell ([Agents use otti like you](#agents-use-otti-like-you)) creates or revokes API keys and approves sign-ins.
+
+`--json` prints structured responses. For typed programmatic access, use the [TypeScript API client](/cli/api-client). Run `otti --help` for every command. A command group lists its own commands with `--help`, with `otti help` or alone: `otti workspace --help`, `otti help workspace` and `otti workspace` print the same list, and `otti workspace status --help` describes one command. A command a group doesn't have is refused with the group's commands.
+
+## Agents use otti like you
+
+When `otti` runs inside an agent shell, the worker supplies its server URL and a credential for that conversation as `R5D_BASE_URL` and `R5D_TOKEN`, and the conversation's ID as `R5D_SESSION_ID`. `otti` does for an agent what it does for you, with every command, on any of your workers and chats. The credential reaches the rest of Octomerge's API as your own does too, such as your account and worker settings, SSH keys, MCP servers, teams and shares, API keys and sign-in approvals. The agent's own chat and worker only fill in what a command leaves out: the acting session is `-s`, else `R5D_SESSION_ID`, and `shell` without `--worker` or `-s` uses the agent's own worker; `create branch` and `session start --new-worktree` start a new branch from the source as the agent's own worker has it. Where something that clears by itself stands in the way (a conversation still running, a worker not ready yet), an agent's commands wait for it unless `--no-wait` is given. In an agent's shell, `auth status` shows the credential as the agent's, with Full access, and `auth logout` revokes nothing.
+
+The credential has no expiry of its own. It works for as long as its chat exists and the worker it was issued on stays signed in with Full access, also after the chat moves to another worker, so a command that runs for days can still message its chat when it ends. It stops working once the chat is deleted, or once that worker's sign-in is revoked, loses Full access or is replaced; a new shell command receives a fresh one. Since it does what you do, keep it as secret as your own sign-in: don't let an agent print it into a chat. To end one that leaked, delete its chat, or revoke the worker's sign-in under **Settings → CLI & API** and sign the worker in again. It is only sent to that server: an agent that reaches another installation passes `--config` with a file signed in there (see [Server and credential](#server-and-credential)). It never connects a worker, a remote or a browser. Worker enrollment credentials remain separate and can be revoked from your account.
+
+What an agent does stays marked as the agent's: a chat it messages sees its chat and worker as the sender, and when it answers another agent's questions or environment request, the asking agent and the chat say which agent answered ([when the agent asks you something](/platform/workspace-chats#when-the-agent-asks-you-something)).
+
+A few things only the chat page does, and no `otti` command: drafts, queued messages, a chat's context and notification setting, the files you attach or delete in the composer, and your chat tags and which chats you have seen. Agents can't change them. An MCP server's request for your input is answered only in the chat, and revealing a provider's saved header and signing in to an MCP server need your browser.

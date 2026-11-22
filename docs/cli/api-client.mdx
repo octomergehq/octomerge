@@ -1,0 +1,281 @@
+---
+title: "TypeScript API client"
+description: "Use the typed Octomerge client to manage account settings, projects, and agent conversations, and to follow the work shared with a team."
+---
+
+The client comes from Octomerge's npm registry, `npm.octomerge.dev`:
+
+```bash
+npm install @octomerge/api --registry https://npm.octomerge.dev
+```
+
+Create an API key in Octomerge's settings or with `otti auth api-key create`. Keep it in your application's secret configuration:
+
+```ts
+import { R5dctlClient, R5dctlApiError } from "@octomerge/api";
+
+const client = new R5dctlClient({
+  baseUrl: "https://octomerge.dev",
+  apiKey: process.env.R5D_API_KEY,
+});
+
+const projects = await client.projects.list();
+const project = await client.projects.describe("my-project");
+const sessions = await client.projects.sessions.list(project.id, { branch: "main" });
+```
+
+The client also accepts a device credential as `token`. Credentials belong to one installation; use the matching `baseUrl` for production, stage, or your own server. Without `baseUrl`, the client connects to `https://octomerge.dev`. A client that names `https://r5d.dev`, Octomerge's address before octomerge.dev, keeps working.
+
+## Browse session trees
+
+`client.projects.sessions.list(projectRef, { branch?, mine? })` returns only top-level sessions. Each `R5dctlSessionListEntry` includes `parentSessionId`, numeric `childCount`, live `runState`, and project/branch context (null for workspace children). The list also has the top-level sessions your teams share with you on the project's repository, each with `owner` and `shared` (the team you read it through and its `path`), its teammate's `projectPath` and a null `projectId`; `mine: true` leaves them out.
+
+```ts
+const roots = await client.projects.sessions.list(project.id);
+if (roots[0]) {
+  const children = await client.sessions.children(roots[0].id);
+  if (children[0]) {
+    const grandchildren = await client.sessions.children(children[0].id);
+    const overview = await client.sessions.conversationOverview(children[0].id, {
+      view: "skeleton", tail: 12,
+    });
+    const latest = await client.sessions.lastConversationMessage(children[0].id);
+    const transcript = await client.sessions.conversation(children[0].id);
+  }
+}
+```
+
+Children are one generation only and follow owned parent relationships across projects, branches and workers. Both lists sort by the session's own catalog `updatedAt` descending, then ID ascending; counts exclude hidden/deleted and inaccessible children. A valid leaf returns `[]`; a missing or inaccessible parent throws `R5dctlApiError` with status 404. These GET requests and conversation reads never start or resume an agent. The child REST route is `GET /api/r5dctl/sessions/:sessionId/children`.
+
+`lastConversationMessage` (`GET /api/r5dctl/sessions/:sessionId/conversation/last`) returns the agent's latest message with text as `message` (`null` before it has written one), with the session's `status`. `message.final` is true when the conversation ended with that message: it calls no tools and nothing follows it.
+
+`conversation` (`GET /api/r5dctl/sessions/:sessionId/conversation`) returns the transcript that `otti conversation` prints as `agentText`: the active branch as the agent's model sees it, its latest model request and then what came after it. It is human-readable unless you pass `{ format: "raw" }`; `includeTools` and `includeSystem` add the request's tool definitions and system prompt. `thread` holds the active branch's nodes and `conversation` every branch with its complete items.
+
+`client.sessions.detach(sessionId)` (`POST /api/sessions/:sessionId/detach`) detaches a subagent from the session that started it, as `otti session detach` does ([Start and continue a conversation](/cli/otti#start-and-continue-a-conversation)): it becomes a top-level session. The answer names the former parent (`detachedFrom`: its ID, name and when), `changed` (false when it was detached already), `parentNotified` (the former parent was working and was told once) and `sharedWith` (teams that read the session only through a session above it, which now read it through a share of its own). A session that was never a subagent throws `R5dctlApiError` with status 409 and code `not_a_subagent`. `sessions.status(...)` of a detached session carries `detachedFrom: { sessionId, at }`.
+
+## Scheduled sessions
+
+```ts
+const schedule = await client.schedules.create(project.id, {
+  requestId: crypto.randomUUID(), // retain for safe retries of this creation
+  worker: "laptop",
+  worktree: "main", // existing worktree only
+  effort: "high", // the branch's default model at high effort; add model to choose another
+  prompt: "Review open issues",
+  timing: { kind: "cron", expression: "0 9 * * 1-5", timezone: "Europe/Stockholm" },
+});
+const { schedules } = await client.schedules.list({ project: project.id, worker: "laptop" });
+await client.schedules.remove(schedule.id);
+```
+
+`R5dctlScheduleTiming` also accepts `{ kind: "delay", delay: "10m" }` and `{ kind: "once", at: "2030-06-01T09:00:00Z" }`. Creation optionally accepts `parentSessionId`. For UTC cron, supply `timezone: "UTC"` explicitly (the CLI defaults it for you). The server validates timing and returns HTTP 201 with `R5dctlSchedule`; list returns `{ schedules }` and removal returns `{ id, status: "removed" }`.
+
+REST routes are `POST /api/r5dctl/projects/:projectRef/schedules`, `GET /api/r5dctl/schedules` (optional `project` and `worker` queries), and `DELETE /api/r5dctl/schedules/:scheduleId`. A list spans your projects and workers unless filtered, also with the credential of an agent's shell.
+
+Schedules are durable without the creating process. See [scheduled sessions](/cli/otti#scheduled-sessions) for cron/DST rules, offline retry limits, missed-occurrence coalescing and non-overlap. Removal prevents unclaimed occurrences, but an already-claimed dispatch may complete; it never stops a launched session.
+
+## Conversations
+
+```ts
+const session = await client.projects.sessions.create(project.id, {
+  branchName: "main",
+  name: "Investigate failing tests",
+});
+
+const { models } = await client.models.list({ project: project.id, branch: "main" });
+const model = models.find((entry) => entry.default) ?? models[0];
+
+const accepted = await client.sessions.prompt(session.id, {
+  prompt: "Investigate the failing tests",
+  worker: "WORKER_LABEL",
+  model: model.model,
+  effort: model.efforts.includes("max") ? "max" : model.defaultEffort,
+  requestId: crypto.randomUUID(),
+});
+
+const status = await client.sessions.status(session.id);
+const conversation = await client.sessions.conversation(session.id);
+```
+
+`models.list(...)` returns the models your enabled providers offer ([models and efforts](/#models-and-efforts)), as `otti get models` lists them: each one's `model` ID, `provider`, the `efforts` it accepts, its `defaultEffort`, its `description`, and `default` for the model sessions of that project and branch run on without one. `model` takes one of those IDs and `effort` one of its efforts; `provider` is needed only when two of your providers offer the same model ID. The package exports the efforts as `MODEL_EFFORTS` (`none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`), with the `ModelEffort` type, `isModelEffort`, `modelEffortSchema` (zod) and `MODEL_EFFORT_LABELS`, also from `@octomerge/api/model-efforts`.
+
+Keep the same `requestId` and body when retrying an uncertain prompt response. Read `messageDelivery` to distinguish queued or blocked input from active execution. The returned run status and the acceptance of a new message are separate facts.
+
+`model` and `effort` are optional on prompts and on `answerQuestions`/`answerEnvRequest`. Without them, the session keeps its current model and effort (its branch's default model for a session that has none yet); an `effort` alone keeps the model at that effort. Supply them only to change the session's model, as the first prompt above does; omit them for reports from one agent to another. `sessions.describe(...)` returns the `model`, `effort` and `provider` a session runs on.
+
+```ts
+const controller = new AbortController();
+for await (const event of client.sessions.events(session.id, { signal: controller.signal })) {
+  console.log(event);
+}
+```
+
+Abort the iterator to detach. Use `client.sessions.stop(session.id)` to stop the conversation. After the user authorizes resuming it, call `client.sessions.resume(session.id, { requestId: crypto.randomUUID(), confirm: true })`. Reuse the same request ID after a lost response. This preserves existing queued work; `result.resume.status` distinguishes queued acceptance from a resume applied by the runner.
+
+## Account settings
+
+```ts
+const settings = await client.account.getSettings();
+await client.account.instructions.set("Run the project checks before reporting completion.\n");
+await client.account.environment.save({
+  name: "DEPLOY_ENV",
+  description: "Default deployment environment",
+  kind: "env",
+  value: "staging",
+});
+```
+
+Environment reads return metadata only. To replace a stored entry, pass its `id`; omitting `value` preserves its value. `environment.revoke(id)` clears the value, and `environment.delete(id)` removes the entry.
+
+## Team integrations
+
+An issue tracker or another tool can follow the work shared with a [team](/platform/teams): read what is shared, and learn when sessions are shared, change status or work items, or open a pull request. It uses a **team API key**, which reads exactly what a member of the team reads and nothing else. A team key can't act: every request that would change something answers `403`, and so does every route outside the team.
+
+A team admin creates keys on the team's **Integrations** page (`https://octomerge.dev/t/<team>/integrations`). The key, `r5d_team_…`, is shown once; the page shows when each key was last used, and revoking one stops it at once. Members can also call these methods with their own API key, and their agents with the credential of their shell (`R5D_TOKEN`).
+
+```ts
+import { R5dctlClient } from "@octomerge/api";
+
+const r5d = new R5dctlClient({ baseUrl: "https://octomerge.dev", apiKey: process.env.R5D_TEAM_KEY });
+
+const { sessions } = await r5d.teams.sessions.list("acme", {
+  remote: "https://github.com/acme/api",
+  workItem: "https://github.com/acme/api/issues/42",
+});
+for (const session of sessions) {
+  console.log(session.name, session.status, session.links.session, session.links.branch);
+}
+```
+
+### Read what is shared
+
+| Method | REST route | Returns |
+| --- | --- | --- |
+| `teams.get(team)` | `GET /api/v1/teams/:team` | The team, `access` (`api_key` or `member`) and `cursor`, the team's newest event. |
+| `teams.sessions.list(team, filters?)` | `GET /api/v1/teams/:team/sessions` | Shared sessions, newest activity first, and `cursor`. |
+| `teams.sessions.get(team, sessionId)` | `GET /api/v1/teams/:team/sessions/:id` | One session, its subagents and its branch's pull request. |
+| `teams.sessions.overview(team, sessionId, { view?, tail? })` | `GET /api/v1/teams/:team/sessions/:id/overview` | The conversation overview, for a summary. `view: "skeleton"`, the default, lists turns and agent work without tool output. |
+| `teams.sessions.find(sessionId)` | `GET /api/team-sessions/:id` | Which of your teams read a session, nearest share first: `session.team` (the team to read it through), `session.teams`, and the session with its `owner`, `status` and `path`. `404` when none does; a team key reads through its own team. |
+| `teams.sessions.conversation`, `conversationOverview`, `lastConversationMessage`, `inspectConversationNode`, `inspectConversationWork`, `status`, `events`, `children` (`team`, `sessionId`, ...) | `GET /api/teams/:team/sessions/:id/conversation`, `.../conversation/overview`, `.../conversation/last`, `.../conversation/nodes/:node`, `.../conversation/work/:work`, `.../status`, `.../events`, `.../children` | What `otti conversation` (with `--last` and `-f`), `conversation overview`, `inspect-node`, `inspect-work` and `sessions children` read, in the same format as `sessions.*`: otti reads a teammate's session with them. A shell run's outcome comes from the conversation only. |
+| `teams.branches.list(team, filters?)` | `GET /api/v1/teams/:team/branches` | Shared branches with their sessions, work items and pull request, and `cursor`. |
+| `teams.events.list(team, { after?, wait?, limit? })` | `GET /api/v1/teams/:team/events` | One page of the event feed. |
+| `teams.events.follow(team, { after?, signal? })` | (long-polls the route above) | Every event after `after`, as it happens. |
+
+`team` is the team's URL name (`acme` in `/t/acme`). Both lists take the same filters:
+
+- `remote`: the repository, as a remote URL (`https://github.com/acme/api.git`, `git@github.com:acme/api.git`) or its identity (`github.com/acme/api`). Spellings of the same remote match. A project without a remote is `~<owner's handle>/<project>`.
+- `branch`: the branch name.
+- `workItem`: the URL of a tracker item a session works on, for example `https://github.com/acme/api/issues/42`, exactly as the session has it. A [launch link](/platform/launch-links) sets a session's work items, and an agent can add them with `otti session work-items add`.
+- `status`: one status or several (comma-separated in the REST route).
+
+A branch matches when one of its sessions matches `workItem` and `status`; it then lists all of its sessions.
+
+Each session has its `status`, `workItems`, `repository`, `branchName`, `owner`, `parentSessionId` (for a subagent) and `links`: `links.session` is the read-only page team members open, and `links.branch` the branch's permanent team page. Sessions and branches also have `teamArchive`: `{ archivedAt, archivedBy }` while the branch is [archived for the team](/platform/teams#archive-or-remove-a-branch-for-the-team), else `null`. A work item is how Octomerge shows it, not which tracker it comes from: its `url` (the item's identity: find your items by it), `label` (`acme/api#42`), `shortLabel` for compact rows (`#42`; the label when absent), `title` and `icon` (`issue`, `pull-request` or `link`, the default). Its `status` is one of:
+
+| Status | Meaning |
+| --- | --- |
+| `provisioning` | A launched session that hasn't started yet. |
+| `running` | The agent works. Also while it waits for a timer, a subagent or a model provider, or pauses for maintenance or recovery. |
+| `waiting_for_input` | The agent's run ended while a question, a request for environment values or an MCP server's request waits for its owner's answer. An agent that asks and goes on working, or waits for a timer, is `running`. |
+| `completed` | The last run completed. |
+| `failed` | The launch failed, a model request failed, or an interrupted run couldn't be recovered automatically. |
+| `stopped` | Its owner stopped it, or its run was interrupted. |
+| `idle` | Nothing ran yet. |
+
+`statusVersion` is the `version` of the last `session.status` the team got for the session (see below), or `null` before the first.
+
+### Events
+
+Events tell you what changed. Each has an `id`, a `type`, a `sequence` (its position in the team's feed), `createdAt`, the `team` and `data`:
+
+| Type | When | `data` |
+| --- | --- | --- |
+| `session.shared` | The team can read a session: it was shared, it is on a shared branch or in a shared project, or it is a subagent of a shared session. | `session`, with its current status, and the `share` |
+| `share.revoked` | The team can no longer read sessions. | `reason` (`revoked`, `member_removed`, `deleted` or `unavailable`), the revoked `shares`, the `member` who left or was removed, and `sessionIds` |
+| `session.status` | A shared session's status changed. | `sessionId`, `status`, `previousStatus`, `version` and `session` |
+| `session.updated` | A shared session's work items or name changed without a new status. | `sessionId` and `session`, whose `statusVersion` is its current status version |
+| `branch.review_request` | A pull request of a shared branch was opened, updated (new commits, title or draft state), reopened, closed or merged. | `action`, `reviewRequest` (`url`, `number`, `title`, `status`, `headSha`, …), `repository`, `branchName`, `sessionIds` and `links.branch` |
+| `branch.archived` | A team admin, or a member whose work is on the branch, archived it for the team. Members' own branches and sessions keep working. | `repository`, `branchName`, `archivedAt`, `archivedBy`, `sessionIds` (the sessions on it the team reads) and `links.branch` |
+| `branch.unarchived` | The branch is back with the team's live branches. | `repository`, `branchName`, `unarchivedBy`, `sessionIds` and `links.branch` |
+
+Removing a branch from the team revokes its shares, which `share.revoked` reports like any revoked share. New event types can be added: ignore types you don't know.
+
+Events cover only what is shared with the team. Revoking a share stops every read of its sessions at once, but events reported while they were shared stay in the feed until they expire. Octomerge checks shared sessions every couple of seconds, so a status that lasted less than that can be skipped. It looks for a branch's pull request when a session on the branch stops running, and every few minutes while the branch is active; it finds pull requests on GitHub for members' GitHub projects.
+
+Delivery is **at least once**: the same event can arrive twice, so deduplicate by `id`. A `session.status` event's `version` grows with every change of that session's status in the team: ignore one whose `version` is lower than the last one you applied. A `session.updated` event carries the session as it is now; ignore it when you already applied a status newer than its `session.statusVersion`.
+
+### Follow the event feed
+
+The feed works from anywhere, including a tracker Octomerge can't reach, such as one behind a firewall. Ask for the events after a cursor; when there are none, the request waits up to `wait` seconds (at most 30) for one:
+
+```bash
+curl -H "Authorization: Bearer $R5D_TEAM_KEY" \
+  "https://octomerge.dev/api/v1/teams/acme/events?after=1042&wait=30"
+```
+
+```json
+{
+  "events": [
+    {
+      "id": "6f0c2f3e-…",
+      "type": "session.status",
+      "sequence": 1043,
+      "createdAt": "2026-10-15T12:04:11.000Z",
+      "team": { "id": "…", "slug": "acme", "name": "Acme" },
+      "data": { "sessionId": "…", "status": "completed", "previousStatus": "running", "version": 1043, "session": { "…": "…" } }
+    }
+  ],
+  "cursor": "1043",
+  "hasMore": false,
+  "truncated": false
+}
+```
+
+Store `cursor` once you have handled the events and pass it as the next `after`. With `hasMore`, ask again at once. Without `after`, the feed starts at the oldest event Octomerge keeps. Events are kept for 30 days: `truncated: true` means some after your cursor are gone, so list the sessions again. To start without the history, list first and follow from the list's `cursor`:
+
+```ts
+const { sessions, cursor } = await r5d.teams.sessions.list("acme");
+const controller = new AbortController();
+for await (const event of r5d.teams.events.follow("acme", { after: cursor, signal: controller.signal })) {
+  if (event.type === "session.status") console.log(event.data.sessionId, event.data.status);
+  if (event.type === "branch.review_request") console.log(event.data.action, event.data.reviewRequest.url);
+  await saveCursor(String(event.sequence));
+}
+```
+
+`follow` long-polls until you abort it. After an error, start it again from the last cursor you saved. When the events after that cursor are gone, it throws `R5dctlTeamEventsTruncatedError`: list the sessions again and follow from the new list's `cursor`.
+
+### Webhooks
+
+A team admin adds webhooks on the team's **Integrations** page: a public HTTPS URL, and a secret that Octomerge generates and shows once unless you give one. Octomerge POSTs every event of the team to the URL as JSON, the same object as in the feed, with these headers:
+
+| Header | Value |
+| --- | --- |
+| `X-R5d-Signature-256` | `sha256=` and the hex HMAC-SHA256 of the raw body, keyed with the secret |
+| `X-R5d-Event` | The event type |
+| `X-R5d-Event-Id` | The event's `id`, the same for every attempt |
+| `X-R5d-Delivery` | The delivery's ID |
+| `X-R5d-Team` | The team's URL name |
+
+Answer with a `2xx` status within 10 seconds. Anything else, including a redirect, is a failed attempt: Octomerge tries again after 30 seconds, 2 minutes, 10 minutes, 30 minutes, 1 hour, 3 hours and 6 hours, then gives up. Retries can deliver events out of order, so order them by `sequence`, and `session.status` events by `version`. The **Integrations** page shows each webhook's delivery log with every attempt's response, delivers an event again on request, and sends a test `ping`, which isn't part of the feed.
+
+Verify the signature on the raw body before you parse it:
+
+```ts
+import { verifyTeamWebhookSignature } from "@octomerge/api";
+
+export async function handleR5dWebhook(request: Request) {
+  const body = await request.text();
+  if (!verifyTeamWebhookSignature(body, request.headers.get("x-r5d-signature-256"), process.env.R5D_WEBHOOK_SECRET!)) {
+    return new Response("Invalid signature", { status: 401 });
+  }
+  const event = JSON.parse(body);
+  if (await alreadyHandled(event.id)) return new Response(null, { status: 204 });
+  // Update the tracker from event.type and event.data.
+  return new Response(null, { status: 204 });
+}
+```
+
+## Errors
+
+Non-success HTTP responses throw `R5dctlApiError`, which includes `status`, `path`, and `body`. Avoid logging credentials or sensitive request bodies. The package README lists the complete typed method surface, including branch operations, claims, process output, and conversation inspection.

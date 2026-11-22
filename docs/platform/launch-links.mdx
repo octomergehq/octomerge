@@ -1,0 +1,114 @@
+---
+title: "Launch links"
+description: "Start or continue work in Octomerge from a link in your issue tracker, after you confirm it."
+---
+
+A launch link starts or continues work in Octomerge from anywhere you can put a link: an issue tracker, a pull request, a chat message or a script. The [GitHub App and the Threadline plugin](/platform/integrations) make these links for you. Opening it shows a dialog in your signed-in Octomerge, filled in from the link. **Nothing starts, and no branch is created, until you confirm it.**
+
+If you aren't signed in, Octomerge asks you to sign in first and then shows the dialog. The link survives the sign-in and a reload of the page.
+
+## The dialog
+
+The dialog is marked **From a link** and titled **Check before starting**. Everything in it can be changed before you choose **Start session**:
+
+- **Work items**: the issues, pull requests or other tracker items the link names, with links to them. A link can carry a snapshot of an item, such as an issue's description and latest comments. **View issue** shows the snapshot and **Copy issue** copies it, so you can paste it into the first message if the agent should have it; for a pull request the buttons say **View pull request** and **Copy pull request**, and for other items **View item** and **Copy item**. Whoever made the link wrote the snapshot, so it may be outdated or wrong.
+- **Project**: your project whose remote is the link's repository, however its URL is spelled. A renamed GitHub repository still matches. If you have no such project, the dialog offers to add the repository as a project, with a suggested name, or to use another of your projects.
+- **Branch**: a new branch, starting from an Octomerge branch or from a branch of the repository, or an existing Octomerge branch. A link only proposes a branch: choose an existing one, such as `main`, to work there instead. A new branch keeps the name the link gives it whenever Octomerge accepts that name ([branch names](/cli/otti#branch-names)). The dialog says when it changed what the link asked for, and why: for example because a branch of that name already exists, so `-2` is added, or because Octomerge doesn't accept the name, in which case it suggests one like it in lowercase letters, digits and hyphens. A new branch created from a branch of the repository, such as a pull request's, keeps that branch's name whenever Octomerge can use it, so the session's pushes go to the pull request.
+  For a prompt-only link without a branch name or work items, the new branch is named after the first message's opening words, like a [new chat's](/platform/workspace-chats) suggested branch, and follows the message as you edit it. Explicit branch names and issue/PR-derived names are preserved. Editing the branch settings stops automatic name updates.
+- **Share**: whether to share the session, its branch or its project read-only with one of your [teams](/platform/teams). A link can propose a team; the [GitHub App](/platform/integrations) proposes its team and all sessions on the branch. When the branch, or the whole project, is already shared with a team, the dialog doesn't ask: it shows how the session will be shared and links to the team's **Members and shares** page, where the share's owner or a team admin can revoke it. A tracker shows a session's status only while the session is shared with the tracker's team, so the dialog says when the team a link asks for won't see the session.
+- **First message**: the chat composer, prefilled with exactly the message the agent receives: the link's prompt, or `Implement <url>` for an issue and `Continue work on <url>` for a pull request. Snapshots aren't part of it unless you paste them in. Edit any part of the message. As in any chat, you can attach files and choose the model, its effort and the worker. Enter adds a line; **Start session** (or Ctrl/⌘+Enter) starts the session.
+
+The model and the worker are the link's, otherwise the project's launch defaults, otherwise your last choice in this dialog. When none of your providers offers the link's model, or the model doesn't take the link's effort, the dialog says so and starts from the next choice. **A launch needs a connected worker**: the composer offers only connected workers, and **Start session** stays disabled, saying why, while none of yours is connected.
+
+Your edits survive a reload of the page, like the link itself.
+
+**Start session** creates the new branch, if you chose one, and opens the new session once the branch exists. If the branch can't be created, the dialog says why and you can choose another branch; when your synchronized workspace has no room for the branch's files, for example, it says how many files or how much file content the workspace would hold, against its limits (200,000 files and 10 GiB, unless your plan gives more), and asks you to archive or delete branches or files you no longer need, after which **Start session** creates the branch. If the launch's worker disconnected since you opened the dialog, the session says it waits for that worker and starts on its own as soon as the worker connects again. The session is named after the link's work items; a launch without work items is named after the start of its first message. Either way, its agent can give it a name that says what the work is ([chat names](/platform/workspace-chats#chat-names)).
+
+If Octomerge couldn't confirm the start, for example because the connection dropped, choose **Start session** again: it repeats the same launch, with the same session and uploads, and never starts a second session. Once a launch was sent, its project, branch, worker and share stay as they were; **Start over** discards it so you can change them. **Cancel** discards it too. A launch that was discarded, or never confirmed, leaves no branch behind. A launch whose first message already reached Octomerge starts even when its answer was lost, for example because Octomerge was switching to a new release: **Cancel** then opens its session instead of discarding it.
+
+### Launch defaults
+
+A project's settings have a **Launch links** section: the model and effort, and the worker, that the dialog preselects for that project when a link names none. Choose **Your last choice** to keep the dialog's last choice, or **A model** to pick one. A launch model that none of your providers offers any more shows a warning there.
+
+## Work items on sessions
+
+A session started from a link remembers its work items. The chat header (on phones, its menu) shows them as links to the tracker, for example `acme/api#42`, and the session lists show their short labels, for example `#42`; point at one to see its title. Sessions started from the former issue board have their issues as work items too.
+
+An agent can show the item it works on itself, for example after linking its session to an issue in your tracker:
+
+```sh
+otti session work-items add --url https://github.com/acme/api/issues/42 --label acme/api#42 --short-label '#42' --title 'Fix login' --icon issue
+otti session work-items list
+otti session work-items remove --url https://github.com/acme/api/issues/42
+```
+
+These act on the session `-s` names, else on `R5D_SESSION_ID`, which in an agent's shell is the agent's own session. Adding a URL the session already has updates that item. The header and the session lists update at once, and teams the session is shared with see the change.
+
+The agent receives the first message exactly as you sent it. A snapshot reaches it only if you pasted it into the message.
+
+## Make a link
+
+The simplest link uses readable query parameters:
+
+```text
+https://octomerge.dev/launch?url=https://github.com/acme/api/issues/42&title=Fix+login
+```
+
+| Parameter | Meaning |
+| --- | --- |
+| `remote` | The repository, for example `https://github.com/acme/api.git` or `git@gitlab.com:acme/api.git`. For a GitHub issue or pull request `url` it can be left out. |
+| `branch` | With `from`: a new branch with this name. Alone: work on this branch. It is your Octomerge branch if you have it, otherwise it is created from the repository's branch of that name, keeping the name, otherwise a new branch from the default branch. |
+| `from` | Where a new branch starts: an Octomerge branch or a branch of the repository. Without it, the project's default branch. |
+| `url`, `title` | One work item: an issue, a pull request or any other http(s) URL, and its title. A GitHub issue or pull request is shown as `acme/api#42`, any other URL as its host and path. |
+| `prompt` | The prompt: the start of the first message. |
+| `model` | A model ID, as `otti get models` lists them ([models and efforts](/#models-and-efforts)). The dialog preselects it on the provider that offers it. |
+| `effort` | One of the model's efforts: `none`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max`. Without it, the model's default effort. |
+| `worker` | One of your workers. The dialog preselects it when it is connected. |
+| `team`, `share` | Sharing with a [team](/platform/teams): the team's URL name, and `session`, `branch` or `project` (default `session`). The dialog preselects it when you are a member of the team and the branch or project isn't shared already. |
+
+A new branch is named exactly as your link proposes when Octomerge accepts the name for a branch: any name GitHub accepts, with the few exceptions that keep every worker able to hold it ([branch names](/cli/otti#branch-names)), and no other branch of the project of that name, also in other upper and lower case. The dialog makes any other name fit and says so. The names the dialog makes up itself, from a work item or a prompt, use up to 45 characters of lowercase letters, digits and hyphens, in `/`-separated parts, such as `issue/42-fix-login`.
+
+A link can also carry everything in its fragment, which your browser never sends to a server: `https://octomerge.dev/launch#<payload>`. The payload is JSON, compressed with deflate (the zlib format) and base64url-encoded:
+
+```jsonc
+{
+  "v": 1,
+  "remote": "https://github.com/acme/api.git",
+  // "new": a new branch from "from" (the default branch when absent).
+  // "use": your Octomerge branch "name" if you have it, otherwise one created from
+  //        the repository's branch of that name, otherwise a new branch.
+  "branch": { "mode": "new", "name": "issue/42-fix-login", "from": "main" },
+  "workItems": [{
+    "url": "https://github.com/acme/api/issues/42",
+    "label": "acme/api#42", "shortLabel": "#42", "title": "Fix login", "icon": "issue",
+    "snapshot": "Optional Markdown, which the dialog offers to view and copy"
+  }],
+  "prompt": "optional", "model": "optional model ID", "effort": "optional effort", "worker": "optional worker",
+  // Optional: share with a team, "session", "branch" or "project".
+  "share": { "team": "acme", "scope": "branch" }
+}
+```
+
+A work item is shown, wherever Octomerge shows it, from these fields alone:
+
+| Field | Meaning |
+| --- | --- |
+| `url` | Required. The item's http(s) link, and its identity: integrations find the sessions that work on an item by its URL. |
+| `label` | The text where there is room, such as `acme/api#42` or `acme!358`. |
+| `shortLabel` | The text in compact places such as a session's card in the sidebar, such as `#42` or `!358`. Without it, the label. |
+| `title` | The item's title, shown on hover and in the session's name. |
+| `icon` | `issue`, `pull-request` or `link` (the default). It also decides the dialog's wording and the first message: `Continue work on <url>` for a pull request, `Implement <url>` for anything else. |
+| `snapshot` | Markdown the dialog offers to view and copy. |
+
+Without a `label`, Octomerge builds the item from its `url` and `title`, as for the `url` parameter: a GitHub issue or pull request is `acme/api#42`, `#42` with its icon, any other URL its host and path with a link icon. Fields Octomerge doesn't know are ignored. Up to 20 work items fit in one link.
+
+For example, in Node.js:
+
+```js
+import { deflateSync } from "node:zlib";
+
+const payload = { v: 1, workItems: [{ url: "https://github.com/acme/api/issues/42", label: "acme/api#42", shortLabel: "#42", title: "Fix login", icon: "issue" }] };
+const link = `https://octomerge.dev/launch#${deflateSync(JSON.stringify(payload)).toString("base64url")}`;
+```
+
+A link made for `https://r5d.dev/launch`, Octomerge's address before octomerge.dev, keeps working: r5d.dev redirects it to the same page on octomerge.dev.

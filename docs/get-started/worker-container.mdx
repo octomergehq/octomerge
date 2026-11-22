@@ -1,0 +1,270 @@
+---
+title: "Run a worker in a container"
+description: "Run a worker with Docker, Docker Compose, Kubernetes or Helm, connected with a one-time enrollment token."
+---
+
+The worker image runs a worker in a container: on a server with Docker, in Docker Compose, or in a Kubernetes cluster, with a StatefulSet or with the Helm chart. It connects with a one-time **enrollment token**, so nobody signs in on the machine, and keeps the worker's home on a volume, so its sign-in and your checkouts survive restarts and new images.
+
+The image is `ghcr.io/ricsam/r5d-worker`, tagged with the version of Octomerge's CLIs, and the chart is `oci://ghcr.io/ricsam/charts/r5d-worker`, at the same versions. Each holds `otti-worker` and `otti` of that version, with Node.js 24, npm, Bun, Git 2.47 and the compilers of Debian 13 (trixie), and runs for **linux/amd64** and **linux/arm64**. Use the version **Settings → Workers** shows: the image of your environment's version.
+
+## Before you start: an enrollment token
+
+In **Settings → Workers → Enrollment tokens**, enter the worker's label, choose **Worker** (a worker with a workspace, with Full access for that worker only) or **Remote** (a [remote](/get-started/add-remote), which receives none of your secrets unless you check **With your secrets** under it), and create a token. The page shows the token once: copy it before you leave the page. A token works once, within an hour of its creation, for its label only ([Enroll a machine with a token](/get-started/add-worker#enroll-a-machine-with-a-token)).
+
+The container reads its settings from its environment:
+
+| Variable | |
+| --- | --- |
+| `R5D_BASE_URL` | Your environment's address, such as `https://octomerge.dev`. Required. |
+| `R5D_WORKER_LABEL` | The label the token was made for. Required. |
+| `R5D_ENROLL_TOKEN` | The token. Needed for the first start only. |
+| `R5D_WORKER_REMOTE` | `1` for a token made for a Remote. |
+| `R5D_WORKER_DESCRIPTION` | What the machine is for, in one line ([Describe a worker](/get-started/add-worker#describe-a-worker)). |
+| `R5D_ARCHIVE_WORKSPACE_LOCK` | `1` to start once past a workspace lock an older release left ([Stopping](#stopping-and-what-a-hard-kill-leaves)). |
+
+On its first start the container exchanges the token for its sign-in and saves it on the volume (`~/.config/r5d`). The worker starts without the token in its environment, so neither the worker nor the commands and terminals agents run there inherit it. The token stays in the container's settings, though (`docker inspect`, the Compose file or the pod's Secret), and in the environment of the container's first process, which agents' commands can read because they run as the same user. So remove it once the worker is enrolled; each section below says how. Later starts find the sign-in and need no token; one still set is left unused, and stays valid until it expires. The worker runs as the user `r5d` (uid and gid 1000), whose home, `/home/r5d`, is the volume: the sign-in, the worker's workspace with your checkouts (`~/.local/share/r5d`) and caches. The CLIs and Bun are part of the image, outside the volume.
+
+A container set up with `https://r5d.dev`, Octomerge's address before octomerge.dev, keeps working as it is. Its sign-in is for r5d.dev: moving it to `https://octomerge.dev` takes a new enrollment token, and the worker then starts with a new copy of its workspace, so let it publish its changes and stop it first ([Connect a worker](/get-started/add-worker)).
+
+A worker holds your workspace and runs agents with your credentials: run one only where you trust the machine and the people who administer it.
+
+## Docker
+
+```bash
+docker run -d --name my-worker --hostname my-worker \
+  --restart unless-stopped --stop-timeout 90 \
+  -e R5D_BASE_URL=https://octomerge.dev \
+  -e R5D_WORKER_LABEL=my-worker \
+  -e R5D_ENROLL_TOKEN=r5de_… \
+  -v my-worker-home:/home/r5d \
+  ghcr.io/ricsam/r5d-worker:<version>
+```
+
+`docker logs -f my-worker` shows the worker's log, and **Settings → Workers** shows it connected. `docker restart my-worker`, or `docker stop` then `docker start`, keeps everything, and so does a new container for the same worker, such as one of a newer image, with the same volume. A new container needs no token, so this is also how the token leaves the container's settings once the worker is enrolled:
+
+```bash
+docker stop my-worker && docker rm my-worker
+docker run -d --name my-worker --hostname my-worker --restart unless-stopped --stop-timeout 90 \
+  -e R5D_BASE_URL=https://octomerge.dev -e R5D_WORKER_LABEL=my-worker \
+  -v my-worker-home:/home/r5d ghcr.io/ricsam/r5d-worker:<new version>
+```
+
+`--stop-timeout 90` gives a stopping worker a minute and a half to end its commands and release its workspace before Docker kills it; Docker's default is 10 seconds. `docker rm -f` and `docker kill` kill it at once: use `docker stop` first (see [Stopping](#stopping-and-what-a-hard-kill-leaves)). `--hostname` gives the container a readable machine name, and the worker's sign-in under **Settings → CLI & API → Authorized devices** is named after its label.
+
+**One container per volume.** Never run two containers on the same volume at the same time, not even for a moment while you replace one: stop the old container before you start the new one, as above. A second container can't tell that the first is still running, so the two would work on the same files and processes.
+
+## Docker Compose
+
+```yaml compose.yaml
+name: my-worker
+
+services:
+  worker:
+    image: ghcr.io/ricsam/r5d-worker:<version>
+    hostname: my-worker
+    restart: unless-stopped
+    stop_grace_period: 90s
+    environment:
+      R5D_BASE_URL: https://octomerge.dev
+      R5D_WORKER_LABEL: my-worker
+      R5D_ENROLL_TOKEN: r5de_…
+    volumes:
+      - home:/home/r5d
+
+volumes:
+  home: {}
+```
+
+Then `docker compose up -d`, and `docker compose logs -f worker` for its log. `docker compose down` and `up` again keeps the volume, and with it the worker's sign-in and checkouts. `docker compose down -v` deletes the volume, and with it whatever the worker had not published: don't. Once the worker is enrolled, remove `R5D_ENROLL_TOKEN` from the file and run `docker compose up -d`, which creates the container again without it.
+
+Here too, one container per volume: keep the service at one container (no `scale` or `replicas` above 1), and don't use its volume in another Compose project or `docker run`. When you change the file, `docker compose up -d` stops the old container before it starts the new one.
+
+`name` names the Compose project after the worker, and with it the container (`my-worker-worker-1`) and the volume (`my-worker_home`), wherever the file is. Without a name, Compose names the project after the file's directory, so two workers' files in directories of the same name would be one project: the second worker's `docker compose up -d` would replace the first one's container and use its volume. Give each worker its own name, and keep it: a file with another name starts another project, with a new, empty volume.
+
+## Kubernetes
+
+A Secret with the token, a volume claim for the worker's home and a StatefulSet of one pod:
+
+```yaml otti-worker.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-worker-enroll
+type: Opaque
+stringData:
+  token: r5de_…
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-worker-home
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: my-worker
+spec:
+  replicas: 1
+  podManagementPolicy: Parallel
+  serviceName: my-worker
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: r5d-worker
+      app.kubernetes.io/instance: my-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: r5d-worker
+        app.kubernetes.io/instance: my-worker
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 90
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: worker
+          image: ghcr.io/ricsam/r5d-worker:<version>
+          env:
+            - name: R5D_BASE_URL
+              value: https://octomerge.dev
+            - name: R5D_WORKER_LABEL
+              value: my-worker
+            - name: R5D_ENROLL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: my-worker-enroll
+                  key: token
+                  optional: true
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+          volumeMounts:
+            - name: home
+              mountPath: /home/r5d
+      volumes:
+        - name: home
+          persistentVolumeClaim:
+            claimName: my-worker-home
+```
+
+`kubectl apply -f otti-worker.yaml`, then `kubectl logs -f statefulset/my-worker`. What matters in it:
+
+- **A StatefulSet of one pod:** one worker per volume, and never two at once. Its pod has a fixed name, `my-worker-0`, so a new pod starts only once the old one has ended: after an update, `kubectl delete pod` or a node drain alike. A Deployment would start the replacement while the old pod is still stopping, so for a while two workers would use the volume. `podManagementPolicy: Parallel` lets an update or `kubectl rollout restart` replace a pod that isn't ready, such as one [restarting with exit code 78](#when-it-cant-sign-in-exit-code-78). `serviceName` names no Service: the worker takes no inbound connections.
+- **`fsGroup: 1000` with `fsGroupChangePolicy: OnRootMismatch`:** the volume becomes the worker's group's once, when it is new. Without `OnRootMismatch`, the kubelet would add group access to every file on each start, and the worker refuses its private directories once others can reach them (`insecure_directory`).
+- **`terminationGracePeriodSeconds: 90`:** a stopping worker's time to end its commands and release its workspace; Kubernetes' default is 30 seconds.
+- **`ReadWriteOnce`:** the worker's own disk. Any storage class that gives pods a POSIX file system with owners and modes works; set `storageClassName` for another than your cluster's default. With CSI storage you can also make it `ReadWriteOncePod`, which lets only one pod in the cluster mount it.
+
+Deleting the pod, a node drain, or `kubectl rollout restart statefulset/my-worker` keeps the volume, the sign-in and the checkouts; the new pod needs no token. Once the worker is enrolled, delete the Secret (`kubectl delete secret my-worker-enroll`). The running pod keeps the token until it's replaced, for example by `kubectl rollout restart statefulset/my-worker`, and its new pod starts without it.
+
+## Helm
+
+```bash
+helm install my-worker oci://ghcr.io/ricsam/charts/r5d-worker --version <version> \
+  --set label=my-worker --set baseUrl=https://octomerge.dev --set enrollToken=r5de_…
+```
+
+or with a values file:
+
+```yaml values.yaml
+label: my-worker
+baseUrl: https://octomerge.dev
+enrollToken: r5de_…        # or existingSecret: a Secret of yours with the token under the key token
+remote: false              # true for a token made for a Remote
+description: ""
+image:
+  repository: ghcr.io/ricsam/r5d-worker
+  tag: ""                  # the chart's version when empty
+persistence:
+  size: 20Gi
+  storageClass: ""         # your cluster's default when empty
+resources:
+  requests:
+    cpu: 250m
+    memory: 1Gi
+terminationGracePeriodSeconds: 90
+```
+
+`helm install my-worker oci://ghcr.io/ricsam/charts/r5d-worker --version <version> -f values.yaml`. The chart makes the StatefulSet, the volume claim and, with `enrollToken`, the Secret, as the Kubernetes example above does; `helm upgrade` with a newer `--version` moves the worker to that image and keeps its volume, and its new pod starts once the old one has ended. Once the worker is enrolled, `helm upgrade my-worker oci://ghcr.io/ricsam/charts/r5d-worker --version <version> --reuse-values --set enrollToken=` removes the Secret, and the worker's new pod starts without the token. `helm uninstall` keeps the volume claim (`<release>-home`) too, so installing the release again finds the worker's sign-in and checkouts; delete the claim with `kubectl` when you no longer need them.
+
+## No Docker inside
+
+A container usually can't run Docker itself, and the worker image has no Docker: agents on a container worker can't build or run containers there. For that, use a worker on a machine with Docker ([Docker](/get-started/add-worker#docker)). Giving the container the host's Docker socket would give its agents root on the host; the image doesn't support it.
+
+## Its log
+
+`docker logs`, `docker compose logs` and `kubectl logs` show the worker's log. The container's log records when each line was written, so there the worker leaves out the time it otherwise starts each line with ([The worker's log](/get-started/add-worker#the-workers-log)): `docker logs -t`, `docker compose logs -t` and `kubectl logs --timestamps` show the times. Lines the worker writes to a file in the container carry their time, and `R5D_LOG_TIMESTAMPS=on` in the container's environment adds it to every line.
+
+## The life vest
+
+The worker's [life vest](/get-started/add-worker#the-life-vest) resumes the worker when a signal stops it, even a `kill -STOP -1` that an agent's command sends to every process in the container, and starts the worker again when it exits or hangs, without a restart of the container. The restart policy still starts the container again when it exits, for example after the out-of-memory killer ended it.
+
+## Updates
+
+A worker updates itself: when your environment selects a new release, the worker downloads it into its home, on the volume, and restarts into it, with running shells and terminals moving to the new release ([Automatic updates](/get-started/add-worker#automatic-updates)). A restart of the same container keeps running the release it updated to. A container of a newer image starts that image's version.
+
+To update the image itself, start a container, pod or Helm release of a newer tag with the same volume. **Update CLIs** in Settings can't write the image's installation, which belongs to root; with automatic updates on, as in the image, Settings doesn't offer it.
+
+## Stopping, and what a hard kill leaves
+
+On a stop (`docker stop`, `docker compose down`, a pod's deletion) the worker ends its commands and terminals, releases its workspace and exits: within about a second when it is idle, and with shells running once they have ended, after at most about 20 seconds. The examples allow 90 seconds before the container is killed.
+
+A worker killed outright (`docker kill`, `docker rm -f`, the out-of-memory killer, a node failure, a stop that outlasts the timeout, or its life vest after it hung) can't release its workspace's lock. The lock names the worker's process, so the next start sees that it no longer runs (the container restarted, or the pod moved to another node), moves the lock aside and carries on: its log says so in one line, and the commands that were running are listed as ended, or with an unknown outcome when nothing recorded how they ended. Nothing the worker recorded is lost.
+
+A lock that an older worker release left when it was killed doesn't say which process held it. Unless the machine restarted since, the start can't tell whether that worker still runs, and refuses:
+
+- its log says `workspace_lock_unverified`, with the lock's path and what to do;
+- **Settings → Workers** shows the worker disconnected, with the same reason;
+- the worker exits with 1, and its life vest starts it again and again, after longer waits up to 5 minutes, so the container keeps running and its log shows the refusal each time.
+
+If no other container runs a worker on that volume (a volume serves one container at a time), start it once with `R5D_ARCHIVE_WORKSPACE_LOCK=1`, which moves the lock aside: with Docker, create the container again with the same volume and `-e R5D_ARCHIVE_WORKSPACE_LOCK=1`; with Compose, add it to the service's `environment` and run `docker compose up -d`; with Kubernetes or Helm, `kubectl set env statefulset/my-worker R5D_ARCHIVE_WORKSPACE_LOCK=1`. Remove it afterwards; left in place it only ever moves aside a lock that can't tell, never one whose worker still runs.
+
+## When it can't sign in: exit code 78
+
+The container stops with exit code **78** when it can't sign in, and its log says why and what to do:
+
+- there's no sign-in on the volume and no `R5D_ENROLL_TOKEN`, or the token was refused: used, expired, revoked, made for another label or by another environment;
+- `R5D_BASE_URL` names another server than the one the volume's sign-in is for, such as `https://octomerge.dev` for a container signed in at `https://r5d.dev`;
+- the worker's sign-in was revoked (under **Settings → CLI & API → Authorized devices**, or with `auth logout` elsewhere), or it lost the access it needs.
+
+The code stays 78 so that you can see what happened, but a restart policy restarts the container on any exit. So until you act, the container keeps failing the same way:
+
+| Runtime | What you see | Stop it |
+| --- | --- | --- |
+| `docker run --restart unless-stopped` | `docker ps` shows the container `Restarting (78)`. Docker starts it again with a growing delay. `docker inspect -f '{{.State.ExitCode}} {{.RestartCount}}' my-worker` shows 78 and the restarts so far, and `docker logs my-worker` shows the reason each time. | `docker update --restart=no my-worker`, then `docker stop my-worker` |
+| Docker Compose | The same, for the service. `docker compose ps` shows it restarting, and `docker compose logs worker` shows why. | `docker compose stop worker` |
+| Kubernetes, Helm | The pod is in `CrashLoopBackOff` (`Error` between restarts). `kubectl describe pod my-worker-0` shows the last state `Terminated` with exit code 78, and `kubectl logs my-worker-0 --previous` shows why. | `kubectl scale statefulset/my-worker --replicas=0` |
+
+To connect it again, create a new enrollment token for the same label, then start it with that token and the same volume. An enrollment replaces a sign-in that no longer works.
+
+- **Docker:** `docker stop my-worker && docker rm my-worker`, then the same `docker run` with `-e R5D_ENROLL_TOKEN=<the new token>`.
+- **Compose:** put the new token in `compose.yaml`, then `docker compose up -d`, which creates the container again with it.
+- **Kubernetes:** replace the token in the Secret, then start the pod again:
+
+  ```bash
+  kubectl create secret generic my-worker-enroll --from-literal=token=r5de_… --dry-run=client -o yaml | kubectl apply -f -
+  kubectl scale statefulset/my-worker --replicas=1   # if you scaled it to 0
+  kubectl rollout restart statefulset/my-worker      # otherwise
+  ```
+
+- **Helm:** `helm upgrade my-worker oci://ghcr.io/ricsam/charts/r5d-worker --version <version> --reuse-values --set enrollToken=r5de_…`, then `kubectl rollout restart statefulset/my-worker`.
+
+With Docker you can also sign it in by hand, with an approval in the browser: run the image once with the same volume, `docker run --rm -it -v my-worker-home:/home/r5d ghcr.io/ricsam/r5d-worker:<version> otti-worker auth --base-url https://octomerge.dev`, approve the code it shows with **Full access**, then `docker start my-worker`.
+
+Other failures exit with 1, and the restart is worth it: an Octomerge server that can't be reached, or a workspace lock a killed worker left, which the next start moves aside ([Stopping](#stopping-and-what-a-hard-kill-leaves)).
+
+## arm64
+
+The image runs on arm64 machines, such as AWS Graviton, Hetzner's CAX servers, Ampere servers, or a Raspberry Pi with a 64-bit system: Docker and Kubernetes pull the image of the machine's architecture. Terminals work there too; the worker ships prebuilt terminal binaries for both architectures.
+
+To run the image from another registry, such as your own, copy it with both architectures, for example `skopeo copy --all docker://ghcr.io/ricsam/r5d-worker:<version> docker://registry.example.com/r5d-worker:<version>`, and set `image.repository` for the chart.

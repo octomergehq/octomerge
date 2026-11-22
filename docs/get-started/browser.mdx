@@ -1,0 +1,252 @@
+---
+title: "Browser service"
+description: "Connect your Chrome browser to Octomerge."
+---
+
+The browser client runs on macOS; on a Linux server, run it in its container image instead ([Run the browser on a Linux server](/get-started/browser-container)). It needs Google Chrome, Bun 1.3 or newer, and Node.js 18 or newer with npm: Bun installs and runs the client, Node.js runs its command's launcher, and npm installs its automatic updates. Install it with Bun from Octomerge's npm registry, `npm.octomerge.dev`, once, then sign in and start it:
+
+```bash
+bun install --global --backend=copyfile @octomerge/otti-browser@<version> --registry https://npm.octomerge.dev
+otti-browser auth
+otti-browser start
+```
+
+**Settings → Browser** and **Connect a browser** in a chat's browser menu (the browser icon at the bottom of the composer) show these commands with the exact version your environment runs in place of `<version>`, and its `--base-url`. `auth` alone is `auth login`. To start the client again later, run the same `otti-browser start` command: it needs no registry. Bun puts the command in `~/.bun/bin` (`bun pm bin -g` shows it). Bun's own installer puts that directory on your `PATH`, but a Bun from Homebrew doesn't: if `otti-browser` isn't found after the install, or `command -v otti-browser` shows an older copy elsewhere, put it first on your `PATH`, for example with `export PATH="$HOME/.bun/bin:$PATH"` in `~/.zshrc`.
+
+Approve the sign-in on the page that showed its command. The `auth` command **Settings → Browser**, **Connect a browser** and the onboarding show carries a one-time `--pair` token, so the code `otti-browser auth` prints appears on that page among two others: pick the one your terminal shows and approve ([Approving on the page](/cli/otti#approving-on-the-page)). Without `--pair`, approve the device code in the browser instead. `otti-browser auth` asks for **Browser** access, which lets the machine connect a browser and nothing else: a copy of that credential cannot start agents or read your conversations. It is the same sign-in as `otti auth login` and `otti-worker auth`: the credential it saves is shared by all three on the machine, so a machine that already signed in with one of them is asked only to add Browser access (or nothing, if it has it), and the browser needs no worker installed or running ([What a sign-in may do](/cli/otti#what-a-sign-in-may-do)). On the Mac where your worker runs, its sign-in already allows the browser: install otti-browser and run `otti-browser start` without `auth` (in the onboarding's Browser step, choose **On *your worker's label***). A worker started with its own `--config` needs the same `--config` for `otti-browser start`. `otti-browser auth status` shows whose sign-in the machine holds and what it allows; `auth logout` on any of the three revokes it for all of them. Keep the command running while you use browser tools. Open **Settings → Browser** to check the connection and see port forwards, [isolated sessions](#isolated-sessions) and open tabs. The tab list stays collapsed until you show it; it can be searched, and filtered to tabs agents used or hold, each with the chat that used it.
+
+The client opens a separate Chrome profile. On macOS it is the same Google Chrome app as your own, so Chrome's icon in the Dock, in Applications and in Spotlight only brings up whichever Chrome is already running. If the client starts while your own Chrome is closed, those clicks bring up the client's Chrome, and the terminal says so. To open your own Chrome next to it, run `open -na "Google Chrome"`; `-n` asks macOS for a new instance. Start your own Chrome first and it keeps the Dock icon. Sign in to websites in that window when a task needs your account. Those sign-ins remain available when you restart the client, and server deployments do not close your local browser. In this profile Chrome doesn't warn that a password you just used appeared in a data breach: that warning would hold the whole tab, for you and the agent, until someone answered it on the Mac. Chrome still offers to save passwords. Pressing **Ctrl+C** disconnects the client and leaves Chrome's tabs and windows open. Starting the client again with the same options reconnects to that Chrome session.
+
+If your machine loses its network connection, or Octomerge stops answering, the client keeps running and reconnects by itself: it retries, waiting at most 15 seconds between attempts, until Octomerge answers again. The terminal shows **Lost the connection** once the connection has been gone for 10 seconds, and **Reconnected** when it is back. Chrome and its tabs stay open meanwhile; browser tools are unavailable until the client reconnects.
+
+The agent can inspect pages, interact with tabs, capture screenshots, and exchange files with your chat. A port forward lets Chrome on your machine reach an application running on the chat's worker through a local address such as `http://localhost:3000`. Forwarded ports are available only on your machine's loopback interfaces. Stop them in **Settings → Browser** when finished.
+
+For a large page, ask the agent to find a control by its name, label, placeholder or visible text, or inspect a specific menu or section. Page reads prioritize open menus, dialogs and focused fields, and report when depth or output limits omit content. The agent can narrow its search or expand a result without extracting the whole page's HTML. Password fields stay masked in page reads and search results.
+
+For another environment, such as stage or a self-hosted installation, sign in to its HTTPS origin with a configuration file of its own and start with the same file:
+
+```bash
+otti-browser auth --config ~/.config/r5d/your-environment.json --base-url https://your-environment.example
+otti-browser start --config ~/.config/r5d/your-environment.json --base-url https://your-environment.example
+```
+
+The client chooses its server and credential as `otti` does ([Server and credential](/cli/otti#server-and-credential)): flags and a named `--config` come before the `R5D_*` variables, and a saved or inherited credential is only sent to the server it was issued for. When the chosen credential belongs to another server, the client stops before contacting anything and names both servers. An agent's conversation credential (`R5D_TOKEN` in an agent's shell) never connects a browser.
+
+Each environment has its own browser profile and account authorization. A browser signed in at `https://r5d.dev`, Octomerge's address before octomerge.dev, keeps working as it is. Moving it to `https://octomerge.dev` takes a new sign-in and starts it afresh, as a new browser with a new default profile and no isolated sessions. You can select an installed Chrome executable with `--chrome-path` or a dedicated profile directory with `--profile`.
+
+Use `--root /absolute/private/browser-state` to place Octomerge's browser binding, receipts, downloads, default Chrome profile and the profiles of its [isolated sessions](#isolated-sessions) in a separate state directory. Octomerge adds an environment-specific subdirectory beneath that path. Without `--root`, state stays under `~/.r5d/personal-browser`. Symbolic links in the path are followed, so on macOS `--root /tmp/browser-state` keeps the state in `/private/tmp/browser-state`. The state directory must be accessible only to you, and only you or the system may be able to change the directories above it. Keep your normal `HOME` environment variable; changing it can interfere with Chrome's operating-system integration.
+
+If the client cannot start, it says why and exits: for example when Chrome is not installed, another `otti-browser` already uses the same state directory, a state file is readable by other users, or `--base-url` does not name an Octomerge server. A missing or refused sign-in exits with code 78, any other failure with 1. It checks that it can run on this machine (macOS, Chrome, its state directory) before it contacts Octomerge, so a failed start on another machine adds no browser to your account. When Octomerge cannot be reached, a browser that connected to it before waits instead, and says so: a start or an automatic update's restart while your network is down connects once Octomerge answers. Press **Ctrl+C** to stop waiting.
+
+## When macOS asks whether to open Chrome
+
+The first time the client starts a Google Chrome that was downloaded from the Internet and that nobody has opened yet, for example one installed with `brew install --cask google-chrome`, macOS asks: **“Google Chrome” is an app downloaded from the Internet. Are you sure you want to open it?** Until someone clicks **Open**, macOS holds the part of Chrome that draws pages, so the client waits: after a few seconds the terminal says what it waits for, and when nobody answers within 30 seconds, the start fails and says why. Click **Open** on the Mac's screen and start the client again; macOS remembers the answer.
+
+On a Mac nobody watches, such as a virtual machine, remove that mark after installing Chrome, before the client first starts it, and macOS doesn't ask:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Google Chrome.app"
+```
+
+Once macOS has asked, removing the mark doesn't answer the question: answer it on that Mac's screen, for example through Screen Sharing or the virtual machine's window.
+
+## Multiple browsers
+
+You can connect browsers from multiple machines to the same account. For separate browsers on one machine, use separate `--root` directories (and separate `--profile` directories if you provide them). Do not run two clients against the same browser state or Chrome profile.
+
+**Each chat has its own browser.** The browser icon at the bottom of a chat's composer shows the chat's browser: its machine's host name, its open tabs, sessions and port forwards, and what an agent is doing in it right now. The menu lists your other browsers: **Use** switches this chat to one of them, and only this chat. New chats use your **default browser** unless you choose another in New Chat's menu, and a subagent starts with its parent's browser. The first browser you connect becomes the default; in **Settings → Browser**, which names each browser by its machine's host name, **Make default** chooses another one. With more than one browser, that page shows one browser's sessions and open tabs at a time: choose which in **Sessions and tabs of**. **Connect a browser** in the menu walks you through installing, signing in and starting `otti-browser` on another computer, and once that browser connects, **Use in this chat** switches the chat to it.
+
+Agents work in their chat's browser. They can use another of your browsers for a single step too, for example to open a page on another computer, and they find the browser of a tab or a download by themselves; each result names the browser it ran on.
+
+### A browser's settings
+
+Each browser in the menu, the chat's own included, has a cog. It appears when you point at the browser, and is always shown on a touch screen. **Settings → Browser** has one on every browser too. It opens the browser's settings and never switches the chat's browser:
+
+- **Make default** makes it your default browser.
+- **Access** shows the sign-in the browser uses, what it allows, and what else on that computer uses it, such as `otti`, a worker or a remote. **Lower access** takes access away, after showing what that changes. Settings never add access: if the sign-in can no longer connect a browser, run the `otti-browser auth` command shown there on that computer and approve it in place.
+- **Disconnect** signs the browser out at once; it can't reconnect until someone signs in on that computer again. If `otti`, a worker or a remote on that computer shares the sign-in, you choose between taking away only Browser access and signing the whole computer out. A remote that shares the sign-in keeps your secrets; one with Full access drops to **With your secrets** ([What a remote gets](/get-started/add-remote#what-a-remote-gets)).
+- **Forget**, for a browser that is offline, removes it from your lists and signs it out the same way. When its sign-in serves more than this browser, you can also choose **Keep the sign-in**, which only removes it from your lists; that choice is already selected when the others would sign something else out. Chats that chose it use your default browser again, and if it was your default, you choose which browser becomes the default. Chats keep the history of what ran there.
+
+You can also list browsers, choose the default and forget an offline browser from the CLI:
+
+```bash
+otti account browsers list
+otti account browsers default <label-or-id>
+otti account browsers forget <label-or-id> [--default <label-or-id>] [--sign-out-machine | --keep-sign-in]
+```
+
+Each line shows the browser's resource ID, whether it is your default (and, when an agent runs the command, whether its chat uses it), its connection state, the `otti-browser` version and source revision it runs, its automatic update setting, its label and its host. `--json` includes connection and host details and the Chrome version. `forget` works once the browser is offline (at most 45 seconds after its last check-in). Forgetting your default browser needs `--default`, naming the browser that becomes the default, unless it is your only one. Like **Forget** in the browser's settings, it also takes Browser access away from the browser's sign-in, so `otti` and anything else on that computer stay signed in; a sign-in nothing else uses is revoked. `--sign-out-machine` revokes the sign-in instead, and `--keep-sign-in` leaves it as it is.
+
+There is **no automatic failover**: if a chat's browser disconnects, reconnect it or switch the chat to another browser. Switching affects the chat's new browser actions only. Already-started actions remain on their original browser; switching does not cancel or replay them, and other chats keep their browsers. After switching, have the agent list tabs and read the page again before continuing. Port forwards remain attached to the browser they were made on and are listed together in **Settings → Browser**.
+
+If choosing a browser times out or its result is uncertain, reload the page or run `otti account browsers list` before retrying. The choice may already have been saved.
+
+## Isolated sessions
+
+An agent can be signed in to the same site as several accounts at once, for example to test sharing, invitations, permissions or messages between two accounts. It creates a **session** for each account: a Chrome of its own, with separate cookies, site data, cache and history, and opens that account's tabs in it. Your own sign-ins are in the **default session**, the browser's own profile, which agents use unless they name another session. A new session starts empty: it never sees the default session's sign-ins, and nothing done in one session changes another's.
+
+- **Signing in.** The agent signs a session in with that account's own secrets ([Filling in secrets](#filling-in-secrets)), or links the session's tab so you sign in there ([Tab links](#tab-links)), for example when a site asks for a CAPTCHA or a code. Pages a tab opens, such as a sign-in popup, stay in its session.
+- **They last.** A session belongs to the browser, not to the chat that created it: any chat can use it, still signed in, until an agent or you end it. Closing its windows, quitting its Chrome, restarting `otti-browser` or your Mac, and automatic updates keep it, sign-ins included.
+- **In the background.** A session's Chrome starts when an agent first opens a tab in it, without a window coming in front of you: its windows open minimized, and a tab link brings one forward. Each session's windows are tinted in its own color, which **Settings → Browser** shows beside its name. After 10 minutes without tabs, a session's Chrome quits to save memory; it starts again, still signed in, the next time a tab is opened in it, without the tabs it had before.
+- **Ending a session.** An agent ends a session when its task no longer needs it, and you can end one in **Settings → Browser** after confirming. Ending closes its Chrome and deletes its profile: its sign-ins, cookies, site data and history. A chat still working in one of its tabs is told the session was ended. The default session cannot be ended.
+- **Settings → Browser** lists a browser's sessions, your default browser's first: each one's name, whether its Chrome runs and with how many tabs, and when and by which chat it was created and last used. The tab list names each tab's session.
+- **Limits.** A browser holds up to 20 sessions besides the default; creating another is refused until one is ended. Each running session is a whole Chrome, which takes memory, so sessions without tabs stop.
+
+Sessions belong to the browser that created them: another browser connected to your account has its own, and a chat switched to another browser uses that browser's sessions. Downloads from every session go to the browser's one downloads folder, and port forwards reach every session, since they listen on your Mac's loopback interfaces. A session needs an `otti-browser` that supports sessions; an older one refuses before anything is sent, and updates itself.
+
+## Updating the browser client
+
+The client updates itself; `otti-browser start` needs no extra option. While connected, it checks for the environment's selected release once a minute, downloads it in the background, finishes the current browser action, and restarts its connection. Chrome stays open with the same windows, tabs and unsaved page state. The browser is briefly disconnected; have the agent list tabs and read the page again afterward.
+
+Automatic updates wait for an open JavaScript dialog or unfinished interaction. If the client reconnects while a dialog is open or a page is not responding, or a page stops responding while the client connects (for example when a script on it runs for a long time once its tab gets focus), it still connects and lists that tab as **Not responding** in the terminal and in **Settings → Browser**; agents can use that tab again once you answer the dialog in Chrome or the page responds. The client never chooses an answer for you.
+
+Automatic updates require npm and a writable state directory. They download from the npm registry your environment names (`npm.octomerge.dev` for octomerge.dev), and update Octomerge's browser client, not Google Chrome. Failed downloads leave the running version in place and retry after five minutes. Settings shows whether an update is downloading, waiting or retrying, and the outcome of the client's last update. The installed `otti-browser` stays the client's launcher: later starts run the updated version, and installing another version with Bun starts that version. A client installed under its earlier name, `r5d-browser`, keeps that command and updates as before; to switch, install `@octomerge/otti-browser` and run `otti-browser start`, which uses the same sign-in, state and Chrome profile.
+
+To turn automatic updates off, start the client once with `--no-auto-update` and your usual options:
+
+```bash
+otti-browser start --no-auto-update
+```
+
+The choice is saved for this environment and state directory, so later starts without the option keep updates off. Start it once with `--auto-update` to turn them back on. A client installed before automatic updates were on by default needs one more manual update (below); from then on it updates itself, unless you turned updates off with `--no-auto-update`.
+
+For a manual update:
+
+1. Press **Ctrl+C** in the terminal running `otti-browser`. Wait for the **Disconnected** message. The client finishes any browser action already running, then leaves Chrome open.
+2. Install the release selected for your environment. Replace `VERSION` with it (**Settings → Browser** shows the command with it):
+
+   ```bash
+   bun install --global --backend=copyfile @octomerge/otti-browser@VERSION --registry https://npm.octomerge.dev
+   ```
+
+   For a client you installed with npm, Settings shows `npm install -g` with the same version instead, so that the update replaces that copy.
+
+3. Run `otti-browser start` again, using the same `--base-url`, `--root`, and `--profile` options if you specified them before. The client reports that it has reconnected to your open tabs and windows.
+
+Your workers keep running during this process. The browser is disconnected from Octomerge until you start the client again; browser actions are unavailable during that interval. After reconnecting, have the agent list tabs and read the page again before continuing browser actions. Tab IDs, tab ownership and viewport overrides are retained while the same Chrome stays open. Element refs and incomplete uploads require fresh discovery after a client restart. A full Chrome restart creates new tab identities.
+
+When Chrome stays open, pages and unsaved form text stay in place. On the first upgrade from an older client that closes Chrome, the new client uses Chrome's session restore to reopen its previous tabs and windows. Those pages reload, so save any unsaved work before that first upgrade.
+
+To close Chrome when stopping the client, run `otti-browser start --close-browser-on-exit`. This applies to user-requested stops; automatic updates leave Chrome open. You can also quit the dedicated Chrome windows yourself.
+
+## When Chrome is replaced while it runs
+
+Chrome's own updates install the new version beside the one that runs, and need nothing from you until Chrome restarts. An installer that replaces the whole Chrome app while Chrome runs, such as a managed update from your company's IT (for example Jamf), leaves the running Chrome unable to open new tabs or load other sites. The client keeps running and says so in its terminal, with the version Chrome runs and the version now installed. Until that Chrome restarts, browser actions in it that need a page are refused, and the agent asks you to restart it; listing, closing and bringing tabs to the front still work.
+
+- **The default session's Chrome:** quit it. The client stops with it and says so; run `otti-browser start` again, and Chrome reopens its tabs on the new version. Agents list tabs again afterwards: tab IDs change.
+- **An [isolated session](#isolated-sessions)'s Chrome** is reported on its own: quit it, for example by bringing one of its windows to the front with a [tab link](#tab-links) and pressing **⌘Q**, or with the `kill` command the terminal shows. It starts again on the new version, still signed in, when an agent next opens a tab in that session; its old tabs are gone.
+
+## Tab links
+
+When an agent needs you to look at or do something in a tab, such as signing in, solving a CAPTCHA or checking a page, it links the tab in its message. The link has a browser-window icon. Click it to see the tab's title and address and choose how to reach it:
+
+- **Bring to front**: the tab comes to the front on the Mac running `otti-browser`: its window is un-minimized and raised, the tab is selected, and Chrome comes in front of the app you were using. Use it when you sit at that Mac. Agents open new windows minimized, so they stay out of your way until a link brings one forward.
+- **Take over remotely**: the tab opens here, on the device you clicked from, a phone included, as a live picture you click, scroll and type in ([Remote takeover](#remote-takeover)). On a phone or tablet this comes first.
+
+When you are done, for example signed in, tell the agent in the chat; it reads the page again before it continues.
+
+- **Whichever chat uses the tab.** The click is yours, not an agent's. It works while another chat's agent is working in the tab, and that agent carries on; the tab stays with the chat that holds it. Bringing a tab forward waits only for a browser action already running, never for an agent to finish.
+- **When it can't.** The link says when the tab is gone (it was closed, or Chrome restarted, which gives tabs new IDs) and when the browser that has it isn't connected. It works for tabs of any of your browsers, whichever chat uses that browser. If macOS keeps another app in front, the tab is still selected and its window shown, and the link says to switch to Chrome.
+- **Only your own browser.** In a chat shared with a team, members see the link, but it does nothing.
+- **Outside the chat.** A tab link is an Octomerge address, `https://octomerge.dev/browser/tabs/<tab ID>`. Opened from an email or another app, it shows a page with **Take over remotely** and **Bring to front** once you are signed in.
+
+An `otti-browser` too old for tab links or remote takeover says so when you choose it; it updates itself.
+
+## Remote takeover
+
+A takeover shows a tab of your `otti-browser` in a window of its own, live, and passes your clicks, scrolling and typing to it, so you can sign in to a site from your phone while your Mac is elsewhere. Nothing else of the Mac is shown: only that tab.
+
+- **On only while you use it.** The tab streams while the takeover window shows it. It pauses while the window is hidden (another app or tab in front) and when you press **Pause**, and it ends when you press **Done**, close the window or your device sleeps. Your browser sends nothing between takeovers.
+- **Done** ends the takeover and closes its window, so you are back in the chat. A window Octomerge may not close (one you opened from an email, say) offers **Back** instead.
+- **On a phone.** Tap to click, swipe with one finger to scroll, and pinch with two to zoom the picture. The keyboard button opens your phone's keyboard, and **Type here** appears when you tap a field; the keyboard stays open while you tap from field to field. The paste button pastes your phone's clipboard into the page, for example a password you copied from your password manager.
+- **Drag on a phone.** Touch and hold for a moment to press the mouse button where your finger is: a ring appears around your finger, and your phone buzzes if it can. Move your finger to drag, for example a CAPTCHA's slider or puzzle piece, a price slider or a list item, and lift it to let go. Holding still keeps the button pressed, for buttons you have to press and hold.
+- **Point without clicking.** **More → Pointer mode** makes one finger move the mouse pointer instead of scrolling, without pressing it, for menus and buttons that appear only while the pointer is over something. A tap still clicks. To scroll again, turn it off with the **Pointer mode** button at the bottom of the picture.
+- **Fit.** With Fit on, the tab is laid out at your screen's size while you take it over, as the site's own mobile layout when it has one; when the takeover ends, it gets its own size back. Fit is on by default on small screens; the phone and monitor button turns it on and off, and Octomerge remembers your choice on each device.
+- **On a computer**, the tab takes your mouse, wheel and keyboard, including shortcuts: on Windows or Linux, Control shortcuts become their Mac's Command ones. Paste pastes this computer's clipboard.
+- **More** goes back, forward or reloads the tab, resets the zoom, turns pointer mode on or off, or brings the tab to the front on your Mac instead.
+- **Dialogs** the page shows (alerts, confirmations, prompts, "Leave this page?") appear over the picture for you to answer.
+- **One window per tab.** Taking a tab over in a second window ends the first one's takeover. A browser streams up to four tabs at once.
+
+Chrome draws some things outside the page, and those don't appear in the picture: `<select>` menus, date pickers, autofill suggestions and permission prompts open on the Mac. A focused menu still changes with the arrow keys. You can't upload files from your phone into the tab, or copy from the tab to your phone's clipboard.
+
+Some of Chrome's own windows hold the whole tab until they are answered on the Mac, such as an HTTP sign-in that Chrome asks for itself (a proxy's, or one that started before the takeover). While one is open the tab ignores your clicks and typing, and the takeover says so; answer it on your Mac (**Bring to front** shows it), and the tab takes your input again. It holds the agent's clicks and typing in that tab too. A site's own HTTP sign-in in a tab you take over appears in the takeover instead ([HTTP sign-ins](#http-sign-ins)).
+
+An agent can keep working in the tab while you take it over; nothing locks it, so ask it to wait when you need the tab to yourself.
+
+### Passkey prompts
+
+When a page asks for a passkey, to sign in with one or to create one, Chrome shows its passkey prompt on the Mac, outside the page, and the tab takes no clicks or typing until it is done. A takeover shows a card that says so instead of a page that seems frozen. A passkey can only be used on the Mac, with Touch ID, a security key, or your phone scanning the QR code Chrome shows there, and Chrome shows the prompt only while the tab is in front: **Bring to front on your Mac** puts it there. **Cancel passkey prompt** cancels it, as the prompt's own Cancel would, so that you can sign in another way, and **Reload page** also ends it.
+
+Agents are told about the prompt too. They don't click or type into the tab while it is open, and they cancel it when signing in another way is part of what you asked, or link the tab for you to complete it.
+
+To know about passkey prompts, the client adds a small script to the pages it runs, which wraps the browser's passkey functions (`navigator.credentials.get` and `create`), and a page could notice it. To keep it out of pages, start the client with `otti-browser start --no-passkey-detection`; agents and takeovers then can't tell that a passkey prompt holds a tab.
+
+## Browser controls and verification
+
+The agent can hover menus, drag items, select text or position a caret, edit rich text, go back or forward, reload, and explicitly show or focus a browser window. It can read the resulting state alongside an action and check a condition before reporting success. When a control appears missing, it can inspect its focus and expanded state, wait for the expected change, or read a wider view and take a screenshot.
+
+The agent clicks and types the way you would. A code editor, such as the one Octomerge uses for instructions, draws its own text over a hidden input, and a styled checkbox can hide its real box: the agent's click lands where the editor or box is drawn, and then it types into the editor like a keyboard. A code editor treats that typing as it treats yours, indenting new lines and closing brackets, so the agent checks the result. When something covers what the agent wants to click, such as a cookie banner or a dialog, the click is not made and the agent is told what is in the way.
+
+JavaScript alerts, confirmations and prompts appear as explicit blockers. The agent can accept or dismiss them when your task authorizes that decision, or you can answer directly in Chrome. Tab diagnostics provide bounded console errors and failed-request summaries when a site is not working. An uncaught error or failed promise is reported with its stack: the functions, script URLs, lines and columns that led to it.
+
+A page can stop responding, for example when a script on it is stuck in a loop. That affects only its own tab: other tabs keep working, the agent sees the tab marked as unresponsive, and **User settings → Browser** shows it as **Not responding**. The agent can close the tab or navigate it elsewhere, or ask you to close it in Chrome.
+
+A tab that waits for a slow website is not shown as not responding. When a link starts a download that the website takes a while to prepare, or opens a page that is slow to load, the agent is told that the tab is waiting for the website. It waits for the download or the page and leaves the tab open meanwhile: closing the tab, or opening another page in it, before the download has started would cancel the download.
+
+Ask the agent to keep a deliverable tab or hand it over to you. New tabs are kept by default. Scratch tabs explicitly marked temporary can be closed when the task finishes or is cancelled; tabs you opened are never part of that cleanup. Work with uncertain outcomes stays available for inspection.
+
+The agent can use file-picker dialogs, follow download progress, and export page text, HTML or PDF into your chat's files. It can also save supported assets that the page has already loaded. For Google Docs and other proprietary document formats, use the website's own export controls. Clipboard access is explicit, uses your system clipboard, and requires the website's browser permission; the client does not grant it automatically.
+
+The agent can open any address Chrome opens, not only websites: Chrome's own pages, such as `chrome://settings` or `chrome://downloads`, `data:` and `blob:` addresses, and PDFs. Files a page makes itself and downloads from a `blob:` or `data:` address are downloads like any other. Chrome shows a PDF in its PDF viewer: the agent reads and uses the viewer's controls, such as the page number, zoom, **Download**, **Print** and the page thumbnails, in a PDF tab and in a PDF that a page embeds, and reads the document's pages in screenshots. The document's text is not in what the agent reads of the page. To get it, the agent exports a PDF tab as PDF: that saves the PDF itself into your chat's files, downloaded again from the tab's address with the tab's sign-in, and the agent reads its text there. A PDF that a website serves only once, or only in answer to a form, cannot be downloaded again: the agent saves it with the viewer's **Download** button instead, or reads it in screenshots.
+
+On cooperating sites, WebMCP exposes structured site tools. The agent discovers them in the current page, uses them within your request, and checks the result. Unsupported sites or Chrome versions use ordinary browser controls. A site's tool descriptions do not grant permission to make purchases, send messages, delete data or transmit information.
+
+`otti-browser` enables Chrome's experimental **WebMCP for testing** feature on every new Chrome launch. You do not need to change `chrome://flags`. This does not enable Chrome's automation marker: the client still checks that `navigator.webdriver` is `false`. It also starts Chrome so that the PDF viewer's **Download** button saves the PDF into the client's downloads folder, where the agent can copy it, instead of asking you where to save it.
+
+An update reconnects to Chrome without changing its launch flags. If Chrome was already open before these defaults were added, save your work, stop `otti-browser`, quit its dedicated Chrome, and start `otti-browser` again to apply them. The client does not restart Chrome automatically just to apply them.
+
+## Downloads
+
+Files that websites download in the browser's Chrome go to the client's own downloads folder, `downloads` in its state directory (`~/.r5d/personal-browser/<environment>/downloads` without `--root`), not your `~/Downloads`. Every [isolated session](#isolated-sessions) saves to it, and every chat that uses this browser sees the same folder.
+
+- **Copying.** The agent copies a download into your chat's files. For a file it has just downloaded, it uses the download's own ID; it can also list the folder, newest first and a page at a time, or only the files whose name contains some text. The copy shows in the chat by the file's name, with **Preview** to open it there, or **Download** for a file the chat can't preview, such as a PDF ([Workspace chats](/platform/workspace-chats)).
+- **Deleting.** The agent can delete a download its task no longer needs, above all one that holds a credential, such as a token or a key, once it has copied or used it. Deleting cannot be undone.
+- **Automatic cleanup.** The client deletes downloads 7 days after they were saved. It checks when it starts and then every hour, so the first start of a client with this cleanup deletes the downloads that are already older. To keep a file longer, have the agent copy it into your chat's files.
+- **The client's own files.** Screenshots, page exports and the files an agent's JavaScript saves are written to the same folder only to be copied into your chat's files. They have hidden names, are never listed, and are deleted 24 hours after they were made. A PDF tab's PDF export is the exception: Chrome downloads that PDF again, so it is also a download in the folder.
+
+## Filling in secrets
+
+An agent can sign in to a website for you without seeing the password. Save the password, or another value such as a username or an API token, as a secret: an account entry in **Settings → Secrets**, or a variable in the project's **Settings → Environment variables** ([Secrets](/platform/shell-environment#secrets)). Then tell the agent where to use which secret, for example: "Sign in to https://example.com with LOGIN_USER and LOGIN_PASSWORD."
+
+The agent names the secret and the field; Octomerge sends the value straight to your browser, which types it into the field. The value is not in the agent's tool call or its result, and Octomerge does not log it.
+
+- **Only at the site you named.** The agent gives the exact site origin you authorized, such as `https://example.com`. The browser checks the tab before it receives the value: the page and the frame around the field must be at exactly that origin. A redirect to another site or port, a cross-origin or sandboxed iframe, or a frame without its own address (about:blank, srcdoc) refuses the fill. Plain `http` is accepted only on `localhost`, `127.0.0.1` and `[::1]`, for example for an app reached through a port forward.
+- **Only the field the agent read.** The field must be a visible, editable text, password, email, telephone, URL or search input that the agent found in a fresh page read. If the page navigated or redrew the field since, nothing is filled.
+- **Which value.** A project variable overrides an account secret of the same name, as in shells. A name without a saved value, an empty value, a value with line breaks, a file entry, and names reserved for Octomerge (starting with `R5D`, and `PATH`, `HOME`, `LANG`, `GH_TOKEN` and the Git identity and SSH variables) are refused before anything reaches the browser.
+- **Nothing is submitted.** The value is typed in like keyboard input; the agent then clicks the sign-in button itself. The site's scripts see the typing as it happens and may act on it at once.
+- **What the agent can still see.** Filling doesn't hide the value afterwards. A filled password field stays masked in page reads like any password field, but a filled text field (such as a username or a token), and any page that repeats the value (such as a greeting with your username), show it to the agent like any other text if it reads them, takes a screenshot or exports the page. Agents avoid reading back what they filled, but use secret fills mainly for test accounts and other credentials that would do little harm if the agent saw them.
+- **An uncertain fill is not repeated.** If the page stops responding while a value is being filled, the agent is told that the outcome is unknown and to read the page before filling again. If the browser client restarts during a fill, the agent is told that the fill's outcome is unknown ([Recover an interrupted chat](/platform/workspace-chats#recover-an-interrupted-chat)), and Octomerge never fills the field again by itself.
+- **The website receives the value.** It can display, store or send it, like anything you type. Use a secret only on the site it belongs to. Chrome keeps its usual records too: a form that puts the value in the page's address leaves it in the history of the browser's dedicated Chrome profile.
+
+Agents fill a secret only for a sign-in or form you asked for. A web page, email or document never authorizes it. CAPTCHA, multi-factor codes and passkeys still need you. An older `otti-browser` refuses before anything is sent, and updates itself.
+
+## HTTP sign-ins
+
+Some sites ask for a username and password before they show any page: HTTP Basic or Digest authentication, which Chrome answers with a small sign-in window of its own instead of a form in the page. In tabs agents use, `otti-browser` takes that sign-in over, so that it doesn't wait unseen on the Mac:
+
+- **The agent is told.** Opening the page tells the agent which site asks (its origin and the name it gives the sign-in, its realm). The tab keeps the page it had until the sign-in is answered, and the agent can't act in it meanwhile.
+- **With secrets you name.** Tell the agent which secrets hold the username and the password, for example: "Open https://intranet.example.com and sign in with INTRANET_USER and INTRANET_PASSWORD." Octomerge sends both values straight to your browser, only for a sign-in at exactly the site you named; they are not in the agent's tool call or its result, and Octomerge does not log them. A sign-in in an iframe at another origin than the tab's page is refused, as for [filling in secrets](#filling-in-secrets), and so is a username with a colon, which this kind of sign-in can't send.
+- **Or you sign in.** Without such secrets, the agent links the tab for you. In a [remote takeover](#remote-takeover) the sign-in appears as a card with the site, a username and a password field: what you type goes to your browser, which sends it to the site, and Octomerge keeps nothing. **Bring to front** instead hands the sign-in to Chrome, which shows its own window on your Mac.
+- **Cancel.** The agent or you can cancel the sign-in; the tab then shows the site's own "401 Unauthorized" page.
+- **Chrome remembers it.** Once the site accepts the username and password, Chrome sends them to that site by itself, in that tab and in the other tabs of the same browser session, until that session's Chrome quits, as after you sign in yourself. A wrong password is asked for again.
+
+Tabs you use yourself keep Chrome's own sign-in window, as before: Octomerge takes the sign-in over only while an agent acts in a tab, in tabs an agent opened (until you bring them to the front with a tab link or the agent hands them to you), and while you take a tab over. Sign-ins a proxy asks for, and other kinds than Basic and Digest (such as NTLM), stay Chrome's; so do sign-ins in an iframe of another site (another domain than the page's) and in a page a popup opens before the client sees it. An older `otti-browser` leaves them all to Chrome, and updates itself.
+
+## Performance profiling
+
+When a page is slow, ask the agent to profile it in the tab you already use, signed in and with your data, instead of reproducing it elsewhere. The agent starts a recording, uses the page (for example scrolls or presses keys), and stops it. It gets a summary of the slowest work, such as the busiest functions and the long tasks that blocked the page, and saves the recording into your chat's files:
+
+- a **CPU profile** (`.cpuprofile`) samples the page's JavaScript;
+- a **performance trace** (`.json`) also records layout, painting, input and long tasks, measures how long each click or key press took to show its result, and can record a page that has stopped responding.
+
+Both open in Chrome DevTools' **Performance** panel (**Load profile**). A recording stops by itself after at most five minutes. Only one trace can run in the browser at a time, DevTools' own Performance recording included. Recordings include the tab's script addresses, function names and timings, with web address parameters hidden and no screenshots, request contents, headers or cookies. Another tab of the same site can appear when Chrome runs both in one process. Profiling slows the page slightly while it records.
