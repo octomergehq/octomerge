@@ -3,9 +3,6 @@ contact_links:
   - name: Questions and how-tos
     url: https://docs.octomerge.dev
     about: The manual explains how to set up and use Octomerge.
-  - name: A security vulnerability
-    url: https://github.com/octomergehq/octomerge/security/policy
-    about: Report it privately by email, never in a public issue.
   - name: Plans, teams and Enterprise
     url: https://octomerge.dev/contact
     about: Write to us through the contact form.
