@@ -5,7 +5,11 @@ description: "Run a worker with Docker, Docker Compose, Kubernetes or Helm, conn
 
 The worker image runs a worker in a container: on a server with Docker, in Docker Compose, or in a Kubernetes cluster, with a StatefulSet or with the Helm chart. It connects with a one-time **enrollment token**, so nobody signs in on the machine, and keeps the worker's home on a volume, so its sign-in and your checkouts survive restarts and new images.
 
-The image is `ghcr.io/ricsam/r5d-worker`, tagged with the version of Octomerge's CLIs, and the chart is `oci://ghcr.io/ricsam/charts/r5d-worker`, at the same versions. Each holds `otti-worker` and `otti` of that version, with Node.js 24, npm, Bun, Git 2.47 and the compilers of Debian 13 (trixie), and runs for **linux/amd64** and **linux/arm64**. Use the version **Settings → Workers** shows: the image of your environment's version.
+The image is `ghcr.io/octomergehq/otti-worker`, and the chart is `oci://ghcr.io/octomergehq/charts/otti-worker`. Each version of Octomerge's CLIs has its own image tag and chart version, which never change; the tag `latest` is the image of Octomerge's current release, which the examples use. Each image holds `otti-worker` and `otti` of its version, with Node.js 24, npm, Bun, Git 2.47 and the compilers of Debian 13 (trixie), and runs for **linux/amd64** and **linux/arm64**. The worker updates itself from the image's version to your environment's ([Updates](#updates)). To pin one version, use its tag instead: **Settings → Workers** shows your environment's, and makes these files with it.
+
+<Note>
+The image and the chart moved to new names. Earlier versions are `ghcr.io/ricsam/r5d-worker` and `oci://ghcr.io/ricsam/charts/r5d-worker`: they stay available, and a worker that runs one keeps working and updating itself, but newer versions are published only under the new names. To move such a worker to a newer image, change its image's name along with its tag, and for a Helm release set `image.repository` once ([A worker set up with the earlier image name](#a-worker-set-up-with-the-earlier-image-name)).
+</Note>
 
 ## Before you start: an enrollment token
 
@@ -37,16 +41,17 @@ docker run -d --name my-worker --hostname my-worker \
   -e R5D_WORKER_LABEL=my-worker \
   -e R5D_ENROLL_TOKEN=r5de_… \
   -v my-worker-home:/home/r5d \
-  ghcr.io/ricsam/r5d-worker:<version>
+  ghcr.io/octomergehq/otti-worker:latest
 ```
 
 `docker logs -f my-worker` shows the worker's log, and **Settings → Workers** shows it connected. `docker restart my-worker`, or `docker stop` then `docker start`, keeps everything, and so does a new container for the same worker, such as one of a newer image, with the same volume. A new container needs no token, so this is also how the token leaves the container's settings once the worker is enrolled:
 
 ```bash
+docker pull ghcr.io/octomergehq/otti-worker:latest   # for a newer image
 docker stop my-worker && docker rm my-worker
 docker run -d --name my-worker --hostname my-worker --restart unless-stopped --stop-timeout 90 \
   -e R5D_BASE_URL=https://octomerge.dev -e R5D_WORKER_LABEL=my-worker \
-  -v my-worker-home:/home/r5d ghcr.io/ricsam/r5d-worker:<new version>
+  -v my-worker-home:/home/r5d ghcr.io/octomergehq/otti-worker:latest
 ```
 
 `--stop-timeout 90` gives a stopping worker a minute and a half to end its commands and release its workspace before Docker kills it; Docker's default is 10 seconds. `docker rm -f` and `docker kill` kill it at once: use `docker stop` first (see [Stopping](#stopping-and-what-a-hard-kill-leaves)). `--hostname` gives the container a readable machine name, and the worker's sign-in under **Settings → CLI & API → Authorized devices** is named after its label.
@@ -60,7 +65,7 @@ name: my-worker
 
 services:
   worker:
-    image: ghcr.io/ricsam/r5d-worker:<version>
+    image: ghcr.io/octomergehq/otti-worker:latest
     hostname: my-worker
     restart: unless-stopped
     stop_grace_period: 90s
@@ -75,7 +80,7 @@ volumes:
   home: {}
 ```
 
-Then `docker compose up -d`, and `docker compose logs -f worker` for its log. `docker compose down` and `up` again keeps the volume, and with it the worker's sign-in and checkouts. `docker compose down -v` deletes the volume, and with it whatever the worker had not published: don't. Once the worker is enrolled, remove `R5D_ENROLL_TOKEN` from the file and run `docker compose up -d`, which creates the container again without it.
+Then `docker compose up -d`, and `docker compose logs -f worker` for its log. `docker compose down` and `up` again keeps the volume, and with it the worker's sign-in and checkouts; `docker compose pull` before `up -d` brings a newer image. `docker compose down -v` deletes the volume, and with it whatever the worker had not published: don't. Once the worker is enrolled, remove `R5D_ENROLL_TOKEN` from the file and run `docker compose up -d`, which creates the container again without it.
 
 Here too, one container per volume: keep the service at one container (no `scale` or `replicas` above 1), and don't use its volume in another Compose project or `docker run`. When you change the file, `docker compose up -d` stops the old container before it starts the new one.
 
@@ -133,7 +138,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: worker
-          image: ghcr.io/ricsam/r5d-worker:<version>
+          image: ghcr.io/octomergehq/otti-worker:latest
           env:
             - name: R5D_BASE_URL
               value: https://octomerge.dev
@@ -164,13 +169,17 @@ spec:
 - **`fsGroup: 1000` with `fsGroupChangePolicy: OnRootMismatch`:** the volume becomes the worker's group's once, when it is new. Without `OnRootMismatch`, the kubelet would add group access to every file on each start, and the worker refuses its private directories once others can reach them (`insecure_directory`).
 - **`terminationGracePeriodSeconds: 90`:** a stopping worker's time to end its commands and release its workspace; Kubernetes' default is 30 seconds.
 - **`ReadWriteOnce`:** the worker's own disk. Any storage class that gives pods a POSIX file system with owners and modes works; set `storageClassName` for another than your cluster's default. With CSI storage you can also make it `ReadWriteOncePod`, which lets only one pod in the cluster mount it.
+- **`app.kubernetes.io/name: r5d-worker`:** the image's earlier name. It stays, also with the new image: a StatefulSet's selector can't change.
 
-Deleting the pod, a node drain, or `kubectl rollout restart statefulset/my-worker` keeps the volume, the sign-in and the checkouts; the new pod needs no token. Once the worker is enrolled, delete the Secret (`kubectl delete secret my-worker-enroll`). The running pod keeps the token until it's replaced, for example by `kubectl rollout restart statefulset/my-worker`, and its new pod starts without it.
+Deleting the pod, a node drain, or `kubectl rollout restart statefulset/my-worker` keeps the volume, the sign-in and the checkouts; the new pod needs no token, and with `latest` Kubernetes pulls the image again for it, so it starts the newest. Once the worker is enrolled, delete the Secret (`kubectl delete secret my-worker-enroll`). The running pod keeps the token until it's replaced, for example by `kubectl rollout restart statefulset/my-worker`, and its new pod starts without it.
 
 ## Helm
 
+A chart has no `latest`: Helm installs a version you name. The first line looks up the version of Octomerge's current release, as its npm registry names it (or use the version **Settings → Workers** shows):
+
 ```bash
-helm install my-worker oci://ghcr.io/ricsam/charts/r5d-worker --version <version> \
+version=$(curl -fsSL https://npm.octomerge.dev/-/package/@octomerge/otti-worker/dist-tags | jq -r .latest)
+helm install my-worker oci://ghcr.io/octomergehq/charts/otti-worker --version "$version" \
   --set label=my-worker --set baseUrl=https://octomerge.dev --set enrollToken=r5de_…
 ```
 
@@ -183,7 +192,7 @@ enrollToken: r5de_…        # or existingSecret: a Secret of yours with the tok
 remote: false              # true for a token made for a Remote
 description: ""
 image:
-  repository: ghcr.io/ricsam/r5d-worker
+  repository: ghcr.io/octomergehq/otti-worker
   tag: ""                  # the chart's version when empty
 persistence:
   size: 20Gi
@@ -195,7 +204,9 @@ resources:
 terminationGracePeriodSeconds: 90
 ```
 
-`helm install my-worker oci://ghcr.io/ricsam/charts/r5d-worker --version <version> -f values.yaml`. The chart makes the StatefulSet, the volume claim and, with `enrollToken`, the Secret, as the Kubernetes example above does; `helm upgrade` with a newer `--version` moves the worker to that image and keeps its volume, and its new pod starts once the old one has ended. Once the worker is enrolled, `helm upgrade my-worker oci://ghcr.io/ricsam/charts/r5d-worker --version <version> --reuse-values --set enrollToken=` removes the Secret, and the worker's new pod starts without the token. `helm uninstall` keeps the volume claim (`<release>-home`) too, so installing the release again finds the worker's sign-in and checkouts; delete the claim with `kubectl` when you no longer need them.
+`helm install my-worker oci://ghcr.io/octomergehq/charts/otti-worker --version "$version" -f values.yaml`. The chart makes the StatefulSet, the volume claim and, with `enrollToken`, the Secret, as the Kubernetes example above does; `helm upgrade` with a newer `--version` moves the worker to that image and keeps its volume, and its new pod starts once the old one has ended. Once the worker is enrolled, `helm upgrade my-worker oci://ghcr.io/octomergehq/charts/otti-worker --version "$version" --reuse-values --set enrollToken=` removes the Secret, and the worker's new pod starts without the token. `helm uninstall` keeps the volume claim (`<release>-home`) too, so installing the release again finds the worker's sign-in and checkouts; delete the claim with `kubectl` when you no longer need them.
+
+A release installed from the earlier chart, `oci://ghcr.io/ricsam/charts/r5d-worker`, keeps the earlier image name on every `helm upgrade` that reuses its values (`--reuse-values`, or the values file it was installed with), and newer versions aren't published under it, so their pod can't pull its image. Add `--set image.repository=ghcr.io/octomergehq/otti-worker` the first time you upgrade it to the new chart ([A worker set up with the earlier image name](#a-worker-set-up-with-the-earlier-image-name)).
 
 ## No Docker inside
 
@@ -213,7 +224,23 @@ The worker's [life vest](/get-started/add-worker#the-life-vest) resumes the work
 
 A worker updates itself: when your environment selects a new release, the worker downloads it into its home, on the volume, and restarts into it, with running shells and terminals moving to the new release ([Automatic updates](/get-started/add-worker#automatic-updates)). A restart of the same container keeps running the release it updated to. A container of a newer image starts that image's version.
 
-To update the image itself, start a container, pod or Helm release of a newer tag with the same volume. **Update CLIs** in Settings can't write the image's installation, which belongs to root; with automatic updates on, as in the image, Settings doesn't offer it.
+To update the image itself, start a container, pod or Helm release of a newer image with the same volume: pull `latest` again (`docker pull`, `docker compose pull`; a new pod of `latest` pulls it by itself), or name a newer version's tag or chart version. **Update CLIs** in Settings can't write the image's installation, which belongs to root; with automatic updates on, as in the image, Settings doesn't offer it.
+
+### A worker set up with the earlier image name
+
+Versions before the move to `ghcr.io/octomergehq` are `ghcr.io/ricsam/r5d-worker`, with the chart `oci://ghcr.io/ricsam/charts/r5d-worker`. They stay available, and a container of one keeps running and updating its CLIs. Newer versions are published only as `ghcr.io/octomergehq/otti-worker` and `oci://ghcr.io/octomergehq/charts/otti-worker`, so a newer tag under the earlier name doesn't exist: change the name along with the tag. The worker keeps its volume, its sign-in and its checkouts.
+
+- **Docker:** `docker stop my-worker && docker rm my-worker`, then the same `docker run` with `ghcr.io/octomergehq/otti-worker:latest` in place of `ghcr.io/ricsam/r5d-worker:<old version>`, as in [Docker](#docker).
+- **Compose:** set `image: ghcr.io/octomergehq/otti-worker:latest` in `compose.yaml`, then `docker compose up -d`.
+- **Kubernetes:** set the container's `image` to `ghcr.io/octomergehq/otti-worker:latest` and `kubectl apply -f otti-worker.yaml` again. Keep the labels as they are: `app.kubernetes.io/name: r5d-worker` stays.
+- **Helm:** upgrade to the new chart and set the new image name once, with `$version` looked up as in [Helm](#helm):
+
+  ```bash
+  helm upgrade my-worker oci://ghcr.io/octomergehq/charts/otti-worker --version "$version" \
+    --reuse-values --set image.repository=ghcr.io/octomergehq/otti-worker
+  ```
+
+  Helm keeps the image name a release was installed with, so without `--set image.repository=…` the new pod looks for the new version under the earlier name, finds nothing and stays in `ImagePullBackOff` while the old pod is already gone. If that happened, run the command above, or `helm rollback my-worker` to go back. Later upgrades keep the new name. If your values file names `ghcr.io/ricsam/r5d-worker`, change it there too.
 
 ## Stopping, and what a hard kill leaves
 
@@ -257,9 +284,9 @@ To connect it again, create a new enrollment token for the same label, then star
   kubectl rollout restart statefulset/my-worker      # otherwise
   ```
 
-- **Helm:** `helm upgrade my-worker oci://ghcr.io/ricsam/charts/r5d-worker --version <version> --reuse-values --set enrollToken=r5de_…`, then `kubectl rollout restart statefulset/my-worker`.
+- **Helm:** `helm upgrade my-worker oci://ghcr.io/octomergehq/charts/otti-worker --version "$version" --reuse-values --set enrollToken=r5de_…`, with `$version` looked up as in [Helm](#helm), then `kubectl rollout restart statefulset/my-worker`. A release installed with the earlier chart, `oci://ghcr.io/ricsam/charts/r5d-worker`, also takes `--set image.repository=ghcr.io/octomergehq/otti-worker` ([A worker set up with the earlier image name](#a-worker-set-up-with-the-earlier-image-name)).
 
-With Docker you can also sign it in by hand, with an approval in the browser: run the image once with the same volume, `docker run --rm -it -v my-worker-home:/home/r5d ghcr.io/ricsam/r5d-worker:<version> otti-worker auth --base-url https://octomerge.dev`, approve the code it shows with **Full access**, then `docker start my-worker`.
+With Docker you can also sign it in by hand, with an approval in the browser: run the image once with the same volume, `docker run --rm -it -v my-worker-home:/home/r5d ghcr.io/octomergehq/otti-worker:latest otti-worker auth --base-url https://octomerge.dev`, approve the code it shows with **Full access**, then `docker start my-worker`.
 
 Other failures exit with 1, and the restart is worth it: an Octomerge server that can't be reached, or a workspace lock a killed worker left, which the next start moves aside ([Stopping](#stopping-and-what-a-hard-kill-leaves)).
 
@@ -267,4 +294,4 @@ Other failures exit with 1, and the restart is worth it: an Octomerge server tha
 
 The image runs on arm64 machines, such as AWS Graviton, Hetzner's CAX servers, Ampere servers, or a Raspberry Pi with a 64-bit system: Docker and Kubernetes pull the image of the machine's architecture. Terminals work there too; the worker ships prebuilt terminal binaries for both architectures.
 
-To run the image from another registry, such as your own, copy it with both architectures, for example `skopeo copy --all docker://ghcr.io/ricsam/r5d-worker:<version> docker://registry.example.com/r5d-worker:<version>`, and set `image.repository` for the chart.
+To run the image from another registry, such as your own, copy a version with both architectures, for example `skopeo copy --all docker://ghcr.io/octomergehq/otti-worker:"$version" docker://registry.example.com/otti-worker:"$version"` with `$version` looked up as in [Helm](#helm), and set `image.repository` for the chart.
