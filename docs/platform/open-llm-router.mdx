@@ -43,12 +43,18 @@ Each model ID belongs to one of your connections, so a chat, a default or an age
 
 The connection appears in **Settings → Models** with an **Open LLM Router** badge and its status: **Connected**, **Reconnect needed**, **Disconnecting** or **Disconnected**. Enable it, make it the default and choose its default model as for any connection. Its **⋯** menu opens **Open LLM Router…**, which shows the account it was approved by, when Octomerge last read it and its models, with these actions:
 
-- **Refresh** reads the models again and lists what changed, such as a model Open LLM Router now offers or no longer offers. **Apply changes** updates the connection; **Keep current models** leaves it as it is. A model a chat or default chose that is no longer offered is refused when it runs, never swapped for another.
+- **Refresh** reads the models again and lists what changed, such as a model Open LLM Router now offers or no longer offers. **Apply changes** updates the connection; **Keep current models** leaves it as it is. A model a chat or default chose that is no longer offered is refused when it runs, never swapped for another. Your [default efforts](#default-efforts) stay as they are.
 - **Manage in router** opens Open LLM Router.
 - **Test model** sends one short prompt through Open LLM Router.
 - **Disconnect**, **Reconnect**, **Rename** and **Delete**: see below.
 
 The connection's base URL and headers belong to Open LLM Router, so it has no **Edit** form.
+
+## Default efforts
+
+Open LLM Router gives each model a default effort, such as High. Under each model in **Open LLM Router…**, **Default effort** keeps **Open LLM Router's default**, shown with its value, or runs the model at one of its efforts you choose, for example `claude-opus-5-5` at **Max**. Your choice is saved at once: chats, agents, subagents and schedules that name the model without an effort run it at that effort from then on, and so does your default model ([Models and efforts](/#models-and-efforts)). Choose **Open LLM Router's default** again to go back.
+
+Your choices stay when you **Refresh** and **Apply changes**, and when you **Reconnect**. If Open LLM Router stops offering the effort you chose for a model, the model runs at Open LLM Router's default meanwhile, never fails over it, and the sheet says so; it runs at your choice again once Open LLM Router offers that effort again.
 
 ## Revoke access
 
