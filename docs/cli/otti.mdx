@@ -6,11 +6,11 @@ description: "Manage projects, conversations, account settings, and workspace co
 Install the client with Bun from Octomerge's npm registry, `npm.octomerge.dev`, and sign in:
 
 ```bash
-bun install --global --backend=copyfile @octomerge/otti@<version> --registry https://npm.octomerge.dev
+bun install --global --backend=copyfile --exact @octomerge/otti --registry https://npm.octomerge.dev
 otti auth login
 ```
 
-**Settings → CLI & API** shows the install command with your environment's version in place of `<version>`, and the sign-in with its `--base-url`. It needs Bun 1.3 or newer to install and Node.js 18 or newer to run. Bun puts the command in `~/.bun/bin` (`bun pm bin -g` shows it); if `otti` isn't found afterwards, add that directory to your `PATH`, as [Connect a worker](/get-started/add-worker) says. A machine that runs a worker already has `otti`: the worker's install includes it.
+The install gets Octomerge's current release, and running it again updates `otti` to the newest one. `--exact` makes Bun keep exactly the release it installed, so update with this command rather than `bun update`. **Settings → CLI & API** shows the same install pinned to the version your environment runs, and the sign-in with its `--base-url`. It needs Bun 1.3 or newer to install and Node.js 18 or newer to run. Bun puts the command in `~/.bun/bin` (`bun pm bin -g` shows it); if `otti` isn't found afterwards, add that directory to your `PATH`, as [Connect a worker](/get-started/add-worker) says. A machine that runs a worker already has `otti`: the worker's install includes it.
 
 Octomerge may stop accepting changes from an `otti` that is too old for it. Such an `otti` can still read, but every command that changes something is refused with `otti X is older than Y, the oldest release this server accepts changes from … (r5dctl_update_required)`, before anything happens. A worker with automatic updates brings the `otti` its agents use up to date by itself, usually within a minute or two of a new Octomerge release; update an `otti` you installed yourself with the install command above, or a worker without automatic updates with **Update CLIs** in its menu on **Settings → Workers**, then restart that worker. A CLI installed under its earlier name, `r5dctl`, keeps that command; to switch, install `@octomerge/otti` as above, and `otti` uses the same sign-in and configuration.
 

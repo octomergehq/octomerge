@@ -8,14 +8,14 @@ A **remote** is a machine agents and you can run things on without it holding yo
 A remote uses the same packages as a worker, and needs the same tools: Bun 1.3+, Node.js 18+ with npm, and Git 2.42+ ([Connect a worker](/get-started/add-worker)). On the machine, install the CLIs once with Bun, then sign in and start the remote:
 
 ```bash
-bun install --global --backend=copyfile @octomerge/otti-worker@<version> @octomerge/otti@<version> --registry https://npm.octomerge.dev
+bun install --global --backend=copyfile --exact @octomerge/otti-worker @octomerge/otti --registry https://npm.octomerge.dev
 otti-worker auth --remote
 otti-worker start --remote --label gpu-box --description "GPU server for training runs"
 ```
 
 To let its commands use your secrets (your environment variables and secret files, your projects' variables and git access), sign in with `otti-worker auth --remote --secrets` instead; see [What a remote gets](#what-a-remote-gets).
 
-**Add worker or remote**, at the bottom of a conversation's worker menu, shows these commands with your environment's version in place of `<version>` when you choose **Remote**, with a **Give it your secrets** switch that adds `--secrets`, and follows along as you run them; **Settings → Workers** shows the install command, and under **Connect a remote instead** the sign-in and start commands. Bun puts the commands in `~/.bun/bin`: if `otti-worker` isn't found afterwards, add that directory to your `PATH`, as [Connect a worker](/get-started/add-worker) says. To start the remote again later, run the same `otti-worker start` command.
+The install gets Octomerge's current release, and the remote updates itself from then on, as a worker does. **Add worker or remote**, at the bottom of a conversation's worker menu, shows these commands, pinned to your environment's version, when you choose **Remote**, with a **Give it your secrets** switch that adds `--secrets`, and follows along as you run them; **Settings → Workers** shows the install command, and under **Connect a remote instead** the sign-in and start commands. Bun puts the commands in `~/.bun/bin`: if `otti-worker` isn't found afterwards, add that directory to your `PATH`, as [Connect a worker](/get-started/add-worker) says. To start the remote again later, run the same `otti-worker start` command.
 
 Approve the sign-in on the page that showed its command: the sign-in command the dialog and Settings show carries a one-time `--pair` token, so its code appears there among two others; pick the one your terminal shows and approve ([Approving on the page](/cli/otti#approving-on-the-page)). Without `--pair`, approve the device code in the browser instead. `auth --remote` asks for **Remote** access, which lets the machine connect as a remote and nothing else, with none of your secrets; `auth --remote --secrets` asks for **Remote with secrets**. On the approval page, **With your secrets** under **Remote** gives or withholds the secrets whatever the command asked for, and **Full access** makes it a remote with your whole account (see below). A machine already signed in with `otti` or `otti-browser` adds the access to that sign-in ([What a sign-in may do](/cli/otti#what-a-sign-in-may-do)). `--label` names the remote. Commands, terminals and relative file paths start in your home directory; choose another with `--cwd`:
 
