@@ -58,7 +58,7 @@ The cog next to a worker or remote, in any worker menu or in **Settings → Work
 
 ### Enroll a machine with a token
 
-A server or container that nobody signs in on, such as one a cloud template or a script starts, connects with a one-time **enrollment token** instead of `auth`. In **Settings → Workers → Enrollment tokens**, or in the onboarding's Host step, enter the machine's worker label, choose what it connects as, and create a token:
+A server or container that nobody signs in on, such as one a cloud template or a script starts, connects with a one-time **enrollment token** instead of `auth`. In **Settings → Workers → Enrollment tokens**, or in the onboarding's Worker host step, enter the machine's worker label, choose what it connects as, and create a token:
 
 - **Worker**: a worker with a workspace, with Full access for that worker only. Agents there run with your secrets, so use it only for a machine you trust.
 - **Remote**: a [remote](/get-started/add-remote) for agents' commands and file tools, which receives none of your secrets. Check **With your secrets** under it for a container or cloud remote that builds with your variables and git access: its commands then get your secrets, never your account ([What a remote gets](/get-started/add-remote#what-a-remote-gets)).
