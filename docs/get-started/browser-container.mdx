@@ -5,18 +5,19 @@ description: "Run otti-browser with Google Chrome in a Docker container on a Lin
 
 The browser image runs `otti-browser` with Google Chrome on a virtual display, in a Docker container on a Linux server. Agents use it like the [browser on your Mac](/get-started/browser), with the sign-ins you give it. Nobody sees its screen: you see and use a tab with **Take over remotely**, from any device ([Remote takeover](/get-started/browser#remote-takeover)). Its sign-in, Chrome's profiles and their site sign-ins live on a volume, so they survive restarts and new images.
 
-The image is `ghcr.io/octomergehq/otti-browser`, for **linux/amd64** (x86-64 servers). It holds `otti-browser` of one version of Octomerge's CLIs and Google Chrome stable, and comes in two tags for each version:
+The image is `ghcr.io/octomergehq/otti-browser`, for **linux/amd64** (x86-64 servers). It holds `otti-browser` of one version of Octomerge's CLIs and Google Chrome stable, and comes in these tags:
 
 | Tag | |
 | --- | --- |
-| `ghcr.io/octomergehq/otti-browser:<version>` | The newest Chrome for that version. When Google releases a new Chrome stable, Octomerge publishes the image with it within a day, under this tag. |
+| `ghcr.io/octomergehq/otti-browser:latest` | Octomerge's current release with the newest Chrome. The examples use it. |
+| `ghcr.io/octomergehq/otti-browser:<version>` | The newest Chrome for that version. When Google releases a new Chrome stable, Octomerge publishes the image with it within a day, under this tag and, for the current release, under `latest`. |
 | `ghcr.io/octomergehq/otti-browser:<version>-chrome<chrome version>` | One image with one Chrome, such as `…-chrome158.0.8127.36`, which never changes. |
 
 <Note>
 The image moved to a new name. Earlier images are `ghcr.io/ricsam/otti-browser`: they stay available, but their tags get no newer Chrome, and newer versions are published only under the new name. To update a browser set up with the earlier name, change the image's name along with its tag ([Updates](#updates)).
 </Note>
 
-Use the version your environment runs: **Settings → Browser** shows it in its install command, `@octomerge/otti-browser@<version>`.
+`otti-browser` updates itself from the image's version to your environment's ([Updates](#updates)). To stay on one version, use its tag instead of `latest`: **Settings → Browser** shows your environment's in its install command, `@octomerge/otti-browser@<version>`.
 
 A browser holds the sign-ins of the sites you use in it, and agents act there with them: run it only on a server you trust, administered by people you trust.
 
@@ -27,7 +28,7 @@ A browser holds the sign-ins of the sites you use in it, and agents act there wi
 - Chrome's seccomp profile, which the container must run with ([Chrome's sandbox](#chromes-sandbox)). It is in the image:
 
 ```bash
-docker run --rm --entrypoint cat ghcr.io/octomergehq/otti-browser:<version> \
+docker run --rm --entrypoint cat ghcr.io/octomergehq/otti-browser:latest \
   /usr/local/share/r5d-browser/chrome-seccomp.json > chrome-seccomp.json
 ```
 
@@ -37,7 +38,7 @@ Create the volume and sign it in once, in a container that ends when the sign-in
 
 ```bash
 docker volume create my-browser-home
-docker run --rm -it -v my-browser-home:/home/r5d ghcr.io/octomergehq/otti-browser:<version> \
+docker run --rm -it -v my-browser-home:/home/r5d ghcr.io/octomergehq/otti-browser:latest \
   otti-browser auth --base-url https://octomerge.dev --pair <token>
 ```
 
@@ -53,7 +54,7 @@ docker run -d --name my-browser --hostname my-browser \
   --shm-size 2g --memory 4g --cpus 2 \
   -e R5D_BASE_URL=https://octomerge.dev \
   -v my-browser-home:/home/r5d \
-  ghcr.io/octomergehq/otti-browser:<version>
+  ghcr.io/octomergehq/otti-browser:latest
 ```
 
 `docker logs -f my-browser` shows its log, which says `Connected to https://octomerge.dev`, and **Settings → Browser** shows the browser connected, on Linux. What the options do:
@@ -75,8 +76,8 @@ The container reads its settings from its environment:
 
 ```bash
 docker stop my-browser && docker rm my-browser
-docker pull ghcr.io/octomergehq/otti-browser:<version>
-docker run -d --name my-browser --hostname my-browser … ghcr.io/octomergehq/otti-browser:<version>   # the same options as above
+docker pull ghcr.io/octomergehq/otti-browser:latest
+docker run -d --name my-browser --hostname my-browser … ghcr.io/octomergehq/otti-browser:latest   # the same options as above
 ```
 
 **One container per volume.** Never run two containers on the same volume at once: stop the old one before you start the new one. Octomerge refuses a second connection of the same browser while the first is connected.
@@ -88,7 +89,7 @@ name: my-browser
 
 services:
   browser:
-    image: ghcr.io/octomergehq/otti-browser:<version>
+    image: ghcr.io/octomergehq/otti-browser:latest
     hostname: my-browser
     restart: unless-stopped
     stop_grace_period: 60s
@@ -137,9 +138,9 @@ Without the profile, Chrome stops at its start, and the log says to run the cont
 [otti-browser] Chrome 158.0.8127.36 is older than the newest Google Chrome stable, 159.0.8150.12, and misses its security fixes. …
 ```
 
-Octomerge publishes the image of your version with the new Chrome within a day. Pull the tag again and start a new container on the same volume, as above; the sign-ins and the browser's state stay.
+Octomerge publishes the image with the new Chrome within a day, under your version's tag and, for the current release, under `latest`. Pull the tag again and start a new container on the same volume, as above; the sign-ins and the browser's state stay.
 
-**A browser set up with the earlier image name**, `ghcr.io/ricsam/otti-browser`, keeps running and updating `otti-browser`, but its tags get no newer Chrome and no newer versions: those are published only as `ghcr.io/octomergehq/otti-browser`. Start its new container from the new name with the same volume and the same options: `docker stop my-browser && docker rm my-browser`, then the `docker run` of [Start it](#start-it) with `ghcr.io/octomergehq/otti-browser:<version>`; with Compose, set `image: ghcr.io/octomergehq/otti-browser:<version>` in `compose.yaml` and run `docker compose up -d`. The sign-ins and the browser's state stay.
+**A browser set up with the earlier image name**, `ghcr.io/ricsam/otti-browser`, keeps running and updating `otti-browser`, but its tags get no newer Chrome and no newer versions: those are published only as `ghcr.io/octomergehq/otti-browser`. Start its new container from the new name with the same volume and the same options: `docker stop my-browser && docker rm my-browser`, then the `docker run` of [Start it](#start-it) with `ghcr.io/octomergehq/otti-browser:latest`; with Compose, set `image: ghcr.io/octomergehq/otti-browser:latest` in `compose.yaml` and run `docker compose up -d`. The sign-ins and the browser's state stay.
 
 ## Stopping and removing it
 

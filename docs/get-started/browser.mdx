@@ -6,12 +6,12 @@ description: "Connect your Chrome browser to Octomerge."
 The browser client runs on macOS; on a Linux server, run it in its container image instead ([Run the browser on a Linux server](/get-started/browser-container)). It needs Google Chrome, Bun 1.3 or newer, and Node.js 18 or newer with npm: Bun installs and runs the client, Node.js runs its command's launcher, and npm installs its automatic updates. Install it with Bun from Octomerge's npm registry, `npm.octomerge.dev`, once, then sign in and start it:
 
 ```bash
-bun install --global --backend=copyfile @octomerge/otti-browser@<version> --registry https://npm.octomerge.dev
+bun install --global --backend=copyfile --exact @octomerge/otti-browser --registry https://npm.octomerge.dev
 otti-browser auth
 otti-browser start
 ```
 
-**Settings → Browser** and **Connect a browser** in a chat's browser menu (the browser icon at the bottom of the composer) show these commands with the exact version your environment runs in place of `<version>`, and its `--base-url`. `auth` alone is `auth login`. To start the client again later, run the same `otti-browser start` command: it needs no registry. Bun puts the command in `~/.bun/bin` (`bun pm bin -g` shows it). Bun's own installer puts that directory on your `PATH`, but a Bun from Homebrew doesn't: if `otti-browser` isn't found after the install, or `command -v otti-browser` shows an older copy elsewhere, put it first on your `PATH`, for example with `export PATH="$HOME/.bun/bin:$PATH"` in `~/.zshrc`.
+The install gets Octomerge's current release, and the client [updates itself](#updating-the-browser-client) from then on. **Settings → Browser** and **Connect a browser** in a chat's browser menu (the browser icon at the bottom of the composer) show these commands pinned to the exact version your environment runs, with its `--base-url`. `--exact` makes Bun keep exactly the release it installed, so update with the install command rather than `bun update`. `auth` alone is `auth login`. To start the client again later, run the same `otti-browser start` command: it needs no registry. Bun puts the command in `~/.bun/bin` (`bun pm bin -g` shows it). Bun's own installer puts that directory on your `PATH`, but a Bun from Homebrew doesn't: if `otti-browser` isn't found after the install, or `command -v otti-browser` shows an older copy elsewhere, put it first on your `PATH`, for example with `export PATH="$HOME/.bun/bin:$PATH"` in `~/.zshrc`.
 
 Approve the sign-in on the page that showed its command. The `auth` command **Settings → Browser**, **Connect a browser** and the onboarding show carries a one-time `--pair` token, so the code `otti-browser auth` prints appears on that page among two others: pick the one your terminal shows and approve ([Approving on the page](/cli/otti#approving-on-the-page)). Without `--pair`, approve the device code in the browser instead. `otti-browser auth` asks for **Browser** access, which lets the machine connect a browser and nothing else: a copy of that credential cannot start agents or read your conversations. It is the same sign-in as `otti auth login` and `otti-worker auth`: the credential it saves is shared by all three on the machine, so a machine that already signed in with one of them is asked only to add Browser access (or nothing, if it has it), and the browser needs no worker installed or running ([What a sign-in may do](/cli/otti#what-a-sign-in-may-do)). On the Mac where your worker runs, its sign-in already allows the browser: install otti-browser and run `otti-browser start` without `auth` (in the onboarding's Browser step, choose **On *your worker's label***). A worker started with its own `--config` needs the same `--config` for `otti-browser start`. `otti-browser auth status` shows whose sign-in the machine holds and what it allows; `auth logout` on any of the three revokes it for all of them. Keep the command running while you use browser tools. Open **Settings → Browser** to check the connection and see port forwards, [isolated sessions](#isolated-sessions) and open tabs. The tab list stays collapsed until you show it; it can be searched, and filtered to tabs agents used or hold, each with the chat that used it.
 
@@ -113,13 +113,13 @@ The choice is saved for this environment and state directory, so later starts wi
 For a manual update:
 
 1. Press **Ctrl+C** in the terminal running `otti-browser`. Wait for the **Disconnected** message. The client finishes any browser action already running, then leaves Chrome open.
-2. Install the release selected for your environment. Replace `VERSION` with it (**Settings → Browser** shows the command with it):
+2. Run the install again, which gets Octomerge's current release:
 
    ```bash
-   bun install --global --backend=copyfile @octomerge/otti-browser@VERSION --registry https://npm.octomerge.dev
+   bun install --global --backend=copyfile --exact @octomerge/otti-browser --registry https://npm.octomerge.dev
    ```
 
-   For a client you installed with npm, Settings shows `npm install -g` with the same version instead, so that the update replaces that copy.
+   **Settings → Browser** shows the same command pinned to the release selected for your environment. For a client you installed with npm, run `npm install -g @octomerge/otti-browser --registry https://npm.octomerge.dev` instead (Settings shows it pinned too), so that the update replaces that copy.
 
 3. Run `otti-browser start` again, using the same `--base-url`, `--root`, and `--profile` options if you specified them before. The client reports that it has reconnected to your open tabs and windows.
 
