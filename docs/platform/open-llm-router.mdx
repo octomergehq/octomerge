@@ -22,7 +22,7 @@ Approve within 10 minutes of choosing **Connect**, and finish the preview within
 ## What the preview shows
 
 - **Connected as**: the Open LLM Router account that approved.
-- **Models** that will be imported, each by its ID with the efforts it accepts and its default effort, its context window and output limit.
+- **Models** that will be imported, each by its name, such as **Claude Opus 5.5**, and its ID, `claude-opus-5-5`, with the efforts it accepts and its default effort, its context window and output limit. Model menus show the name; agents and `otti` name the model by its ID.
 - **Not imported**: models Octomerge leaves out, with the reason.
 
 When none of the models can be imported, the preview says so and offers only **Cancel**, with **Manage in router** to open Open LLM Router. Connect again once it offers a model Octomerge can import.
@@ -43,7 +43,7 @@ Each model ID belongs to one of your connections, so a chat, a default or an age
 
 The connection appears in **Settings → Models** with an **Open LLM Router** badge and its status: **Connected**, **Reconnect needed**, **Disconnecting** or **Disconnected**. Enable it, make it the default and choose its default model as for any connection. Its **⋯** menu opens **Open LLM Router…**, which shows the account it was approved by, when Octomerge last read it and its models, with these actions:
 
-- **Refresh** reads the models again and lists what changed, such as a model Open LLM Router now offers or no longer offers. **Apply changes** updates the connection; **Keep current models** leaves it as it is. A model a chat or default chose that is no longer offered is refused when it runs, never swapped for another. Your [default efforts](#default-efforts) stay as they are.
+- **Refresh** reads the models again and lists what changed, such as a model Open LLM Router now offers or no longer offers, or a model's new name. **Apply changes** updates the connection; **Keep current models** leaves it as it is. A model a chat or default chose that is no longer offered is refused when it runs, never swapped for another. Your [default efforts](#default-efforts) stay as they are.
 - **Manage in router** opens Open LLM Router.
 - **Test model** sends one short prompt through Open LLM Router.
 - **Disconnect**, **Reconnect**, **Rename** and **Delete**: see below.
