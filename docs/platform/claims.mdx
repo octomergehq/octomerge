@@ -52,6 +52,8 @@ An agent runs only with its session's own connected worker. When you register a 
 
 **On your own branch, the hold is implicit.** A session native to a branch holds `checkout` there without claiming it until the session is idle: while its agent runs, while input waits to start its next run, and while it is suspended in a `wait`, for a subagent, a command or a claim. `--status` lists that hold as `(native, running)`, or `queued`, `waiting` or `paused` (a run paused for recovery), and `held until the holder is idle (implicit)`. A session that is idle, stopped or waiting for your answer holds nothing. Nothing is stored for the hold, so it cannot be renewed or released. Without an explicit claim of its own, `--renew` and `--release` answer `held_implicitly` and exit non-zero.
 
+When an agent moves its chat to another branch while the old branch's checkout has uncommitted changes, the move turns its implicit hold there into an explicit `checkout` claim for 30 minutes, with the note `cleaning up after moving to branch <new>`, so the agent can undo its own edits on the old branch at once ([Moving a chat to another branch](/platform/workspace-chats#moving-a-chat-to-another-branch)). The agent releases it when it is done.
+
 A session may still claim `checkout` on its own branch explicitly, to leave a note or to hold it once the session is idle, for example while a command it started keeps running. `--status` then lists both entries, the explicit claim first. `--renew` and `--release` act on the explicit claim, like any other claim.
 
 **In another checkout, claim it first.** Before writing in another branch's or project's checkout, for example one referenced as `@project/branch`, claim `checkout` there. Hold it until the write is done, then release it:

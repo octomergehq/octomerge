@@ -324,6 +324,20 @@ Everything you send the agent runs on a worker you choose: the chat input's work
 
 The workspace is synchronized to the new worker, and commands and processes the agent started stay on their worker: the agent can still read, answer and stop them there, and the chat's running processes list them with that worker, while it is connected. A move that can't go ahead (the worker isn't connected, messages are queued in the chat, subagents that share its checkout still run) refuses what you sent and says why; nothing moved, and your text stays where you wrote it. Next to each worker chip the chat says what sending there does.
 
+## Moving a chat to another branch
+
+An agent can move its own chat to another branch of the same project when the work belongs there, for example on a branch and pull request of its own: to a branch that exists, or to one it creates first, either starting clean from a branch's last commit (or from a branch on the project's remote) or carrying the checkout's uncommitted changes along. It says why, and the chat shows the move as **Moved to branch** *old → new* with its reason, what it created, and what stays on the old branch. There is no button for it: to move a chat, ask its agent, for example "continue this on a new branch with your changes". An agent decides to move by itself too when it sees that its work needs a branch of its own.
+
+After the move, everything the agent does uses the new branch: its commands run in the new branch's checkout, its file tools read and write there, and its instructions are the new branch's `AGENTS.md`. Commands it started in the old checkout keep running there, and it can still read, answer and stop them. The chat is listed under its new branch, its address follows it, and links to its old address open it. Teams that could read the chat through the old branch's share keep reading it, through a share of the chat itself, which **Share…** lists and can revoke.
+
+What the old branch holds stays there:
+
+- **Uncommitted changes.** Carrying changes copies every uncommitted change of the old checkout into the new branch, also those of other chats on that branch, and the old branch keeps them. The agent then undoes only its own edits on the old branch, and in the new branch drops the changes that aren't its work. While it does, it holds the old branch's checkout claim for up to 30 minutes, and the old branch's other chats are told about it ([Claims](/platform/claims#the-checkout-topic)); it releases the claim as soon as it is done. When other chats have uncommitted work on the old branch, such as on `main`, the agent can instead bring only its own changes: it saves them as a patch, reverts them in the old checkout, starts the new branch clean and applies the patch there.
+- **Commits.** Commits of the old branch that the new one doesn't have stay on the old branch; the move lists them, so the agent can bring over what its work needs.
+- **Forks and subagents** that share the chat's checkout stay on the old branch, as chats of their own.
+
+A move can't go ahead while subagents or forks that share the chat's checkout still run, while a message to the chat waits to be read, or when the branch it names is missing, archived, being archived or being deleted: the agent is told why and nothing moves. A new branch that can't be created right away, for example while the worker's workspace is under remediation, is created as soon as possible; the agent moves once it exists.
+
 ## Drafts
 
 To write a message now and send it later, possibly from another device, choose **Save draft** next to **Send** instead of sending. The draft is saved with the conversation: its text, its model and effort, its worker, and its files, which are uploaded to the conversation's worker right away. The agent does not start. In **New Chat**, **Save draft** goes through the same queue as a message: it creates the chat without starting the agent, uploads the files and saves the draft there, and its slot then becomes a link to the chat.
