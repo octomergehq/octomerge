@@ -267,9 +267,13 @@ otti session detach SESSION_ID
 ```bash
 otti -s SESSION_ID dismiss-request --note "Answered in my message: use Postgres"
 otti -s SESSION_ID dismiss-request --tool-call-id TOOL_CALL_ID
+otti -s SESSION_ID dismiss-request --quiet
+otti -s SESSION_ID session requests
 ```
 
-`dismiss-request` closes an open question or environment request without answering it, like **Dismiss** in the chat: the one whose call `--tool-call-id` names (`conversation overview` shows each request's tool call ID), else the newest open one; with none open, it is refused. The asking agent is told that the request was dismissed, followed by your `--note`, so the note can say where the answer is. An agent can dismiss a request too, for example one a subagent asked that no longer matters; the asking agent and the chat say which agent dismissed it, not you. An agent dismisses its own questions without `otti`, and an MCP server's request is answered only in the chat. The output names the request it dismissed.
+`dismiss-request` closes an open question or environment request without answering it: the one whose call `--tool-call-id` names (`conversation overview` shows each request's tool call ID), else the newest open one; with none open, it is refused. The asking agent is told that the request was dismissed, followed by your `--note`, so the note can say where the answer is, like **Dismiss and tell the agent** in the chat: a waiting agent wakes up, and one that ended its turn starts again. With `--quiet` the request closes without telling the asking agent, like **Dismiss** in the chat: nothing wakes or starts it, and it isn't told later either, so a quiet dismissal takes no `--note`, `--model`, `--effort`, `--provider` or `--move-to`. An agent can dismiss a request too, for example one a subagent asked that no longer matters; the asking agent and the chat say which agent dismissed it, not you. An agent dismisses its own questions without `otti`, and an MCP server's request is answered only in the chat. The output names the request it dismissed.
+
+`session requests` lists a session's questions and environment requests on its current branch, oldest first, and what became of each: open, a reply on its way to the agent, answered, or dismissed, quietly or not, and by whom. `--tool-call-id` shows one of them. In an agent's shell it reads the agent's own session without `-s`: since a quiet dismissal tells the agent nothing, this is how an agent learns that a question it waits for was dismissed.
 
 The result includes a resume request ID. `queued` means execution has not started; `applied` means the runner consumed that resume, and `blocked` means it is waiting on recovery or a later Stop. Check `session status SESSION_ID` for current run status. After a lost response, retry with the same `--request-id REQUEST_ID` and `--confirm` to avoid waking the session twice. The CLI prints the request ID on failure as well.
 
