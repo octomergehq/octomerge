@@ -23,12 +23,14 @@ The agent can inspect pages, interact with tabs, capture screenshots, and exchan
 
 For a large page, ask the agent to find a control by its name, label, placeholder or visible text, or inspect a specific menu or section. Page reads prioritize open menus, dialogs and focused fields, and report when depth or output limits omit content. The agent can narrow its search or expand a result without extracting the whole page's HTML. Password fields stay masked in page reads and search results.
 
-For another environment, such as stage or a self-hosted installation, sign in to its HTTPS origin with a configuration file of its own and start with the same file:
+For another environment, such as stage or a self-hosted installation, sign in to its HTTPS origin and start with the same `--base-url`. The machine keeps that sign-in beside its sign-ins to other servers, so browsers for several environments run side by side on one machine, each with its own Chrome profile:
 
 ```bash
-otti-browser auth --config ~/.config/r5d/your-environment.json --base-url https://your-environment.example
-otti-browser start --config ~/.config/r5d/your-environment.json --base-url https://your-environment.example
+otti-browser auth --base-url https://your-environment.example
+otti-browser start --base-url https://your-environment.example
 ```
+
+`--config <file>` on both commands keeps that sign-in in a file of its own instead.
 
 The client chooses its server and credential as `otti` does ([Server and credential](/cli/otti#server-and-credential)): flags and a named `--config` come before the `R5D_*` variables, and a saved or inherited credential is only sent to the server it was issued for. When the chosen credential belongs to another server, the client stops before contacting anything and names both servers. An agent's conversation credential (`R5D_TOKEN` in an agent's shell) never connects a browser.
 
