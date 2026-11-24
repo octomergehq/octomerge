@@ -231,7 +231,7 @@ curl -H "Authorization: Bearer $R5D_TEAM_KEY" \
 }
 ```
 
-Store `cursor` once you have handled the events and pass it as the next `after`. With `hasMore`, ask again at once. Without `after`, the feed starts at the oldest event Octomerge keeps. Events are kept for 30 days: `truncated: true` means some after your cursor are gone, so list the sessions again. To start without the history, list first and follow from the list's `cursor`:
+Store `cursor` once you have handled the events and pass it as the next `after`. With `hasMore`, ask again at once. Without `after`, the feed starts at the oldest event Octomerge keeps. Events are kept for 30 days. `truncated: true` means some events after your cursor are gone, because they were older than that or because Octomerge was [recovered from a backup](/platform/persistence): list the sessions again. A recovery never reuses an event number you received, and a status it tells again has a higher `version`. To start without the history, list first and follow from the list's `cursor`:
 
 ```ts
 const { sessions, cursor } = await r5d.teams.sessions.list("acme");
