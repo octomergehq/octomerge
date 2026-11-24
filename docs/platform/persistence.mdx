@@ -21,4 +21,6 @@ A routine application release lets existing work remain with its owning generati
 
 If a host or process fails, the conversation can become blocked until the original receipt is reconciled. Inspect the actual effect before issuing a new command, especially for deployments or other external changes. A new runtime cannot resurrect a process lost with its host.
 
+If Octomerge is recovered from a backup, it goes back to an earlier point, and work done after that point is gone. Work that was running at that point doesn't continue by itself: each conversation that was working comes back stopped, with a notice in its transcript, and a tool call that was in flight reads as having an unknown outcome, because it may have run afterwards. Check what a stopped conversation was doing before you continue it. Scheduled sessions that came due in between are skipped. A banner at the top of the app names the point the recovery went back to; it stays for a week, or until you dismiss it.
+
 Workspace synchronization keeps the workspace's current files, not earlier versions of them, and is not a backup of every external database or arbitrary host file. Commit what you want to keep to a project's history. Installation operators must retain independent database and storage backups and account for new writes before restoring an earlier snapshot.
