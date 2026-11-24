@@ -60,7 +60,7 @@ When the filter covers unseen sessions, drafts or what the agents do, the sessio
 
 #### Teammates' sessions in the list
 
-When you are in a team, the sessions your teammates share with it in their project for a repository you have a project for too are in your project, among yours, by their activity ([Teams](/platform/teams#teammates-sessions-in-your-projects)). A teammate's session is the lightest row in the list, with a grey icon and its owner's initial; its card names its owner and says its status for you, such as **Priya Shah · waiting for Priya**. Selecting it opens it read-only on its team page. It is never unseen, and you can't pin or tag it. An open project's chip names the team that reads it or has sessions in it; select it to see which teams read what, to open a team, or to manage sharing. Someone in no team sees none of this.
+When you are in a team, the sessions your teammates share with it in their project for a repository you have a project for too are in your project, among yours, by their activity ([Teams](/platform/teams#teammates’-sessions-in-your-projects)). A teammate's session is the lightest row in the list, with a grey icon and its owner's initial; its card names its owner and says its status for you, such as **Priya Shah · waiting for Priya**. Selecting it opens it read-only on its team page. It is never unseen, and you can't pin or tag it. An open project's chip names the team that reads it or has sessions in it; select it to see which teams read what, to open a team, or to manage sharing. Someone in no team sees none of this.
 
 #### The keyboard
 
@@ -86,7 +86,7 @@ On a phone, **+** and the menu button always show. The keyboard works as in the 
 
 ### The chat's top bar
 
-A project chat has the branch's header at its top, with the chat's name and **project / branch** below it; a workspace chat shows **Workspace · worker** instead. See [A branch's header and pages](#a-branchs-header-and-pages).
+A project chat has the branch's header at its top, with the chat's name and **project / branch** below it; a workspace chat shows **Workspace · worker** instead. See [A branch's header and pages](#a-branch’s-header-and-pages).
 
 ### Previewing chats
 
@@ -109,7 +109,7 @@ Every session in the list has a menu (**⋯**); the chat's top bar has the same 
 - **Tags…**: add or remove tags (see below);
 - **Mark as unread** or **Mark as read**;
 - **Preview** (in the list): read through your sessions from this one (see [Previewing chats](#previewing-chats));
-- **Sub-agents** with their number, when it has any: all of them at any depth, finished ones included, each under the subagent that started it, with how many are at work. Each shows its status (a check once it finished), its name and, when it works on another branch or in another project, where; select one to open it. **Open in All sessions**, at the end, shows the chat with all its subagents in the **All sessions** table, to search, filter, sort and select them (see [A project's sessions](#a-projects-sessions)). On a phone, **Sub-agents** opens the list over the page;
+- **Sub-agents** with their number, when it has any: all of them at any depth, finished ones included, each under the subagent that started it, with how many are at work. Each shows its status (a check once it finished), its name and, when it works on another branch or in another project, where; select one to open it. **Open in All sessions**, at the end, shows the chat with all its subagents in the **All sessions** table, to search, filter, sort and select them (see [A project's sessions](#a-project’s-sessions)). On a phone, **Sub-agents** opens the list over the page;
 - **Compact context…**: compact the conversation's context now instead of when it fills up, for example when its work moved on to something new, with optional instructions that are added to the usual summary request (see [Long conversations](#long-conversations)). It is disabled while the chat is compacting, and chats of an archived branch don't have it;
 - **Fork conversation**: copy the conversation into a new chat and open it;
 - **New session in same branch** (project chats): create an empty session on this chat's branch and open it. It starts with the normal model and worker defaults, not the source chat's conversation or overrides. Workspace chats have no branch, so they don't show this option;
@@ -160,7 +160,7 @@ To search for `unseen`, `seen`, `draft`, `asking`, `running`, `waiting`, `stoppe
 
 ### Working on several chats at once
 
-The list has no selection: a session's row is a link, so Cmd-click (Ctrl-click on Windows and Linux) or middle-click opens the chat in a new tab, and Shift-click in a new window, as with any link. To act on several sessions at once, use the **All sessions** table or a project's **Sessions** page ([A project's sessions](#a-projects-sessions)), where you can check sessions and tag them, mark them as read or unread, or delete them. **Manage in All sessions** in a project's menu opens **All sessions** showing that project's sessions.
+The list has no selection: a session's row is a link, so Cmd-click (Ctrl-click on Windows and Linux) or middle-click opens the chat in a new tab, and Shift-click in a new window, as with any link. To act on several sessions at once, use the **All sessions** table or a project's **Sessions** page ([A project's sessions](#a-project’s-sessions)), where you can check sessions and tag them, mark them as read or unread, or delete them. **Manage in All sessions** in a project's menu opens **All sessions** showing that project's sessions.
 
 To delete branches, use **Delete branch…** in a session's menu, or the project's **Branches** page, where you can check several. If a step of a branch's deletion fails, its sessions show a red warning with the reason; **Retry deletion…** in their menu finishes it.
 
@@ -233,7 +233,7 @@ A browser download the agent copied into the chat's files, a page it exported, a
 
 Every page of a branch has the same header at its top: a chat on the branch, the branch's **Code**, **Git**, **Shell** and **Settings** pages, and the [branch page](#the-branch-page).
 
-- **Its title.** On a chat, the chat's name, with **project / branch** below it: select the project to open the [project's page](#a-projects-page), or the branch to open the branch page. On the branch's other pages, the branch's name, with the project (select it for the project's page) and the remote's host (or **no remote**) below it. A long branch name gives up its namespace first (`issue/acme/806-teammates-sh` becomes `…/806-teammates-sh`); point at it for the whole name.
+- **Its title.** On a chat, the chat's name, with **project / branch** below it: select the project to open the [project's page](#a-project’s-page), or the branch to open the branch page. On the branch's other pages, the branch's name, with the project (select it for the project's page) and the remote's host (or **no remote**) below it. A long branch name gives up its namespace first (`issue/acme/806-teammates-sh` becomes `…/806-teammates-sh`); point at it for the whole name.
 - **The branch's review.** Its pull request as GitHub has it, with its state: **Open**, **Draft**, **Merged** or **Closed**. Select it for its title, the branch it merges into, when Octomerge last checked it, **Open on GitHub** and **Copy link**. On another host, or before Octomerge has found one, a pull request (or another host's review) that a session linked as a work item with the pull request icon (`otti session work-items add`), labelled and named as its host does once Octomerge knows the host's [kind](/platform/git-remotes#host-kinds), such as **Merge request !12**: select it for its title, which session linked it, **Open** and **Copy link**; Octomerge doesn't know its state on that host. A branch without one, other than the project's primary branch, has a dashed review mark instead: select it for what Octomerge knows of the branch, such as whether it is pushed and whether it has commits that aren't in the primary branch, and, on a project whose remote is a GitHub repository (where your Octomerge offers GitHub), **Create pull request** with a title you can edit (the chat's name to start with). It opens the pull request into the project's primary branch, or shows the one already open; it is unavailable while the branch isn't on GitHub yet, and an archived branch, or one the project no longer has, doesn't offer it. A project without a remote has neither.
 - **Links.** On a chat its work items, on the branch's other pages those of all its sessions. Up to three show as themselves; more show as one chip, such as **20 links**, that opens their list, with a filter from ten links on. The link that is the branch's review shows only as the review.
 - **On the right:** a chat's subagents (how many at any depth, opening their list, finished ones included, each under the subagent that started it); the branch's views, **Git**, **Shell**, **Code** and **Settings**, after **Sessions** with how many sessions the branch has on the branch's own pages; **New chat** on the branch's own pages; **Shared** while a team can read it, which opens the share dialog; and the menu (**⋮**). The menu ends with the branch's actions, **Open pull request** when it has one, **Share…**, **Archive branch…** and **Delete branch…**, each saying why when it can't be done now, such as while a session on the branch is working; on a chat, the chat's actions come before them. An archived branch's pages have **Unarchive…** and **Delete branch…** instead.
@@ -726,7 +726,7 @@ since it started or was last compacted says so. Compacting an idle chat doesn't
 count as a finished run: a subagent doesn't report it to the agent that started
 it, and **Notify me on completion** doesn't email you about it.
 `otti session compact` does the same from a terminal or an agent's shell
-([otti](/cli/otti#compact-a-conversations-context)).
+([otti](/cli/otti#compact-a-conversation’s-context)).
 
 ## What the agent's context holds
 

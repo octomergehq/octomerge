@@ -165,7 +165,7 @@ spec:
 
 `kubectl apply -f otti-worker.yaml`, then `kubectl logs -f statefulset/my-worker`. What matters in it:
 
-- **A StatefulSet of one pod:** one worker per volume, and never two at once. Its pod has a fixed name, `my-worker-0`, so a new pod starts only once the old one has ended: after an update, `kubectl delete pod` or a node drain alike. A Deployment would start the replacement while the old pod is still stopping, so for a while two workers would use the volume. `podManagementPolicy: Parallel` lets an update or `kubectl rollout restart` replace a pod that isn't ready, such as one [restarting with exit code 78](#when-it-cant-sign-in-exit-code-78). `serviceName` names no Service: the worker takes no inbound connections.
+- **A StatefulSet of one pod:** one worker per volume, and never two at once. Its pod has a fixed name, `my-worker-0`, so a new pod starts only once the old one has ended: after an update, `kubectl delete pod` or a node drain alike. A Deployment would start the replacement while the old pod is still stopping, so for a while two workers would use the volume. `podManagementPolicy: Parallel` lets an update or `kubectl rollout restart` replace a pod that isn't ready, such as one [restarting with exit code 78](#when-it-can’t-sign-in-exit-code-78). `serviceName` names no Service: the worker takes no inbound connections.
 - **`fsGroup: 1000` with `fsGroupChangePolicy: OnRootMismatch`:** the volume becomes the worker's group's once, when it is new. Without `OnRootMismatch`, the kubelet would add group access to every file on each start, and the worker refuses its private directories once others can reach them (`insecure_directory`).
 - **`terminationGracePeriodSeconds: 90`:** a stopping worker's time to end its commands and release its workspace; Kubernetes' default is 30 seconds.
 - **`ReadWriteOnce`:** the worker's own disk. Any storage class that gives pods a POSIX file system with owners and modes works; set `storageClassName` for another than your cluster's default. With CSI storage you can also make it `ReadWriteOncePod`, which lets only one pod in the cluster mount it.
@@ -214,7 +214,7 @@ A container usually can't run Docker itself, and the worker image has no Docker:
 
 ## Its log
 
-`docker logs`, `docker compose logs` and `kubectl logs` show the worker's log. The container's log records when each line was written, so there the worker leaves out the time it otherwise starts each line with ([The worker's log](/get-started/add-worker#the-workers-log)): `docker logs -t`, `docker compose logs -t` and `kubectl logs --timestamps` show the times. Lines the worker writes to a file in the container carry their time, and `R5D_LOG_TIMESTAMPS=on` in the container's environment adds it to every line.
+`docker logs`, `docker compose logs` and `kubectl logs` show the worker's log. The container's log records when each line was written, so there the worker leaves out the time it otherwise starts each line with ([The worker's log](/get-started/add-worker#the-worker’s-log)): `docker logs -t`, `docker compose logs -t` and `kubectl logs --timestamps` show the times. Lines the worker writes to a file in the container carry their time, and `R5D_LOG_TIMESTAMPS=on` in the container's environment adds it to every line.
 
 ## The life vest
 

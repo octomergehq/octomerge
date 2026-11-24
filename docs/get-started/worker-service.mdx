@@ -63,7 +63,7 @@ sudo systemctl enable --now otti-worker
 journalctl -u otti-worker -f      # its log
 ```
 
-The journal records when each line was written (`journalctl -o short-iso-precise` shows it to the microsecond), so the worker writes its lines there without the time it otherwise starts them with ([The worker's log](/get-started/add-worker#the-workers-log)).
+The journal records when each line was written (`journalctl -o short-iso-precise` shows it to the microsecond), so the worker writes its lines there without the time it otherwise starts them with ([The worker's log](/get-started/add-worker#the-worker’s-log)).
 
 When the sign-in is refused, `systemctl status otti-worker` shows the service failed with `status=78/CONFIG`, and the log says why and which command signs in again. Run that command as the service's user, then `sudo systemctl start otti-worker`.
 
@@ -127,7 +127,7 @@ tail -f ~/Library/Logs/otti-worker.log                # its log
 launchctl bootout gui/$(id -u)/dev.r5d.worker         # stop it and unload it
 ```
 
-launchd records no times in the log file, so each line the worker writes there starts with the time it was written, in UTC ([The worker's log](/get-started/add-worker#the-workers-log)).
+launchd records no times in the log file, so each line the worker writes there starts with the time it was written, in UTC ([The worker's log](/get-started/add-worker#the-worker’s-log)).
 
 The agent starts when you log in. launchd has no counterpart of systemd's `RestartPreventExitStatus`: with `KeepAlive` on, it starts the worker again after any exit, 78 included, at most once per `ThrottleInterval` seconds (10 by default, 60 above). So after a refused sign-in the log shows the refusal once a minute until you sign in again (`otti-worker auth` in a terminal; the next start then connects) or unload the agent with `launchctl bootout`, which is also how you stop it. `ExitTimeOut` gives a stopping worker the same minute and a half as the systemd unit: by default launchd kills a job 20 seconds after asking it to stop. On macOS the life vest can't resume itself: a stop of every process of your user, which also freezes your desktop, stops it too.
 

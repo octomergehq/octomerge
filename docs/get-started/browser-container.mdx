@@ -25,7 +25,7 @@ A browser holds the sign-ins of the sites you use in it, and agents act there wi
 
 - Docker 20.10 or newer, on a Linux kernel that lets unprivileged users create user namespaces (most distributions do).
 - About 2 GB of memory and 2 CPUs for Chrome with a few tabs.
-- Chrome's seccomp profile, which the container must run with ([Chrome's sandbox](#chromes-sandbox)). It is in the image:
+- Chrome's seccomp profile, which the container must run with ([Chrome's sandbox](#chrome’s-sandbox)). It is in the image:
 
 ```bash
 docker run --rm --entrypoint cat ghcr.io/octomergehq/otti-browser:latest \
@@ -59,7 +59,7 @@ docker run -d --name my-browser --hostname my-browser \
 
 `docker logs -f my-browser` shows its log, which says `Connected to https://octomerge.dev`, and **Settings → Browser** shows the browser connected, on Linux. What the options do:
 
-- `--security-opt seccomp=chrome-seccomp.json`, `--security-opt no-new-privileges` and `--cap-drop ALL` are required: they keep Chrome's sandbox on with no other privilege ([Chrome's sandbox](#chromes-sandbox)).
+- `--security-opt seccomp=chrome-seccomp.json`, `--security-opt no-new-privileges` and `--cap-drop ALL` are required: they keep Chrome's sandbox on with no other privilege ([Chrome's sandbox](#chrome’s-sandbox)).
 - `--hostname`: Chrome's profile names the machine it runs on. Give every container of this volume the same name; a container with another one stops and says that the profile is locked by another machine.
 - `--shm-size 2g`: Docker gives a container 64 MB of shared memory, too little for Chrome's pages.
 - `--stop-timeout 60`: on a stop, the client finishes the browser action it is doing and closes Chrome, so its profile stays consistent; that usually takes under a second.
