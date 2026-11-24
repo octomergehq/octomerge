@@ -390,7 +390,7 @@ File links in agent messages open the file in the chat, including files outside 
 - **Portable**, such as `[report]($R5D_ROOT/plans/.../report.md)`: the worker resolves its own managed root.
 - **Absolute or home-relative**, such as `[report](/tmp/report.txt)`, `[passwd](/etc/passwd)` or `[notes](~/notes.txt)`, on the message's worker. Your worker account's file permissions still apply.
 
-Web links, and links in web pages the agent read, open in a new tab. A link to a session, and a session's full ID, that the agent writes on its own show as a chip that opens the session ([Mention a session](/platform/teams#mention-a-session)). Previews follow the file:
+Web links, and links in web pages the agent read, open in a new tab. A link to a session, and a session's ID, in full or shortened to its first eight characters, that the agent writes on its own show as a chip that opens the session ([Mention a session](/platform/teams#mention-a-session)). Previews follow the file:
 
 - **Markdown** (`.md`, `.markdown`, `.mdx`) opens rendered, with **Source** for the original text and **Preview** to switch back. Its HTML is sanitized and MDX components and scripts are not executed. Markdown above 100,000 characters or 2,000 lines opens as source. Tables keep their words whole and short cells, such as IDs, names and statuses, on one line; a table wider than the panel scrolls sideways.
 - **Code** in recognized languages, such as TypeScript, Python, Rust, Go, shell scripts, JSON, YAML and HTML, is shown as read-only highlighted source. HTML is shown as source, not rendered.
