@@ -22,3 +22,7 @@ A routine application release lets existing work remain with its owning generati
 If a host or process fails, the conversation can become blocked until the original receipt is reconciled. Inspect the actual effect before issuing a new command, especially for deployments or other external changes. A new runtime cannot resurrect a process lost with its host.
 
 Workspace synchronization keeps the workspace's current files, not earlier versions of them, and is not a backup of every external database or arbitrary host file. Commit what you want to keep to a project's history. Installation operators must retain independent database and storage backups and account for new writes before restoring an earlier snapshot.
+
+## Deleted data and backups
+
+What you delete (a chat, a branch, a project or your account) is deleted at once and can't be restored. Octomerge keeps deleted data in its backups for up to 8 days so it can recover from a failure. A recovery never brings back something you deleted: what you deleted after the point a recovery goes back to is deleted again. Files on your own workers aren't in Octomerge's backups.
