@@ -28,7 +28,7 @@ When you start the sandbox again, the worker connects by itself:
 - **Within 10 minutes of the stop**, boat gives you the same machine back, as it was. The hook left a timer that starts the worker as soon as the machine wakes up: it connects within a few seconds. Started again only seconds after it stopped, the machine may not notice it slept, and the worker connects within 3 minutes.
 - **Later**, the sandbox starts on a new machine from the saved disk. The worker waits until boat has restored your home folder, then connects, usually within 15 seconds.
 
-While the worker is offline, chats on it pause with **Paused until worker '…' reconnects** and continue by themselves once it connects ([When the chat's worker is unavailable](/platform/workspace-chats#when-the-chats-worker-is-unavailable)). You can't send a new message to a chat whose worker is offline: start the sandbox first.
+While the worker is offline, chats on it pause with **Paused until worker '…' reconnects** and continue by themselves once it connects ([When the chat's worker is unavailable](/platform/workspace-chats#when-the-chat’s-worker-is-unavailable)). You can't send a new message to a chat whose worker is offline: start the sandbox first.
 
 ## Create the sandbox
 
