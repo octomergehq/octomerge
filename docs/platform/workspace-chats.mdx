@@ -874,7 +874,36 @@ Notifications**.
 
 Email requires an email sender configured for your installation. Without
 one, no email is sent, and agents are told that email is unavailable and tell
-you in the chat instead.
+you in the chat instead, unless the Octomerge app on your phone takes their
+notifications.
+
+## Phone notifications
+
+The Octomerge app for iPhone lists your chats as the sidebar does, and
+notifies you on your phone. Sign in from the app: it opens Octomerge's sign-in
+page, where you approve **Octomerge for iPhone**, which asks to read your
+chats (otti, read only). Tapping a chat or a notification opens the chat in
+Safari, or in the app's browser sheet if you choose that in the app's settings.
+
+The phone is notified when:
+
+- an agent asks you something (questions, environment values, an MCP server
+  asking for your input), subagents too, 10 seconds after it was asked, unless
+  it was answered by then;
+- a task finishes in one of your top-level chats and you haven't looked at it
+  within 30 seconds, so a chat you watch on your computer sends nothing (or,
+  if you choose, only chats with **Notify me on completion**, or never);
+- an agent sends you a notification;
+- a chat stops without you stopping it.
+
+The app icon's badge counts your chats that need you: unseen, asking you
+something, or waiting for you after a stop.
+
+While a phone is notified of something, Octomerge doesn't also email it to you:
+turn off **Instead of email** for that phone to get both. Each phone's
+notifications are set in the app and under **Settings → Notifications →
+Phones**, where **Remove and sign out** signs the app out and ends its
+notifications, as signing out in the app does.
 
 ## Session working memory
 
