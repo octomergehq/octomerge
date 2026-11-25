@@ -654,10 +654,15 @@ checkout first, unless you start the new branch from the remote: choose
 If the source has no uncommitted changes, both choices give the same files.
 **Create and start a session** creates the branch and then opens a new chat on
 it; **Create branch** only creates it. The dialog shows **Creating BRANCH…**
-while Octomerge creates the branch (then **Starting a session on BRANCH…**), and
-closes once it is ready; if the branch can't be
+while Octomerge creates the branch, with what it does at the moment: fetching
+it from the repository and storing its history (with its size) for a
+repository branch, then creating its checkout, or that storage was busy and
+the checkout is tried again; the project's **Branches** page lists the branch
+with the same words until it is ready. Then **Starting a session on BRANCH…**
+follows, and the dialog closes once it is ready; if the branch can't be
 created, the dialog says why, for example when the name is taken or the source
-branch has never synchronized. **Continue in background** closes the dialog
+branch has never synchronized. A big repository's branch can take a minute or
+two, which the dialog waits out. **Continue in background** closes the dialog
 while the creation goes on; with **Create and start a session**, the new chat
 opens when the branch is ready. If the branch is created but its session can't
 start, a message says why, and **New session** on the branch's row starts one. Every worker receives the new branch's files within seconds and sets

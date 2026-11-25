@@ -123,7 +123,7 @@ Someone pushed a branch that Octomerge doesn't have: a teammate, a collaborator 
 
 - **Not merged** (the default): branches with commits your primary branch doesn't have, and no pull request merged or closed at their last commit (a branch pushed again after its pull request was closed, or a new branch that reuses an old name, is listed). **With a pull request** and **All** list more; the end of the list says how many more are merged or closed.
 - **Find a branch** by part of its name, or **paste a link**: a branch's page (`…/tree/ft/checkout-v2`) or a pull request (`…/pull/409`) finds its branch.
-- **Add** adds the branch to Octomerge under its own name, at the remote branch's latest commit. It then shows under **In Octomerge**, ready for a session; Pull and Push go to the same branch on the remote, and its pull request is the branch's review. If adding it fails, the row says why, with **Retry**.
+- **Add** adds the branch to Octomerge under its own name, at the remote branch's latest commit. While it is added, the row says what it does: fetching it from the repository, storing its history (with its size), creating its checkout; a big repository's branch can take a minute or two. It then shows under **In Octomerge**, ready for a session; Pull and Push go to the same branch on the remote, and its pull request is the branch's review. If adding it fails, the row says why, with **Retry**.
 - The row's menu: **Add to Octomerge**, the same; **New branch from it…** under another name (pushes then go to that name); the pull request; the branch on the remote's site; **Copy name**.
 
 Afterwards it is a branch like any other: when its author pushes again, the branch shows how many commits it is behind, and **Pull** on its **Git** page brings them in.
