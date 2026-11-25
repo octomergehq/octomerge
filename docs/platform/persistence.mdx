@@ -23,6 +23,8 @@ If a host or process fails, the conversation can become blocked until the origin
 
 If Octomerge is recovered from a backup, it goes back to an earlier point, and work done after that point is gone. Work that was running at that point doesn't continue by itself: each conversation that was working comes back stopped, with a notice in its transcript, and a tool call that was in flight reads as having an unknown outcome, because it may have run afterwards. Check what a stopped conversation was doing before you continue it. Scheduled sessions that came due in between are skipped. A banner at the top of the app names the point the recovery went back to; it stays for a week, or until you dismiss it. Open tabs show a notice and reload by themselves, so they don't go on showing work the recovery took back. A team's integrations keep their place in its [event feed](/cli/api-client#follow-the-event-feed): the events they missed read as truncated.
 
+Work your workers hold isn't lost: a worker that had newer files or commits than that point publishes them again on top of the recovered workspace, and a branch made after that point, which the recovery lost, stays on that worker as it is, with a note in `otti workspace status` that says how to bring it back ([Workspace status](/cli/otti#workspace-status-and-synchronization)).
+
 Workspace synchronization keeps the workspace's current files, not earlier versions of them, and is not a backup of every external database or arbitrary host file. Commit what you want to keep to a project's history. Installation operators must retain independent database and storage backups and account for new writes before restoring an earlier snapshot.
 
 ## Deleted data and backups
