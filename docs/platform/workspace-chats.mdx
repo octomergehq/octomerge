@@ -593,7 +593,12 @@ only content no project needs and otherwise asks you to make room. Archive or
 delete branches you no longer need: their files leave the workspace at once (an
 archived branch's stay readable on Octomerge and come back when you unarchive it;
 see [Archiving](/platform/archiving)), and creating the branch again, or
-opening its launch link again, then succeeds. If your limits get smaller (a
+opening its launch link again, then succeeds. A stopped worker doesn't wait for
+its remediation: once the workspace has room for what it holds back (branches
+archived or deleted, or larger limits), it publishes by itself within a minute,
+its remediation chat closes with the reason, and the paused chats continue. The
+remediation agent's own check says whether the workspace has room for it yet,
+with the numbers. If your limits get smaller (a
 plan change), a workspace already over them keeps working: only changes that
 make it grow are refused until it is under them again.
 
