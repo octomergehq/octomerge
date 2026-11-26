@@ -9,14 +9,13 @@ Workers use your connected GitHub account for registry operations where the gran
 ## Worker authentication
 
 When you connect GitHub repositories (**Settings → Git**), Octomerge provides that GitHub credential to connected macOS and Linux workers. It can be any GitHub account, whichever way you sign in to Octomerge.
-The worker configures Docker and containers-auth credentials and provides `GH_TOKEN` for the GitHub CLI, along with registry
-and namespace metadata such as `R5D_GHCR_REGISTRY` and `R5D_GHCR_NAMESPACE`.
+The worker configures Docker and containers-auth credentials and provides `GH_TOKEN` for the GitHub CLI.
 
 With Docker installed on the worker, you can build and push an image:
 
 ```bash
 GIT_SHA="$(git rev-parse --short=12 HEAD)"
-IMAGE="${R5D_GHCR_REGISTRY:-ghcr.io}/${R5D_GHCR_NAMESPACE}/api:${GIT_SHA}"
+IMAGE="ghcr.io/<owner>/api:${GIT_SHA}"   # <owner>: your GitHub user or organization
 docker build -t "$IMAGE" .
 docker push "$IMAGE"
 ```

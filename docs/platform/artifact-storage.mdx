@@ -3,7 +3,7 @@ title: 'Artifact storage'
 description: 'Upload large attachments, resume transfers, and work with the files in a conversation''s artifacts folder.'
 ---
 
-Each conversation has an artifacts folder, `$R5D_ROOT/artifacts/<conversation-id>/` (the agent writes it as `$R5D_ROOT/artifacts/$R5D_SESSION_ID/`), on its worker. Attachments you send, browser downloads, page exports, screenshots and images the agent reads are saved there. They are **ordinary files on the worker that wrote them**: you and the agent can create, overwrite, rename and delete them with the shell, a terminal or the file tools, like any other file. Octomerge does not keep a central copy of their contents, a checksum or any other record of them once they are written, apart from the copy of each image and attachment it sends to the agent's model (below).
+Each conversation has an artifacts folder, `$OTTI_ROOT/artifacts/<conversation-id>/` (the agent writes it as `$OTTI_ROOT/artifacts/$OTTI_SESSION_ID/`), on its worker. Attachments you send, browser downloads, page exports, screenshots and images the agent reads are saved there. They are **ordinary files on the worker that wrote them**: you and the agent can create, overwrite, rename and delete them with the shell, a terminal or the file tools, like any other file. Octomerge does not keep a central copy of their contents, a checksum or any other record of them once they are written, apart from the copy of each image and attachment it sends to the agent's model (below).
 
 What that means in practice:
 
@@ -13,7 +13,7 @@ What that means in practice:
 - Other previews and file links read the current file. A file that was deleted or is on a disconnected worker shows as unavailable, naming the worker; the rest of the conversation keeps working.
 - Switching workers does not move the folder's files. They stay on the worker that wrote them; copy one yourself (for example with `scp`) or send it again if another worker needs it.
 
-File links in agent messages are [worker files](/platform/workspace-chats) too: they open the file as it is now on the worker the message ran on, in any folder under the conversation's artifacts directory. The workspace does not synchronize artifacts, so a link to one needs that worker connected; no other worker's file of the same name stands in for it. Link an artifact as `$R5D_ROOT/artifacts/<conversation-id>/<file>`: a relative link such as `artifacts/<conversation-id>/<file>` starts from the agent's working directory, which in a project conversation is the branch's checkout, not the workspace root.
+File links in agent messages are [worker files](/platform/workspace-chats) too: they open the file as it is now on the worker the message ran on, in any folder under the conversation's artifacts directory. The workspace does not synchronize artifacts, so a link to one needs that worker connected; no other worker's file of the same name stands in for it. Link an artifact as `$OTTI_ROOT/artifacts/<conversation-id>/<file>`: a relative link such as `artifacts/<conversation-id>/<file>` starts from the agent's working directory, which in a project conversation is the branch's checkout, not the workspace root.
 
 ## Uploading
 

@@ -11,7 +11,7 @@ description: "Give every agent deploy access once: sign in to Vercel or Cloudfla
 | Cloudflare | Sign in with Cloudflare | `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` |
 | Fly.io | An organization token you create and paste | `FLY_API_TOKEN` |
 | Kubernetes | A kubeconfig you upload or paste | `KUBECONFIG`, a file |
-| AWS | Access keys, or IAM Identity Center | `AWS_PROFILE` (`r5d`) and `AWS_CONFIG_FILE`, a file |
+| AWS | Access keys, or IAM Identity Center | `AWS_PROFILE` (`otti`) and `AWS_CONFIG_FILE`, a file |
 
 <Note>
 Vercel and Cloudflare say **Not set up on this installation** where your installation has no client for them; the other three always work. An installation without deploy targets shows no Deploy and cloud section.
@@ -68,13 +68,13 @@ A user that runs an exec plugin, such as `aws` or `gke-gcloud-auth-plugin`, is a
 Choose **Add credentials**, then:
 
 - **Access keys**: an IAM user's access key ID (`AKIA…`) and secret access key, and a default Region. Octomerge checks them with AWS STS and shows the account and ARN. Use a user with only the permissions agents need.
-- **IAM Identity Center**: your start URL, its Region, the account ID, the permission set's role name and a default Region. Nothing secret is stored: agents sign in with `aws sso login --profile r5d --use-device-code` and ask you to approve the code it shows.
+- **IAM Identity Center**: your start URL, its Region, the account ID, the permission set's role name and a default Region. Nothing secret is stored: agents sign in with `aws sso login --profile otti --use-device-code` and ask you to approve the code it shows.
 
-Either way agents get `AWS_PROFILE=r5d` and `AWS_CONFIG_FILE`, a file with the `r5d` profile, which the AWS CLI and SDKs read.
+Either way agents get `AWS_PROFILE=otti` and `AWS_CONFIG_FILE`, a file with the `otti` profile, which the AWS CLI and SDKs read.
 
 ## In Secrets and variables
 
-A connection's entries are listed with your other entries, marked with where they came from: **From Vercel sign-in**, **From Cloudflare sign-in**, **From your Fly.io token**, **From your kubeconfig** or **From the r5d AWS profile**. They can't be edited:
+A connection's entries are listed with your other entries, marked with where they came from: **From Vercel sign-in**, **From Cloudflare sign-in**, **From your Fly.io token**, **From your kubeconfig** or **From the otti AWS profile**. They can't be edited:
 
 - Connecting replaces an entry of the same name that you added yourself; Octomerge tells you before it does.
 - Saving an entry with a connection's name is refused until you disconnect it.

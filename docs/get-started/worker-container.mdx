@@ -19,12 +19,14 @@ The container reads its settings from its environment:
 
 | Variable | |
 | --- | --- |
-| `R5D_BASE_URL` | Your environment's address, such as `https://octomerge.dev`. Required. |
-| `R5D_WORKER_LABEL` | The label the token was made for. Required. |
-| `R5D_ENROLL_TOKEN` | The token. Needed for the first start only. |
-| `R5D_WORKER_REMOTE` | `1` for a token made for a Remote. |
-| `R5D_WORKER_DESCRIPTION` | What the machine is for, in one line ([Describe a worker](/get-started/add-worker#describe-a-worker)). |
-| `R5D_ARCHIVE_WORKSPACE_LOCK` | `1` to start once past a workspace lock an older release left ([Stopping](#stopping-and-what-a-hard-kill-leaves)). |
+| `OTTI_BASE_URL` | Your environment's address, such as `https://octomerge.dev`. Required. |
+| `OTTI_WORKER_LABEL` | The label the token was made for. Required. |
+| `OTTI_ENROLL_TOKEN` | The token. Needed for the first start only. |
+| `OTTI_WORKER_REMOTE` | `1` for a token made for a Remote. |
+| `OTTI_WORKER_DESCRIPTION` | What the machine is for, in one line ([Describe a worker](/get-started/add-worker#describe-a-worker)). |
+| `OTTI_ARCHIVE_WORKSPACE_LOCK` | `1` to start once past a workspace lock an older release left ([Stopping](#stopping-and-what-a-hard-kill-leaves)). |
+
+Images of earlier releases read these settings as `R5D_BASE_URL`, `R5D_WORKER_LABEL` and so on. A container keeps working with those names until it moves to a newer image, which reads only the `OTTI_` names: rename them in its `docker run` command, compose file or manifest when you change its image. The Helm chart's values keep their names.
 
 On its first start the container exchanges the token for its sign-in and saves it on the volume (`~/.config/r5d`). The worker starts without the token in its environment, so neither the worker nor the commands and terminals agents run there inherit it. The token stays in the container's settings, though (`docker inspect`, the Compose file or the pod's Secret), and in the environment of the container's first process, which agents' commands can read because they run as the same user. So remove it once the worker is enrolled; each section below says how. Later starts find the sign-in and need no token; one still set is left unused, and stays valid until it expires. The worker runs as the user `r5d` (uid and gid 1000), whose home, `/home/r5d`, is the volume: the sign-in, the worker's workspace with your checkouts (`~/.local/share/r5d`) and caches. The CLIs and Bun are part of the image, outside the volume.
 
@@ -37,9 +39,9 @@ A worker holds your workspace and runs agents with your credentials: run one onl
 ```bash
 docker run -d --name my-worker --hostname my-worker \
   --restart unless-stopped --stop-timeout 90 \
-  -e R5D_BASE_URL=https://octomerge.dev \
-  -e R5D_WORKER_LABEL=my-worker \
-  -e R5D_ENROLL_TOKEN=r5de_… \
+  -e OTTI_BASE_URL=https://octomerge.dev \
+  -e OTTI_WORKER_LABEL=my-worker \
+  -e OTTI_ENROLL_TOKEN=r5de_… \
   -v my-worker-home:/home/r5d \
   ghcr.io/octomergehq/otti-worker:latest
 ```
@@ -50,7 +52,7 @@ docker run -d --name my-worker --hostname my-worker \
 docker pull ghcr.io/octomergehq/otti-worker:latest   # for a newer image
 docker stop my-worker && docker rm my-worker
 docker run -d --name my-worker --hostname my-worker --restart unless-stopped --stop-timeout 90 \
-  -e R5D_BASE_URL=https://octomerge.dev -e R5D_WORKER_LABEL=my-worker \
+  -e OTTI_BASE_URL=https://octomerge.dev -e OTTI_WORKER_LABEL=my-worker \
   -v my-worker-home:/home/r5d ghcr.io/octomergehq/otti-worker:latest
 ```
 
@@ -70,9 +72,9 @@ services:
     restart: unless-stopped
     stop_grace_period: 90s
     environment:
-      R5D_BASE_URL: https://octomerge.dev
-      R5D_WORKER_LABEL: my-worker
-      R5D_ENROLL_TOKEN: r5de_…
+      OTTI_BASE_URL: https://octomerge.dev
+      OTTI_WORKER_LABEL: my-worker
+      OTTI_ENROLL_TOKEN: r5de_…
     volumes:
       - home:/home/r5d
 
@@ -80,7 +82,7 @@ volumes:
   home: {}
 ```
 
-Then `docker compose up -d`, and `docker compose logs -f worker` for its log. `docker compose down` and `up` again keeps the volume, and with it the worker's sign-in and checkouts; `docker compose pull` before `up -d` brings a newer image. `docker compose down -v` deletes the volume, and with it whatever the worker had not published: don't. Once the worker is enrolled, remove `R5D_ENROLL_TOKEN` from the file and run `docker compose up -d`, which creates the container again without it.
+Then `docker compose up -d`, and `docker compose logs -f worker` for its log. `docker compose down` and `up` again keeps the volume, and with it the worker's sign-in and checkouts; `docker compose pull` before `up -d` brings a newer image. `docker compose down -v` deletes the volume, and with it whatever the worker had not published: don't. Once the worker is enrolled, remove `OTTI_ENROLL_TOKEN` from the file and run `docker compose up -d`, which creates the container again without it.
 
 Here too, one container per volume: keep the service at one container (no `scale` or `replicas` above 1), and don't use its volume in another Compose project or `docker run`. When you change the file, `docker compose up -d` stops the old container before it starts the new one.
 
@@ -140,11 +142,11 @@ spec:
         - name: worker
           image: ghcr.io/octomergehq/otti-worker:latest
           env:
-            - name: R5D_BASE_URL
+            - name: OTTI_BASE_URL
               value: https://octomerge.dev
-            - name: R5D_WORKER_LABEL
+            - name: OTTI_WORKER_LABEL
               value: my-worker
-            - name: R5D_ENROLL_TOKEN
+            - name: OTTI_ENROLL_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: my-worker-enroll
@@ -214,7 +216,7 @@ A container usually can't run Docker itself, and the worker image has no Docker:
 
 ## Its log
 
-`docker logs`, `docker compose logs` and `kubectl logs` show the worker's log. The container's log records when each line was written, so there the worker leaves out the time it otherwise starts each line with ([The worker's log](/get-started/add-worker#the-worker’s-log)): `docker logs -t`, `docker compose logs -t` and `kubectl logs --timestamps` show the times. Lines the worker writes to a file in the container carry their time, and `R5D_LOG_TIMESTAMPS=on` in the container's environment adds it to every line.
+`docker logs`, `docker compose logs` and `kubectl logs` show the worker's log. The container's log records when each line was written, so there the worker leaves out the time it otherwise starts each line with ([The worker's log](/get-started/add-worker#the-worker’s-log)): `docker logs -t`, `docker compose logs -t` and `kubectl logs --timestamps` show the times. Lines the worker writes to a file in the container carry their time, and `OTTI_LOG_TIMESTAMPS=on` in the container's environment adds it to every line.
 
 ## The life vest
 
@@ -254,14 +256,14 @@ A lock that an older worker release left when it was killed doesn't say which pr
 - **Settings → Workers** shows the worker disconnected, with the same reason;
 - the worker exits with 1, and its life vest starts it again and again, after longer waits up to 5 minutes, so the container keeps running and its log shows the refusal each time.
 
-If no other container runs a worker on that volume (a volume serves one container at a time), start it once with `R5D_ARCHIVE_WORKSPACE_LOCK=1`, which moves the lock aside: with Docker, create the container again with the same volume and `-e R5D_ARCHIVE_WORKSPACE_LOCK=1`; with Compose, add it to the service's `environment` and run `docker compose up -d`; with Kubernetes or Helm, `kubectl set env statefulset/my-worker R5D_ARCHIVE_WORKSPACE_LOCK=1`. Remove it afterwards; left in place it only ever moves aside a lock that can't tell, never one whose worker still runs.
+If no other container runs a worker on that volume (a volume serves one container at a time), start it once with `OTTI_ARCHIVE_WORKSPACE_LOCK=1`, which moves the lock aside: with Docker, create the container again with the same volume and `-e OTTI_ARCHIVE_WORKSPACE_LOCK=1`; with Compose, add it to the service's `environment` and run `docker compose up -d`; with Kubernetes or Helm, `kubectl set env statefulset/my-worker OTTI_ARCHIVE_WORKSPACE_LOCK=1`. Remove it afterwards; left in place it only ever moves aside a lock that can't tell, never one whose worker still runs.
 
 ## When it can't sign in: exit code 78
 
 The container stops with exit code **78** when it can't sign in, and its log says why and what to do:
 
-- there's no sign-in on the volume and no `R5D_ENROLL_TOKEN`, or the token was refused: used, expired, revoked, made for another label or by another environment;
-- `R5D_BASE_URL` names another server than the one the volume's sign-in is for, such as `https://octomerge.dev` for a container signed in at `https://r5d.dev`;
+- there's no sign-in on the volume and no `OTTI_ENROLL_TOKEN`, or the token was refused: used, expired, revoked, made for another label or by another environment;
+- `OTTI_BASE_URL` names another server than the one the volume's sign-in is for, such as `https://octomerge.dev` for a container signed in at `https://r5d.dev`;
 - the worker's sign-in was revoked (under **Settings → CLI & API → Authorized devices**, or with `auth logout` elsewhere), or it lost the access it needs.
 
 The code stays 78 so that you can see what happened, but a restart policy restarts the container on any exit. So until you act, the container keeps failing the same way:
@@ -274,7 +276,7 @@ The code stays 78 so that you can see what happened, but a restart policy restar
 
 To connect it again, create a new enrollment token for the same label, then start it with that token and the same volume. An enrollment replaces a sign-in that no longer works.
 
-- **Docker:** `docker stop my-worker && docker rm my-worker`, then the same `docker run` with `-e R5D_ENROLL_TOKEN=<the new token>`.
+- **Docker:** `docker stop my-worker && docker rm my-worker`, then the same `docker run` with `-e OTTI_ENROLL_TOKEN=<the new token>`.
 - **Compose:** put the new token in `compose.yaml`, then `docker compose up -d`, which creates the container again with it.
 - **Kubernetes:** replace the token in the Secret, then start the pod again:
 

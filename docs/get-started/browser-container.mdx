@@ -52,7 +52,7 @@ docker run -d --name my-browser --hostname my-browser \
   --security-opt seccomp=chrome-seccomp.json \
   --security-opt no-new-privileges --cap-drop ALL \
   --shm-size 2g --memory 4g --cpus 2 \
-  -e R5D_BASE_URL=https://octomerge.dev \
+  -e OTTI_BASE_URL=https://octomerge.dev \
   -v my-browser-home:/home/r5d \
   ghcr.io/octomergehq/otti-browser:latest
 ```
@@ -68,9 +68,11 @@ The container reads its settings from its environment:
 
 | Variable | |
 | --- | --- |
-| `R5D_BASE_URL` | Your environment's address, such as `https://octomerge.dev`. Required. |
-| `R5D_BROWSER_AUTO_UPDATE` | `0` keeps the image's `otti-browser`; `1` updates it. Unset: the choice saved on the volume, else on. |
-| `R5D_BROWSER_SCREEN` | The virtual display's size, `1600x1000x24` by default. Chrome's windows open 1050 pixels wide on it, as on a laptop's screen. |
+| `OTTI_BASE_URL` | Your environment's address, such as `https://octomerge.dev`. Required. |
+| `OTTI_BROWSER_AUTO_UPDATE` | `0` keeps the image's `otti-browser`; `1` updates it. Unset: the choice saved on the volume, else on. |
+| `OTTI_BROWSER_SCREEN` | The virtual display's size, `1600x1000x24` by default. Chrome's windows open 1050 pixels wide on it, as on a laptop's screen. |
+
+Images of earlier releases read these settings as `R5D_BASE_URL`, `R5D_BROWSER_AUTO_UPDATE` and `R5D_BROWSER_SCREEN`. A container keeps working with those names until it moves to a newer image, which reads only the `OTTI_` names: rename them when you change its image.
 
 `docker restart my-browser`, or `docker stop` then `docker start`, keeps everything, and so does a new container of the same or a newer image on the same volume:
 
@@ -102,7 +104,7 @@ services:
     mem_limit: 4g
     cpus: 2
     environment:
-      R5D_BASE_URL: https://octomerge.dev
+      OTTI_BASE_URL: https://octomerge.dev
     volumes:
       - home:/home/r5d
 
@@ -130,7 +132,7 @@ Without the profile, Chrome stops at its start, and the log says to run the cont
 
 ## Updates
 
-**otti-browser** updates itself when your environment selects a new release: it downloads the release into the volume and restarts its own process, and Chrome stays open. `R5D_BROWSER_AUTO_UPDATE=0` keeps the image's version. A container of a newer image starts that image's version.
+**otti-browser** updates itself when your environment selects a new release: it downloads the release into the volume and restarts its own process, and Chrome stays open. `OTTI_BROWSER_AUTO_UPDATE=0` keeps the image's version. A container of a newer image starts that image's version.
 
 **Chrome** doesn't update in a running container: it stays the version the image installed. When Google releases a newer Chrome stable, the log says so, once for each newer version:
 

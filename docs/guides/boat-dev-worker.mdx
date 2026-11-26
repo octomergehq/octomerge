@@ -104,7 +104,7 @@ simply stops.
 - The sandbox's ID, which Octomerge's setup script wrote to
   `/home/user/.boat/sandbox-id` on this machine. If that file is missing, you
   are not on a boat worker set up by Octomerge: say so and stop.
-- Your worker's label: `otti --json describe session "$R5D_SESSION_ID" | jq -r .workerLabel`.
+- Your worker's label: `otti --json describe session "$OTTI_SESSION_ID" | jq -r .workerLabel`.
 
 The deadline, and the two things you do with the sandbox (each command is
 complete; run it as it is, alone in its tool call):
@@ -124,7 +124,7 @@ user starts it.
 
 ## What runs on the worker
 
-Leave out your own session (`$R5D_SESSION_ID`) and the commands you run for
+Leave out your own session (`$OTTI_SESSION_ID`) and the commands you run for
 these checks.
 
 - `otti --json ps list --worker <label>`: agent commands and open

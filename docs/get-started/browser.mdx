@@ -32,7 +32,7 @@ otti-browser start --base-url https://your-environment.example
 
 `--config <file>` on both commands keeps that sign-in in a file of its own instead.
 
-The client chooses its server and credential as `otti` does ([Server and credential](/cli/otti#server-and-credential)): flags and a named `--config` come before the `R5D_*` variables, and a saved or inherited credential is only sent to the server it was issued for. When the chosen credential belongs to another server, the client stops before contacting anything and names both servers. An agent's conversation credential (`R5D_TOKEN` in an agent's shell) never connects a browser.
+The client chooses its server and credential as `otti` does ([Server and credential](/cli/otti#server-and-credential)): flags and a named `--config` come before the `OTTI_*` variables, and a saved or inherited credential is only sent to the server it was issued for. When the chosen credential belongs to another server, the client stops before contacting anything and names both servers. An agent's conversation credential (`OTTI_TOKEN` in an agent's shell) never connects a browser.
 
 Each environment has its own browser profile and account authorization. A browser signed in at `https://r5d.dev`, Octomerge's address before octomerge.dev, keeps working as it is. Moving it to `https://octomerge.dev` takes a new sign-in and starts it afresh, as a new browser with a new default profile and no isolated sessions. You can select an installed Chrome executable with `--chrome-path` or a dedicated profile directory with `--profile`.
 
