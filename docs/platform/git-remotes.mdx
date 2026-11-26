@@ -146,14 +146,14 @@ otti -p my-project create branch ft/checkout-v2 --source remote:ft/checkout-v2
 
 ## Branch history on every worker
 
-Every worker keeps a checkout of every branch of your projects, set up in the background and kept current as branches move, whichever worker their conversations run on. A checkout starts with the branch's latest 50 commits. Older history and earlier versions of files come from Octomerge when a Git command needs them, through the checkout's `r5d` remote, so `git log -p` and `git blame` work as usual. For more history at once:
+Every worker keeps a checkout of every branch of your projects, set up in the background and kept current as branches move, whichever worker their conversations run on. A checkout starts with the branch's latest 50 commits. Older history and earlier versions of files come from Octomerge when a Git command needs them, through the checkout's `otti` remote, so `git log -p` and `git blame` work as usual. For more history at once:
 
 ```bash
-git fetch --deepen=200 r5d my-branch
-git fetch --unshallow r5d my-branch
+git fetch --deepen=200 otti my-branch
+git fetch --unshallow otti my-branch
 ```
 
-The `r5d` remote only fetches, and only while the worker runs; your commits reach Octomerge when the worker publishes the checkout. `git fetch --all` leaves it out.
+The `otti` remote only fetches, and only while the worker runs; your commits reach Octomerge when the worker publishes the checkout. `git fetch --all` leaves it out.
 
 ## Project settings
 

@@ -7,7 +7,7 @@ description: "Give agents standing instructions and reusable procedures across y
 
 | Scope | Instructions | Skills |
 | --- | --- | --- |
-| Account | `$R5D_ROOT/AGENTS.md` | `$R5D_ROOT/skills/<name>/SKILL.md` |
+| Account | `$OTTI_ROOT/AGENTS.md` | `$OTTI_ROOT/skills/<name>/SKILL.md` |
 | Project | `AGENTS.md` at the checkout root | `.agents/skills/<name>/SKILL.md` |
 
 Account files apply across your projects and workers. They synchronize with the rest of your account workspace, without a project commit. Project files belong to the project's Git repository: edits are ordinary uncommitted changes on that branch until you commit them. Existing project skills in `.claude/skills/` are also discovered; create new ones in `.agents/skills/`.

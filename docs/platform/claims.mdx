@@ -23,7 +23,7 @@ Taking a claim either succeeds or exits non-zero. When another session holds the
 
 A topic is free text of up to 120 characters, and a note up to 500. Write the note for the session that will be refused: what you are doing and when you expect to finish. The note stays with the claim while you hold it: a renewal keeps it, and taking the topic again with a new `--note` replaces it. When the topic is taken anew, by another session or after a release or expiry, the claim has the new holder's note, or none.
 
-**The acting session.** `otti` acts as the session `-s SESSION_ID` names, else as `R5D_SESSION_ID`. An agent's shell sets `R5D_SESSION_ID` to that agent's session, so the commands above work as written there; an agent can name another session with `-s`, as you can. From your terminal, choose the session with `-s SESSION_ID`, or set `R5D_SESSION_ID`. It must be one of your sessions. A claim belongs to that session, not to your account.
+**The acting session.** `otti` acts as the session `-s SESSION_ID` names, else as `OTTI_SESSION_ID`. An agent's shell sets `OTTI_SESSION_ID` to that agent's session, so the commands above work as written there; an agent can name another session with `-s`, as you can. From your terminal, choose the session with `-s SESSION_ID`, or set `OTTI_SESSION_ID`. It must be one of your sessions. A claim belongs to that session, not to your account.
 
 ## Expiry, renewal and generations
 

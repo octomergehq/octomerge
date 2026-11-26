@@ -16,7 +16,7 @@ import { R5dctlClient, R5dctlApiError } from "@octomerge/api";
 
 const client = new R5dctlClient({
   baseUrl: "https://octomerge.dev",
-  apiKey: process.env.R5D_API_KEY,
+  apiKey: process.env.OTTI_API_KEY,
 });
 
 const projects = await client.projects.list();
@@ -131,12 +131,12 @@ Environment reads return metadata only. To replace a stored entry, pass its `id`
 
 An issue tracker or another tool can follow the work shared with a [team](/platform/teams): read what is shared, and learn when sessions are shared, change status or work items, or open a pull request. It uses a **team API key**, which reads exactly what a member of the team reads and nothing else. A team key can't act: every request that would change something answers `403`, and so does every route outside the team.
 
-A team admin creates keys on the team's **Integrations** page (`https://octomerge.dev/t/<team>/integrations`). The key, `r5d_team_…`, is shown once; the page shows when each key was last used, and revoking one stops it at once. Members can also call these methods with their own API key, and their agents with the credential of their shell (`R5D_TOKEN`).
+A team admin creates keys on the team's **Integrations** page (`https://octomerge.dev/t/<team>/integrations`). The key, `r5d_team_…`, is shown once; the page shows when each key was last used, and revoking one stops it at once. Members can also call these methods with their own API key, and their agents with the credential of their shell (`OTTI_TOKEN`).
 
 ```ts
 import { R5dctlClient } from "@octomerge/api";
 
-const r5d = new R5dctlClient({ baseUrl: "https://octomerge.dev", apiKey: process.env.R5D_TEAM_KEY });
+const r5d = new R5dctlClient({ baseUrl: "https://octomerge.dev", apiKey: process.env.OCTOMERGE_TEAM_KEY });
 
 const { sessions } = await r5d.teams.sessions.list("acme", {
   remote: "https://github.com/acme/api",
@@ -211,7 +211,7 @@ Delivery is **at least once**: the same event can arrive twice, so deduplicate b
 The feed works from anywhere, including a tracker Octomerge can't reach, such as one behind a firewall. Ask for the events after a cursor; when there are none, the request waits up to `wait` seconds (at most 30) for one:
 
 ```bash
-curl -H "Authorization: Bearer $R5D_TEAM_KEY" \
+curl -H "Authorization: Bearer $OCTOMERGE_TEAM_KEY" \
   "https://octomerge.dev/api/v1/teams/acme/events?after=1042&wait=30"
 ```
 
@@ -268,7 +268,7 @@ import { verifyTeamWebhookSignature } from "@octomerge/api";
 
 export async function handleR5dWebhook(request: Request) {
   const body = await request.text();
-  if (!verifyTeamWebhookSignature(body, request.headers.get("x-r5d-signature-256"), process.env.R5D_WEBHOOK_SECRET!)) {
+  if (!verifyTeamWebhookSignature(body, request.headers.get("x-r5d-signature-256"), process.env.OCTOMERGE_WEBHOOK_SECRET!)) {
     return new Response("Invalid signature", { status: 401 });
   }
   const event = JSON.parse(body);
