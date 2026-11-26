@@ -356,9 +356,10 @@ So you can find the chats where you left a draft, a chat with your draft shows t
 
 ## Edit a message
 
-Editing a draft, one of your earlier messages (its menu's **Edit**) or a queued message opens it in place as a small composer:
+Editing a draft, one of your earlier messages (its menu's **Edit**) or a queued message opens it in place in the composer, the same box as the chat input:
 
-- the attachment bar shows the files the message already uploaded, marked as uploaded, and the files you add (they upload when you save or send). Select a file to preview it; **×** on an uploaded file offers **Remove from this message** (the file stays in the conversation's artifacts folder) or **Delete file** from its worker, which happens right away: **Cancel** doesn't bring it back, and messages that already show the file can no longer preview it. Attach files with the paperclip, by dropping them on the editor or by pasting them;
+- the attachment bar shows the files the message already uploaded, marked as uploaded, and the files you add (they upload when you save or send). Select a file to preview it; **×** on an uploaded file offers **Remove from this message** (the file stays in the conversation's artifacts folder) or **Delete file** from its worker, which happens right away: **Cancel** doesn't bring it back, and messages that already show the file can no longer preview it. Attach files with the paperclip (**Upload file**, or **Select artifact** for a file of the conversation's artifacts folder), by dropping them on the editor or by pasting them;
+- for a draft or a queued message, the [context meter](#what-the-agent’s-context-holds) at the top right of the attachment bar, as in the chat input. An earlier message has none: sending it starts a new branch from where the original was sent, and the meter measures the conversation's latest model request;
 - the text, with its file references as chips;
 - the model and effort, and the worker, the message is sent with;
 - **Cancel**, **Save** (a draft or a queued message) and **Send** (a draft or an earlier message). Ctrl/⌘+Enter sends (or saves a queued message); Escape cancels.
@@ -414,7 +415,7 @@ The agent can ask you questions, ask you for environment values such as an API k
 
 - Its form can be answered at any time, while the agent works or waits, after it has finished its turn, and after a subagent has reported back.
 - Questions and their options, and the descriptions of the environment values the agent asks for, show formatting, code and links as the agent's messages do. Opening a link or copying code in an option doesn't choose that option.
-- The fields you write in, a question's own answer and the notes under the questions, work like the chat input: type `@` to mention a session or reference a workspace project, and paste files into a field, drop them on it or attach them with the paperclip above the notes. Each file shows as a chip where you added it and in the reply's attachment bar, and stays in this browser, also across a reload, until you send the reply. Every file in the bar goes with your answer when you select **Continue**, as a message's files go with the message; removing a file from the bar removes its chips too. Your answers show the files as chips you can select to preview them.
+- Your reply's notes, under the questions, are written in the composer, the same box as the chat input, with its context meter and the reply's model and worker. A question's own answer works like it too: type `@` to mention a session or reference a workspace project, and paste files into a field, drop them on it or attach them with the composer's paperclip (**Upload file**, or **Select artifact** for a file of the conversation's artifacts folder). Each file shows as a chip where you added it and in the reply's attachment bar, and stays in this browser, also across a reload, until you send the reply. Every file in the bar goes with your answer when you select **Continue**, as a message's files go with the message; removing a file from the bar removes its chips too. Your answers show the files as chips you can select to preview them.
 - Once you answer, the conversation shows your answers with their questions. **View questions** below them opens the questions again as their form showed them, read-only: every option with its description and the agent's recommendation, what you chose, your own answers and your notes, so you can look back at the alternatives you didn't choose. Questions you dismissed offer it too, to show what was asked.
 - The environment values you provide are saved encrypted, as the form's heading says: in a project chat to the project's [environment variables](/platform/shell-environment#project-environment-variables), in a workspace chat to **Settings → Secrets** ([Secrets](/platform/shell-environment#secrets)). Commands the agents start afterwards receive them.
 - For a value that is only good for a while, such as a one-time code or a sign-in link, the agent can suggest a [lifetime](/platform/shell-environment#secrets): the form shows it as a chip next to the value, such as **10 min**, which deletes the value 10 minutes after you save it. Select the chip to choose another lifetime, a date, or **No limit**; without a suggestion, the faint timer icon there offers the same choices. The agent is told the lifetime each value got.
@@ -760,6 +761,7 @@ it, and **Notify me on completion** doesn't email you about it.
 
 The composer's context meter (top right, for example **42k /200k**) shows how
 much of the model's context window the agent's latest model request used.
+Editing your draft or a queued message, and replying to the agent's questions, show it too.
 Hover it, or select it, to see what that request was made of, with an
 estimated token count for each part:
 
