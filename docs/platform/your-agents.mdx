@@ -35,12 +35,12 @@ So the chat's files can be on any worker, such as a VPS, a container or another 
     In a terminal on the computer, run:
 
     ```bash
-    npx --registry https://npm.octomerge.dev @octomerge/otti-connect
+    npx --registry https://npm.octomerge.dev @octomerge/otti-connect@latest
     ```
 
-    **Settings → Your agents** shows the same command under **Connect a computer**. For an installation other than octomerge.dev, it adds `--base-url` with that installation's address.
+    **Settings → Your agents** shows the same command under **Connect a computer**. For an installation other than octomerge.dev, it adds `--base-url` with that installation's address. With `@latest`, running the command again runs the newest release of Otti Connect.
 
-    On its first start, Otti Connect installs the versions of Claude Code, Codex and Antigravity that Octomerge has tested, in a folder of its own, `~/.otti-connect/agents`. This takes a few minutes, and it shows its progress. Copies of the agents you installed yourself stay as they are, and both use the same sign-ins.
+    On its first start, Otti Connect installs the versions of Claude Code, Codex and Antigravity that Octomerge has tested, in a folder of its own, `~/.otti-connect/agents`: about 470 MB to download. This takes a few minutes, and it shows its progress. Later starts use them. Copies of the agents you installed yourself stay as they are, and both use the same sign-ins.
 
   </Step>
   <Step title="Approve the code">
@@ -170,7 +170,7 @@ Your computers' agents run turns of your own chats only: Otti Connect has no way
 With npx, put the command after the one that starts Otti Connect, for example:
 
 ```bash
-npx --registry https://npm.octomerge.dev @octomerge/otti-connect status
+npx --registry https://npm.octomerge.dev @octomerge/otti-connect@latest status
 ```
 
 In the Docker image, `otti-connect` is on the `PATH`: `docker exec otti-connect otti-connect status`.
