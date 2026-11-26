@@ -511,7 +511,7 @@ history on Octomerge.
   the checkout on the worker that needs them.
 - **Large files:** a file may hold up to 128 MiB, and the synchronized
   workspace up to your plan's limits: 10 GiB of files and 200,000 files,
-  or 50 GiB and 500,000 files on the Pro plan. A tracked file larger
+  or 50 GiB and 1,000,000 files on the Pro plan. A tracked file larger
   than 128 MiB (Git LFS content can be) is not synchronized: each worker gets
   it from its own checkout's Git. Git LFS content up to 128 MiB synchronizes
   like any other file between workers that have git-lfs. On a worker without
@@ -542,7 +542,7 @@ A worker stops synchronizing, and asks for a review, when:
   keeps its own version. A worker joining with files of its own that differ
   from the synchronized ones stops the same way, so neither version is lost.
 - **No room.** The synchronized workspace would pass its limits (10 GiB or
-  200,000 files; 50 GiB or 500,000 files on the Pro plan).
+  200,000 files; 50 GiB or 1,000,000 files on the Pro plan).
 
 Octomerge then opens a remediation chat on that worker, named for the cause:
 **Large Diff Remediation**, **Unsafe File Remediation** or **Workspace Conflict
@@ -584,7 +584,7 @@ refused.
 
 Your synchronized workspace holds at most your plan's limits across all its
 project checkouts and account files: 10 GiB of files and 200,000 files, or
-50 GiB and 500,000 files on the Pro plan. `otti workspace status` shows what it holds against
+50 GiB and 1,000,000 files on the Pro plan. `otti workspace status` shows what it holds against
 yours. A change that would take it past either is refused, and says how much
 the workspace would hold: a new branch or project fails with that reason (in
 the sidebar, and in a session started from a launch link), and a worker that
