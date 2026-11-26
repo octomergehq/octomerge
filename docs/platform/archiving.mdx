@@ -1,13 +1,68 @@
 ---
-title: "Archiving branches and projects"
-description: "Keep old work cheaply: an archived branch leaves every worker, and its files, commits and conversations stay on Octomerge, readable."
+title: "Archiving sessions, branches and projects"
+description: "Put work away and keep it: an archived session leaves your list and turns read-only; an archived branch also leaves every worker. Unarchive either to have it back as it was."
 ---
 
-Archive a branch you no longer work on to take it off your workers and out of your workspace limits without deleting it. Unarchive it when you need it again: it comes back as it was.
+Archive a session you are done with to take it off your list, keep everything in it and have it back whenever you want. Archive a branch you no longer work on to also take it off your workers and out of your workspace limits without deleting it. Unarchive either when you need it again: it comes back as it was.
+
+**More → Archived** (`/archived`) lists what you archived, under **Sessions**, **Branches** and **Projects**.
+
+## Archive a session
+
+Archiving a session puts away the conversation: the session with all of its sub-agents. It is about your attention, not storage: it frees no workspace limits and leaves its branch as it is.
+
+| | While a session is archived |
+| --- | --- |
+| Your list | It is in no grouping, filter or **Pinned**. Its project's **Archived and hidden** counts it (the workspace chats' **Archived**). |
+| **All sessions** and a project's **Sessions** page | Left out, unless the **Filter** names **Archived**. |
+| Its transcript, tool results, images and files | Kept, unchanged. |
+| Its links | Still open it, read-only: commit trailers, pull requests, emails and team pages that point at it. |
+| Messages, answers and resumes | Refused, from you, an agent, a schedule and `otti session prompt` alike: an archived session takes nothing that would wake it. **Fork conversation** still works: the fork is a new session of its own. |
+| Unseen, the bell, **Needs you** and your phone's badge | It stops counting. Archiving marks it read. |
+| Emails and pushes | None. Its open questions and requests stay open, without a reminder, and are back in your list when you unarchive it. |
+| Work in progress | Stopped first (**Stop and archive**, below). |
+| Its schedules | Paused. Unarchiving resumes them from their next occurrence; one that came due meanwhile is skipped. |
+| Pins and tags | It leaves **Pinned** and comes back unpinned; its tags are kept. |
+| Shares with teams | Kept: your teammates keep reading it. |
+| Search | `otti search` still finds it, marked archived. |
+
+Unarchiving brings it all back. The session returns to its place in your list by its own last activity: archiving and unarchiving aren't activity.
+
+### In the app
+
+- **Point at a session** in the sidebar: **Archive** is before its menu button (**⋯**), on your own sessions (a sub-agent archives with the session that started it). On a phone both buttons always show.
+- **The session's menu**, in the sidebar and in the chat's top bar: **Archive session**, after **Mark as unread**. Its key is **E**, which also archives the session the keyboard is on in the list.
+- **All sessions** or a project's **Sessions** page: check sessions and select **Archive** in the bar at the bottom.
+- **Archived** suggests the sessions that are done and haven't been touched for 14 days: **Review…** lists them all checked, so that one click archives them after a look. Nothing is archived by itself.
+
+A session that is idle, done or asking you something is archived at once, and the message at the bottom of the screen offers **Undo** and **Show in Archived**. When it was the last live session of a branch that is merged (its pull request merged, or its work is in the project's primary branch), the message offers **Archive branch…** instead, to put the branch away too.
+
+A session that is still at work (running, queued or waiting, itself or one of its sub-agents, or with commands still running) asks first, because archiving stops that work: the dialog lists its turn, its sub-agents at work and its running processes, each given 10 seconds to shut down, the schedules that pause and the questions that stay open. **Stop and archive** stops it and archives it in one step. When you archive several sessions at once and some of them are at work, the dialog asks once, for all of them: nothing is archived until you confirm, and **Cancel** leaves all of them as they were.
+
+An archived session's page shows **Archived** beside its name and, where you would type, when it was archived and by whom, with **Unarchive**, which brings the box back with your draft. Its menu has **Unarchive session** in place of **Archive session**. While it is the chat you have open, the list keeps its row, dimmed, with the archive icon.
+
+**Archived**'s **Sessions** tab lists your archived sessions, the most recently archived first and grouped by when, each with when and by whom it was archived (you or an agent), when it was last active, its project and branch, its merged pull request or its sub-agents, and a question that still waits for you. Search them, show one project's, **Open** one to read it without unarchiving it, and **Unarchive** or **Delete…** one at a time or several selected. A project's **Archived and hidden** in the sidebar opens it showing that project's sessions.
+
+A session on an archived branch can't be live: unarchiving it while its branch is archived asks to unarchive both (**Unarchive branch and session**). Archiving a branch leaves a session archived on its own as it is, and unarchiving the branch doesn't bring it back.
+
+### With otti
+
+```bash
+otti archive session 7f3c2a91                 # archive it, with its sub-agents
+otti archive session 7f3c2a91 --confirm       # one at work: stop it and archive it
+otti unarchive session 7f3c2a91
+otti get sessions --archived                  # what you archived; -p my-project for one project's
+```
+
+A session at work is archived only with `--confirm`: without it, `archive session` says what archiving would stop and pause, and changes nothing. `otti session prompt` to an archived session is refused with how to unarchive it.
+
+Agents archive and unarchive sessions with `otti` like you, with the same refusals. An agent can't archive its own session or a session above it, and nothing an agent does wakes an archived session.
+
+## Archive a branch
 
 **Settings → Usage** shows how much of your workspace limits and archive quota you use, project by project and branch by branch, and archives a branch from there too ([Usage and limits](/platform/usage)).
 
-## What archiving does
+### What archiving a branch does
 
 | | When you archive a branch |
 | --- | --- |
@@ -28,13 +83,13 @@ A branch whose conversation is running, queued or waiting, or a sub-agent of one
 
 The project's primary branch is archived only with its project.
 
-## Archive and unarchive in the app
+### Archive and unarchive a branch in the app
 
-**Archive branch…** is in the menu (**⋮**) of the branch's header, on the branch's own pages, and on the [branch page](/platform/workspace-chats#the-branch-page). A session whose branch is merged (its pull request merged, or its work is in the project's primary branch) also shows **Archive** when you point at it in the sidebar. To archive several branches at once, check them on the project's [Branches page](/platform/workspace-chats#a-project’s-branches) and select **Archive**. The dialog previews what archiving would do before you confirm; Octomerge never archives a branch by itself.
+**Archive branch…** is in the menu (**⋮**) of the branch's header, on the branch's own pages, and on the [branch page](/platform/workspace-chats#the-branch-page). When you archive the last live session of a merged branch, the message that confirms it offers **Archive branch…** too. To archive several branches at once, check them on the project's [Branches page](/platform/workspace-chats#a-project’s-branches) and select **Archive**. The dialog previews what archiving would do before you confirm; Octomerge never archives a branch by itself.
 
-Every page of an archived branch says so under its header, with **Unarchive**. The project's Branches page lists its archived branches under **Archived and hidden**, with when they were archived, **Unarchive** and delete; **Archived** (`/archived`, from **All archived work…**) lists the archived work of all your projects, and suggests branches you might archive: merged ones first, then idle ones, with their pull request and the commits they have that aren't in the primary branch.
+Every page of an archived branch says so under its header, with **Unarchive**. The project's Branches page lists its archived branches under **Archived and hidden**, with when they were archived, **Unarchive** and delete; **Archived**'s **Branches** and **Projects** tabs (`/archived`, also from **All archived work…**) list the archived work of all your projects, and **Branches** suggests branches you might archive: merged ones first, then idle ones, with their pull request and the commits they have that aren't in the primary branch.
 
-## Archive and unarchive with otti
+### Archive and unarchive a branch with otti
 
 Preview what archiving would do, then archive:
 
@@ -83,8 +138,8 @@ Archiving a project archives every branch of it, the primary one included. An ar
 
 ## Delete archived work
 
-`otti -p my-project delete branch old-experiment --confirm` deletes an archived branch for good: its files, its history on Octomerge and its conversations ([Deleted data and backups](/platform/persistence#deleted-data-and-backups)). Deleting a project deletes its archived branches with it. Archived branches are kept until you delete them; nothing expires.
+`otti -p my-project delete branch old-experiment --confirm` deletes an archived branch for good: its files, its history on Octomerge and its conversations ([Deleted data and backups](/platform/persistence#deleted-data-and-backups)). Deleting a project deletes its archived branches with it. An archived session is deleted with **Delete…** on **Archived** or **Delete session…** in its menu, as any session is. Archived work is kept until you delete it; nothing expires.
 
 ## Agents
 
-Agents archive and unarchive with `otti` like you, with the same refusals; an agent can't archive the branch its own conversation runs on. An agent that refers to an archived branch (`@my-project/old-experiment`) gets no checkout: `otti checkout path` says the branch is archived and how to read it with `files ls` and `files cat`.
+Agents archive and unarchive with `otti` like you, with the same refusals; an agent can't archive the branch its own conversation runs on, nor its own session or a session above it. An agent that refers to an archived branch (`@my-project/old-experiment`) gets no checkout: `otti checkout path` says the branch is archived and how to read it with `files ls` and `files cat`.
