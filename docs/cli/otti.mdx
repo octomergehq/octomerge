@@ -378,6 +378,8 @@ otti -s SESSION_ID share session --team acme
 otti -s SESSION_ID share branch --team acme
 otti -p my-project share project --team acme
 otti -s SESSION_ID share list
+otti teams sidebar acme off
+otti teams sidebar acme
 otti -s SESSION_ID session work-items add --url https://github.com/acme/api/issues/42 --title "Fix login" --icon issue
 otti -s SESSION_ID session work-items add --url https://git.example.com/group/repo/-/merge_requests/12 --icon pull-request
 otti -s SESSION_ID session work-items list
@@ -389,6 +391,8 @@ otti -s SESSION_ID session work-items remove --url https://github.com/acme/api/i
 `session work-items` lists, adds and removes the tracker items a session works on, which Octomerge shows as badges on it and teams the session is shared with read ([work items](/platform/launch-links#work-items-on-sessions)). `--url` is the item's identity: adding a URL the session has updates that item. `--label` is shown where there is room and `--short-label` in compact rows such as the sidebar; without them Octomerge labels the item as its host writes it (`acme/api#42` and `#42` on github.com, `group/repo!12` and `!12` for a merge request on a host whose [kind](/platform/git-remotes#host-kinds) is GitLab), else by its host and path. `--title` shows on hover, and `--icon` is `issue`, `pull-request` or `link` (the default). A `pull-request` item makes the link the review of the session's branch where Octomerge doesn't find the branch's review itself (an SSH remote). A session has at most 20.
 
 Both use the acting session: the one `-s` names, else `R5D_SESSION_ID`, which in an agent's shell is the agent's own session.
+
+`teams sidebar` turns your own switch for a team on or off, or says where it is without `on` or `off`: off, your sidebar leaves out the sessions you read only through that team ([Show a team's sessions in your sidebar](/platform/teams#show-a-team’s-sessions-in-your-sidebar)). It names the team by its URL name.
 
 ## Shells and processes
 
