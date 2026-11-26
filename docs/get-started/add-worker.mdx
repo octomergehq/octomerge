@@ -154,6 +154,17 @@ otti-worker start --label my-laptop --shell /opt/homebrew/bin/bash
 
 A terminal starts the shell as a terminal window does, so it reads your startup files (`~/.zshrc` or `~/.bashrc`). Commands, including `otti shell -c` and the agent's, run with `-c` and skip them. **Settings → Workers** shows each worker's shell and why it was chosen (open the worker, then its version details), and agents are told which shell each connected worker uses. A single terminal or agent command can ask for bash, zsh or sh instead (`otti shell --shell bash`); a shell the worker does not have falls back to bash, then sh.
 
+### Large workspaces on Linux
+
+On Linux the worker watches each directory of your workspace with inotify, so a change another program makes, such as an editor or a build, publishes within seconds. It uses at most half of the machine's `fs.inotify.max_user_watches`, leaving the rest to your other programs. A workspace with more directories than that, across all its checkouts, still synchronizes: the worker watches the checkouts used most recently and scans the others instead, a minute to ten minutes apart (further apart where one scan takes over a minute: scanning takes at most a tenth of the worker's time). A change in one of those that the worker's own commands and file tools didn't make can take that long to publish; a checkout that becomes busy is watched again within seconds, in place of one nobody used for ten minutes. `otti workspace status` says when this happens, with the numbers and how far to raise the setting. To watch every directory, raise it, for example:
+
+```bash
+sudo sysctl fs.inotify.max_user_watches=1048576
+echo fs.inotify.max_user_watches=1048576 | sudo tee /etc/sysctl.d/90-inotify-watches.conf
+```
+
+The second line keeps the setting after a restart. The worker notices a raised limit within five minutes. Each watch takes about a kilobyte of the kernel's memory.
+
 ### Changes made while the worker was stopped
 
 While a worker is stopped, its checkouts can change: files edited directly on the machine, or a branch another worker published in the meantime. `--initial-sync` says what the start does with those changes:
