@@ -519,6 +519,8 @@ An entry can have one [lifetime](/platform/shell-environment#secrets): `--expire
 
 Entries from a [deploy connection](/platform/deploy-targets), such as `VERCEL_TOKEN` or `KUBECONFIG`, can't be set here: `set` is refused and says where the entry comes from. `revoke` or `delete` on one disconnects the whole connection, like **Disconnect** in Settings, and prints every entry it removed and whether the provider revoked Octomerge's access. With `--json`, each listed entry from a connection has a `source` (its provider and account), and `revoke` and `delete` answer `disconnected`.
 
+An entry an administrator set for you ([Secrets](/platform/shell-environment#secrets)) ends its line in lists with `set by an administrator`, and has `setByAdministrator` with `--json`. `set`, `revoke` and `delete` are refused for it and say to ask an administrator to change or remove it.
+
 ## Automation and API keys
 
 ```bash

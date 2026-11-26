@@ -21,6 +21,7 @@ Agent shells receive the exact `otti` version bundled with their running worker,
 - Credentials already on your worker can be used without uploading them. Refer to secrets by name, never by value, in instructions and chats.
 - An agent can also type a variable's value into a website's sign-in field with your browser, by name, without the value being in its tool call or result: only at the site you named, and never a file entry ([Filling in secrets](/get-started/browser#filling-in-secrets)).
 - **Deploy and cloud**, above the list, connects Vercel, Cloudflare, Fly.io, a kubeconfig or AWS ([Deploy access](/platform/deploy-targets)). A connection's entries, such as `VERCEL_TOKEN`, appear in the list marked with where they came from, for example **From Vercel sign-in**. They can't be edited or shown, and removing one disconnects the connection with all of its entries.
+- Where your organization's administrators set up accounts, an administrator can give you entries too, such as a `KUBECONFIG` for its cluster. They are marked **Set by an administrator**. Your commands receive them like your own entries, but you can't edit, show, revoke or delete them, and a value you give an agent can't replace one: ask an administrator to change or remove it.
 
 `otti account env` and `otti account secrets` manage the same entries ([Use otti](/cli/otti#account-instructions-and-credentials)).
 
