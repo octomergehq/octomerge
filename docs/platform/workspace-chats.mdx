@@ -37,7 +37,7 @@ An unseen session has a dot before its icon, and the session you have open a tin
 
 Pointing at one of your sessions also shows **Archive** before its menu button, and its marks step aside: one click takes the session, with its sub-agents, out of your list, keeps everything in it and makes it read-only until you unarchive it. The message at the bottom of the screen offers **Undo** and **Show in Archived**; when it was the last live session of a merged branch, **Archive branch…** instead. A session that is still at work asks first: **Stop and archive**. On a phone **Archive** always shows beside the menu button ([Archiving](/platform/archiving#archive-a-session)). An archived session you have open keeps its row while it is open, dimmed, with the archive icon and **Archived**.
 
-A branch is not a row of its own. Its name is in its sessions' cards and top bars, and in the grouping by branch. **Code**, **Git**, **Shell**, **Branch settings**, **Open pull request** (or the host's word for its review, such as **Open merge request**), **Share…**, **Archive branch…** and **Delete branch…** are in the menu of each of its sessions, under the branch's name. After a project's sessions, **1 branch without a session** opens the project's **Branches** page: every branch of the project, and what you archived or hid. **Archived and hidden** counts what you put away of the project: its archived and hidden branches and its archived sessions; it opens **Archived** showing the project's archived sessions when it has any, else the project's **Branches** page. The workspace chats have **Archived** for theirs.
+A branch is not a row of its own. Its name is in its sessions' cards and top bars, and in the grouping by branch. **Code**, **Git**, **Shell**, **Branch settings**, **Open pull request** (or the host's word for its review, such as **Open merge request**), **Share…**, **Archive branch…** and **Delete branch…** are in the menu of each of its sessions, under the branch's name. After a project's sessions, **1 branch without a session** opens the project's **Branches** page: every branch of the project, and what was put away. **Archived** counts what is put away of the project: its archived branches and sessions, and your teammates' sessions archived for you; it opens **Archived** showing the project's archived sessions when it has any, else its archived branches. The workspace chats have **Archived** for theirs.
 
 Pin a session or a project with **Pin** in its menu to keep it at the top of the list, under **Pinned**, whatever the grouping. A pinned session names its project, and stays in its project's list too.
 
@@ -125,7 +125,7 @@ Every session in the list has a menu (**⋯**); the chat's top bar has the same 
 
 Subagents have no **Tags…**, no **Mark as unread** and no **Archive session**: their results reach the chat that started them, and they archive with it.
 
-A project's menu (**⋯** on its row) has **New chat**, **New branch…**, **Sessions** (the project's **Sessions** page, with all its sessions), **Manage in All sessions** (the **All sessions** table showing the project's sessions, to tag, mark or delete several at once), **Branches** (the project's **Branches** page) and **Settings**; **Pin**, **Share…** and **Move up or down**; then **Archive project…** and **Delete project…**. Its **+** starts a new chat in the project. A teammate's session's menu has none of its owner's actions: **Open in** each of your teams that reads it, **Create my branch…** (a branch of your own from the remote branch of that name; it says so while your teammate hasn't pushed the branch), and **Hide from my sidebar**, which takes your teammates' sessions on that branch out of your list (the project's **Branches** page lists the branches you hid, to show them again). A team's admins, and the members whose own work on the branch the team reads, also find **Archive for the team…** and **Remove from the team…** there ([Teams](/platform/teams)).
+A project's menu (**⋯** on its row) has **New chat**, **New branch…**, **Sessions** (the project's **Sessions** page, with all its sessions), **Manage in All sessions** (the **All sessions** table showing the project's sessions, to tag, mark or delete several at once), **Branches** (the project's **Branches** page) and **Settings**; **Pin**, **Share…** and **Move up or down**; then **Archive project…** and **Delete project…**. Its **+** starts a new chat in the project. A teammate's session's menu has none of its owner's actions: **Open in** each of your teams that reads it, **Copy link**, **Archive for me** (key **E**), **Archive branch for me**, which takes your teammate's sessions on that branch out of your lists, now and later (the project's **Branches** page lists them under **Archived for you**), and **Unarchive my branch…** while a branch of yours of that name is archived. Under **For everyone in Acme**, a team's admins also find **Archive for Acme…** and **Remove from Acme…**, and they and the members whose own work on the branch the team reads find **Archive branch for Acme…** ([Teams](/platform/teams#archive-or-remove-work-for-the-team)).
 
 ### Unseen chats
 
@@ -299,11 +299,11 @@ A project's **Branches** page lists every branch of the project in one table: it
 
 **New branch…** asks for the new branch's name and what it starts from ([Create a branch](#create-a-branch)). **Create and start a session** creates the branch and then opens a new chat on it; **Create branch** only creates it.
 
-Below the table, **Archived and hidden** has what was put away, under captions shown only when they have branches:
+Below the table, **Archived** has what was put away, under captions shown only when they have branches:
 
 - **Yours**: the branches you archived, with when, **Unarchive** and delete ([Archiving](/platform/archiving)).
-- **Team archive**: teammates' branches their owners archived, and branches archived for a team, with whose they are. A team's admins, and the members whose work on a branch the team reads, bring one back with **Unarchive for** the team, or remove it from the team ([Teams](/platform/teams)).
-- **Hidden by you**: teammates' branches whose sessions you hid from your sidebar. **Show in my sidebar** brings them back.
+- **Archived for Acme**: branches with teammates' sessions that the team archived, with whose they are. **Unarchive for me** keeps one in your lists only; a team's admins, and the members whose work on a branch the team reads, bring one back for everyone with **Unarchive for Acme**, or remove it from the team ([Teams](/platform/teams#archive-or-remove-work-for-the-team)).
+- **Archived for you**: teammates' branches you archived for yourself (**Archive branch for me**). **Unarchive for me** brings their sessions back.
 
 **All archived work…** opens **Archived**, with the archived work of all your projects.
 
@@ -313,7 +313,7 @@ Below the table, **Archived and hidden** has what was put away, under captions s
 
 ### An archived project
 
-An archived project's pages say under the header when it was archived, with **Unarchive project…**. Its **Branches** page has no table: its branches are listed under **Archived and hidden**, and come back or go with the project. Its header's menu has **Unarchive project…** and **Delete project…**, and **New chat** waits until you unarchive it.
+An archived project's pages say under the header when it was archived, with **Unarchive project…**. Its **Branches** page has no table: its branches are listed under **Archived**, and come back or go with the project. Its header's menu has **Unarchive project…** and **Delete project…**, and **New chat** waits until you unarchive it.
 
 ## Moving a chat to another worker
 

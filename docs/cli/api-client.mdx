@@ -170,7 +170,7 @@ for (const session of sessions) {
 
 A branch matches when one of its sessions matches `workItem` and `status`; it then lists all of its sessions.
 
-Each session has its `status`, `workItems`, `repository`, `branchName`, `owner`, `parentSessionId` (for a subagent) and `links`: `links.session` is the read-only page team members open, and `links.branch` the branch's permanent team page. Sessions and branches also have `teamArchive`: `{ archivedAt, archivedBy }` while the branch is [archived for the team](/platform/teams#archive-or-remove-a-branch-for-the-team), else `null`. A work item is how Octomerge shows it, not which tracker it comes from: its `url` (the item's identity: find your items by it), `label` (`acme/api#42`), `shortLabel` for compact rows (`#42`; the label when absent), `title` and `icon` (`issue`, `pull-request` or `link`, the default). Its `status` is one of:
+Each session has its `status`, `workItems`, `repository`, `branchName`, `owner`, `parentSessionId` (for a subagent) and `links`: `links.session` is the read-only page team members open, and `links.branch` the branch's permanent team page. Sessions and branches also have `teamArchive`: `{ archivedAt, archivedBy, scope }` while the session's conversation (`scope` `session`) or its branch (`branch`) is [archived for the team](/platform/teams#archive-or-remove-work-for-the-team), else `null`. A member's own archive of their session is no team archive. A work item is how Octomerge shows it, not which tracker it comes from: its `url` (the item's identity: find your items by it), `label` (`acme/api#42`), `shortLabel` for compact rows (`#42`; the label when absent), `title` and `icon` (`issue`, `pull-request` or `link`, the default). Its `status` is one of:
 
 | Status | Meaning |
 | --- | --- |
@@ -197,8 +197,10 @@ Events tell you what changed. Each has an `id`, a `type`, a `sequence` (its posi
 | `branch.review_request` | A pull request of a shared branch was opened, updated (new commits, title or draft state), reopened, closed or merged. | `action`, `reviewRequest` (`url`, `number`, `title`, `status`, `headSha`, …), `repository`, `branchName`, `sessionIds` and `links.branch` |
 | `branch.archived` | A team admin, or a member whose work is on the branch, archived it for the team. Members' own branches and sessions keep working. | `repository`, `branchName`, `archivedAt`, `archivedBy`, `sessionIds` (the sessions on it the team reads) and `links.branch` |
 | `branch.unarchived` | The branch is back with the team's live branches. | `repository`, `branchName`, `unarchivedBy`, `sessionIds` and `links.branch` |
+| `session.archived` | A team admin, or the session's owner, archived a session for the team, with its sub-agents. Nothing stops and the owner's own work doesn't change. | `session` (with its `teamArchive`), `sessionIds` (its sessions the team reads), `archivedAt`, `archivedBy`, `links.session` and `links.branch` |
+| `session.unarchived` | The session is back with the team's live sessions. | `session`, `sessionIds`, `unarchivedBy`, `links.session` and `links.branch` |
 
-Removing a branch from the team revokes its shares, which `share.revoked` reports like any revoked share. New event types can be added: ignore types you don't know.
+Removing a branch or a session from the team revokes its shares, which `share.revoked` reports like any revoked share. New event types can be added: ignore types you don't know.
 
 Events cover only what is shared with the team. Revoking a share stops every read of its sessions at once, but events reported while they were shared stay in the feed until they expire. Octomerge checks shared sessions every couple of seconds, so a status that lasted less than that can be skipped. It looks for a branch's pull request when a session on the branch stops running, and every few minutes while the branch is active; it finds pull requests on GitHub for members' GitHub projects.
 
