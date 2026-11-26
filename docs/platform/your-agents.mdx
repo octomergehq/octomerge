@@ -1,0 +1,207 @@
+---
+title: "Bring your own agents"
+description: "Use Claude Code, Codex and Antigravity, signed in as you on your own computer, in your chats: Otti Connect brings them into the model menu, and their commands and edits run on the chat's worker."
+---
+
+Bring the coding agents you already use to Octomerge: **Claude Code**, **Codex** and **Antigravity** (Google Antigravity's CLI), each signed in as you on your own computer, with the plan or account you already have. They appear in your chats' model menu next to every other model, under **Your agents**. The agent runs on your computer and talks to its maker from there; its commands and file edits run on the chat's worker, through Octomerge's tools, like any agent's.
+
+**Otti Connect** brings them in: an open-source connector, built by Octomerge and the community, that you run on the computer where the agents are signed in. A computer that runs it is one of your **agent hosts**: the laptop you work on, or a computer that is always on, such as a home server ([in Docker](#run-it-in-docker-on-an-always-on-computer)).
+
+<Note>
+Claude Code, Codex and Antigravity are made by Anthropic, OpenAI and Google, which aren't affiliated with Octomerge or Otti Connect and don't endorse them. Each agent's own terms apply when you use it through Otti Connect ([Terms](#terms)).
+</Note>
+
+## How it works
+
+- Otti Connect connects your computer to Octomerge by itself, over HTTPS: the computer needs no worker. It tells Octomerge which agents are installed there and whether each is signed in, then waits for your chats' turns.
+- When you send a message to one of your agents, Octomerge hands the turn to your first connected computer that has that agent ([Which computer a chat uses](#which-computer-a-chat-uses)). Otti Connect runs the agent there, with the agent's own sign-in, and carries the turn between the agent and the chat: your messages one way; the agent's answer, its thinking and its tool calls the other.
+- On your computer, the agent's own file and shell tools are off, and it works in an empty folder of its own. It works with Octomerge's tools instead: `shell`, `read`, `write`, `edit`, `grep`, `find` and `ls` run on the chat's worker, in its checkout, as they do for every agent, and the chat shows each call. It gets Octomerge's other tools too, such as questions to you, plans, web research and your [MCP servers](/get-started/mcp-servers).
+- The agent gets your account's and project's instructions and skills from Octomerge, as every agent does ([AGENTS.md and skills](/platform/agent-instructions-and-skills)).
+- What the agent says and does becomes the chat's history, like any agent's. Octomerge keeps a turn's raw exchange with Otti Connect for 24 hours after the turn ends, then deletes it.
+
+So the chat's files can be on any worker, such as a VPS, a container or another computer, while the agent runs on yours, with your sign-in.
+
+## What you need
+
+- A computer with macOS or Linux. On Windows, run Otti Connect in WSL, where it works as on Linux.
+- Node.js 18 or newer, with npm: they run Otti Connect and install the agents.
+- For each agent you want to use, an account with its maker that the agent signs in with: Claude for Claude Code, ChatGPT for Codex, Google for Antigravity.
+
+## Connect a computer
+
+<Steps>
+  <Step title="Start Otti Connect">
+
+    In a terminal on the computer, run:
+
+    ```bash
+    npx --registry https://npm.octomerge.dev @octomerge/otti-connect
+    ```
+
+    **Settings → Your agents** shows the same command under **Connect a computer**. For an installation other than octomerge.dev, it adds `--base-url` with that installation's address.
+
+    On its first start, Otti Connect installs the versions of Claude Code, Codex and Antigravity that Octomerge has tested, in a folder of its own, `~/.otti-connect/agents`. This takes a few minutes, and it shows its progress. Copies of the agents you installed yourself stay as they are, and both use the same sign-ins.
+
+  </Step>
+  <Step title="Approve the code">
+
+    The first time, Otti Connect signs the computer in to Octomerge: it shows a code and a link, and opens the link in your browser (`--no-open` leaves that to you). In the browser where you're signed in to Octomerge, check that the code matches and approve. A code that expires before you approve it is replaced by a new one.
+
+    The approval page says that Otti Connect asks to connect the computer as an **agent host**. That sign-in can connect an agent host and nothing else: it can't read your secrets or reach your workers. Otti Connect saves it in `~/.otti-connect`, readable only by you, and never prints it; later starts connect with it, without a code.
+
+    The computer then appears in **Settings → Your agents**, with its agents and whether each is signed in.
+
+  </Step>
+  <Step title="Sign in to each agent">
+
+    Sign in to each agent you want to use, once, in a terminal on the computer, with the agent's own command and its maker's own sign-in:
+
+    ```bash
+    claude auth login   # Claude Code
+    codex login         # Codex
+    agy acp --login     # Antigravity
+    ```
+
+    An agent already signed in on the computer needs nothing more. When you haven't installed an agent yourself, its command isn't on your `PATH`: `otti-connect status` and **Settings → Your agents** show the command that signs in Otti Connect's copy.
+
+  </Step>
+</Steps>
+
+Leave Otti Connect running: your chats use the computer's agents while it runs. It prints a line when a turn starts and when it ends, never what the turn is about. It checks the agents' sign-ins every few minutes, so **Settings → Your agents** shows one you just made within a few minutes, or at once when you start Otti Connect again.
+
+**Ctrl+C** stops it: it ends the turns running there first, and the computer shows as **Offline** at once. Start it again with the same command; it connects with its saved sign-in. While the computer sleeps or Otti Connect is stopped, your chats use your next connected computer with the agent ([In a chat](#in-a-chat)).
+
+One Otti Connect runs per sign-in: a second one on the same computer refuses to start. To connect the computer to another Octomerge installation too, give that one a folder of its own with `--config-dir`.
+
+### Name the computer
+
+The computer is named after its host name. To give it another name, start Otti Connect the first time with `--label`, for example `--label work-laptop`: letters, digits, dots, hyphens and underscores. Once it is connected, the name is Octomerge's: rename the computer in **Settings → Your agents**; a later `--label` doesn't change it.
+
+The names of your agent hosts are unique. A computer that connects with the name of an agent host that is connected is refused, and Otti Connect asks you to choose another name with `--label`. One that connects with the name of an agent host that has been offline for a minute takes that host's place, with its switches and its place in the order, and the old host's sign-in stops working: a reinstalled computer comes back as itself, not as a second one.
+
+## Run it in Docker on an always-on computer
+
+For a computer that is always on, such as a home server, run Otti Connect from its Docker image, `ghcr.io/octomergehq/otti-connect`, for **linux/amd64** and **linux/arm64**. The image holds Otti Connect with the agent versions Octomerge has tested. Its volume keeps Otti Connect's sign-in and the agents' sign-ins, so they survive restarts and newer images.
+
+1. Start it the first time in the foreground, so you see the code:
+
+   ```bash
+   docker run -it --name otti-connect --hostname home-server \
+     --restart unless-stopped \
+     -e OTTI_CONNECT_LABEL=home-server \
+     -v otti-connect:/home/otti \
+     ghcr.io/octomergehq/otti-connect
+   ```
+
+   Approve the code it prints, as in [Connect a computer](#connect-a-computer), then leave it running with **Ctrl+P Ctrl+Q**, which detaches your terminal. Started with `-d` instead of `-it`, it prints the code in its log: `docker logs -f otti-connect`. `OTTI_CONNECT_LABEL` names the computer (the container's host name by default), and `-e OTTI_CONNECT_BASE_URL=<address>` connects it to an installation other than octomerge.dev.
+
+2. Sign in to each agent inside the container, once, with its own command:
+
+   ```bash
+   docker exec -it otti-connect claude auth login
+   docker exec -it otti-connect codex login --device-auth
+   docker exec -it otti-connect agy acp --login
+   ```
+
+   Each prints an address to open in your browser, and Claude Code and Antigravity a code to paste back into the terminal. For Codex, `--device-auth` signs in with a code, which works from a container.
+
+The volume, `otti-connect`, is the home folder of the image's user: it holds Otti Connect's sign-in and the agents' sign-ins. A new container on the same volume, such as one of a newer image, keeps them:
+
+```bash
+docker pull ghcr.io/octomergehq/otti-connect
+docker stop otti-connect && docker rm otti-connect
+docker run -d --name otti-connect --hostname home-server \
+  --restart unless-stopped \
+  -e OTTI_CONNECT_LABEL=home-server \
+  -v otti-connect:/home/otti \
+  ghcr.io/octomergehq/otti-connect
+```
+
+`docker stop` ends the turns running in the container and tells Octomerge before it stops. `docker exec otti-connect otti-connect status` shows the agents and their sign-ins, and `docker exec otti-connect otti-connect logout` signs the container out of Octomerge.
+
+## Manage your agent hosts
+
+**Settings → Your agents** lists your agent hosts and their agents, and updates by itself.
+
+- **Agent hosts**: each computer with its name, **Connected** or **Offline** (with when it was last seen), its system and its Otti Connect version. Under it, each agent with its version and its sign-in: **Signed in** with Claude, ChatGPT or Google, with the models it offers; **Not signed in**, with the command that signs it in on that computer; or **Not installed**.
+- **A switch per agent** offers it from that computer. Turn it off to leave the agent out there: an agent turned off on every computer leaves the model menu.
+- **Rename**, in the computer's **⋯** menu, changes the name chats and this page show.
+- **Forget**, in the same menu, removes the computer and revokes its sign-in: its agents leave the model menu, unless another computer offers them, and chats can't run them there. The agents stay installed and signed in on the computer. An Otti Connect still running there says its sign-in no longer works and shows a new code: approve it to connect the computer again, or stop it.
+- **Connect a computer** shows the command that starts Otti Connect and the steps above, and says when the new computer is connected.
+- **Versions** lists the versions of Otti Connect and of each agent that Octomerge tests, and on how many of your computers Otti Connect is up to date.
+
+### Which computer a chat uses
+
+With two or more agent hosts, **Which computer a chat uses** orders them. The model menu lists each agent's models once, whichever computers offer it, and a turn runs on the first computer in this order that is connected and has the agent installed and turned on. Move a computer up or down to change the order; it applies from the next turn.
+
+### Updates
+
+Otti Connect updates the agents together with itself: each release runs the agent versions Octomerge tested with it, and installs them when it starts. To update a computer, stop Otti Connect and start it again with the same command, which runs the newest release. In Docker, pull the newer image and start a new container on the same volume, [as above](#run-it-in-docker-on-an-always-on-computer). Copies of the agents you installed yourself are never updated by Otti Connect.
+
+## In a chat
+
+Choose one of your agents in the model menu at the bottom of the composer, under **Your agents**: for example **Claude Code · Sonnet**, **Codex** or **Antigravity**. The effort you choose goes to the agent. Then work with it as with any model:
+
+- The agent continues its own session from turn to turn, and keeps its own context, as it does in its own terminal.
+- A message you **Steer** while it works reaches it during its turn; one you **Queue** waits for the turn to end, as with any model.
+- **Stop** ends its turn. Its session keeps what it did, and your next message continues it.
+- Images you attach to a message reach the agent with it.
+- Its commands and file edits show in the chat as calls of Octomerge's tools, on the chat's worker.
+
+If the computer goes away during a turn, because Otti Connect stopped or the computer slept or lost its network, the chat says so, for example "Codex could not finish the turn: Otti Connect on your agent host home-server stopped during the turn. Send a message to go on." Your next message carries on, on your next connected computer with that agent. An agent's session stays on the computer that ran it, so a turn on another computer starts a new session there, given the conversation so far. When none of your computers with the agent is connected, the chat says so and names the command that starts Otti Connect.
+
+Your plan's usage limits apply as they do in the agent's own terminal: when the agent reaches one, it says so in the chat.
+
+## Your sign-ins
+
+Two kinds of sign-in are involved, and they stay apart:
+
+- **Otti Connect's sign-in to Octomerge**, the one you approve with a code, connects the computer as an agent host and nothing else. `otti-connect logout` forgets it on the computer and revokes it, and the computer leaves **Settings → Your agents** by itself; **Forget** there does the same from Octomerge's side.
+- **Each agent's sign-in to its maker** stays on the computer, where the agent keeps it: in its own folder in your home folder (`~/.claude`, `~/.codex`, `~/.gemini`) or in the system's keychain. Otti Connect never reads, copies or sends a sign-in, and Octomerge never sees or stores one.
+
+Sign in to each agent with the agent's own command, in a terminal on the computer itself, or in its container with `docker exec`. Neither Otti Connect nor Octomerge offers a sign-in for any agent: don't sign an agent in through Octomerge, such as in a chat or on a branch's [Shell page](/get-started/add-worker#shell).
+
+Otti Connect removes API keys and other endpoints, such as `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` and `GEMINI_API_KEY`, from each agent's environment, so a chat always runs on your sign-in, never on an API key by accident.
+
+Your computers' agents run turns of your own chats only: Otti Connect has no way to share or pool accounts.
+
+## Commands
+
+With npx, put the command after the one that starts Otti Connect, for example:
+
+```bash
+npx --registry https://npm.octomerge.dev @octomerge/otti-connect status
+```
+
+In the Docker image, `otti-connect` is on the `PATH`: `docker exec otti-connect otti-connect status`.
+
+| Command | |
+| --- | --- |
+| `otti-connect`, `otti-connect start` | Signs the computer in if it isn't, installs the tested agents, connects the computer and runs its turns until you stop it |
+| `otti-connect status` | The agents on this computer, with their versions and sign-ins, without connecting |
+| `otti-connect logout` | Forgets this computer's sign-in and revokes it in Octomerge: the computer leaves **Settings → Your agents** by itself |
+
+| Option | |
+| --- | --- |
+| `--label <name>` | The computer's name when it first connects: letters, digits, dots, hyphens and underscores. Default: `$OTTI_CONNECT_LABEL`, else the host name. Afterwards, rename it in **Settings → Your agents** |
+| `--base-url <address>` | The Octomerge installation to connect to. Default: `$OTTI_CONNECT_BASE_URL`, else the one the computer signed in to, else `https://octomerge.dev` |
+| `--config-dir <folder>` | Where Otti Connect keeps its sign-in and the agents. Default: `~/.otti-connect` |
+| `--no-open` | Doesn't open the approval page in the browser |
+
+## Good to know
+
+- Each command and file operation of the agent goes from your computer through Octomerge to the chat's worker and back: quick enough for edits and commands, slower than an agent on the worker itself for many small reads.
+- The agent's computer has to stay on and connected while the agent works, even when the chat's files are on an always-on worker: a laptop that goes to sleep ends the turn it was running. For agents that keep working while your laptop sleeps, use an [always-on computer](#run-it-in-docker-on-an-always-on-computer).
+- Antigravity takes only so many tools from one connection, so Octomerge offers it the shell, file and conversation tools first, and leaves out some of the browser tools.
+
+## Terms
+
+Claude Code, Codex and Antigravity are made by Anthropic, OpenAI and Google, which aren't affiliated with Octomerge or Otti Connect and don't endorse them. Their names are their makers' trademarks, used here only to say which agents Otti Connect runs. Otti Connect runs each agent's own program, unmodified, as its maker publishes it, on your computer, with the sign-in you made there.
+
+Each agent's own terms apply when you use it through Otti Connect, and you're responsible for following them. Its maker decides how it may be used through other products, and those rules change: read them before you use an agent this way.
+
+- Claude Code: Anthropic's [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance) page for Claude Code
+- Codex: OpenAI's [Terms of Use](https://openai.com/policies/terms-of-use/)
+- Antigravity: the [Google Antigravity Additional Terms of Service](https://antigravity.google/terms)
+
+Otti Connect is open source, under the Apache License 2.0. Its source, and its record of what each agent's terms allow, with sources, will be published.
