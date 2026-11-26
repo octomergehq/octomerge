@@ -11,7 +11,7 @@ Open **Teams** from the sidebar's **More** tab, then **Create a team**. A dot on
 
 On the team's page, **Invite** (or the **Members and shares** tab) invites people, as members or admins: by their handle when they have an Octomerge account, or by email address when they don't. Every account has a unique handle, shown as `@handle` on team pages and in **Settings**, chosen when it signed up ([Signing up](/#signing-up)). They see the invitation on their **Teams** page after signing in to Octomerge, and accept or decline it there; someone without an account signs up first. When the team has the [Team plan](#the-team-plan), accepting covers them at once, also while all seats are taken: they need no plan of their own, and leave the waitlist for a seat if they were on it.
 
-Admins invite and remove members, change roles, remove shares, archive or remove a branch for the team ([below](#archive-or-remove-a-branch-for-the-team)) and delete the team. Every team keeps at least one admin, so the last admin can't leave until another member is an admin. Anyone can leave a team; what they shared with it stops being shared. When someone [deletes their account](/get-started/sign-in#deleting-your-account), a team only they are in is deleted with it, and a team whose only admin they are gets its longest-standing other member as admin.
+Admins invite and remove members, change roles, remove shares, archive or remove a session or a branch for the team ([below](#archive-or-remove-work-for-the-team)) and delete the team. Every team keeps at least one admin, so the last admin can't leave until another member is an admin. Anyone can leave a team; what they shared with it stops being shared. When someone [deletes their account](/get-started/sign-in#deleting-your-account), a team only they are in is deleted with it, and a team whose only admin they are gets its longest-standing other member as admin.
 
 ## The Team plan
 
@@ -74,7 +74,7 @@ A group shows its ten latest sessions; **n more** shows more. While a filter is 
 
 Opening a line of yours opens your chat, and its menu (**⋯**) is the one your sidebar has. Opening a teammate's line opens their session read-only (see below). A session with subagents has an arrow before its icon that shows them under it, as in your sidebar: its five most recently active ones, finished ones too, then **10 more**, with those still at work always shown, each on a line from the icon of the session that started it. While they are hidden and some work, the line shows how many, at any depth, with a spinner while one of them is running; click the count to show the way to all of them. A subagent that works on another branch or in another project says where.
 
-**Archive** lists the branches that are archived for the team, or that their owners archived, by repository, with who archived them, how many sessions they hold and when.
+**Archive** holds what the team put away, by repository, under **Sessions** and **Branches**: each with who archived it and when ("Archived by Alex · Nov 18"), a session with its branch and pull request and **Active again** when there is new work in it, a branch with how many sessions it holds. Members' own archives never put anything here: a session its owner archived stays on **Active**, frozen, until the team archives it. A session's menu there has **Unarchive for me** (back in your own list; it stays in the team's archive) and, for the team's admins and the session's owner, **Unarchive for Acme** and **Remove from Acme…**.
 
 The page follows the team's work live: sessions appear, change and leave as they do.
 
@@ -89,19 +89,19 @@ Link it from a pull request description so reviewers can follow every session sh
 
 ## Teammates' sessions in your projects
 
-When a teammate shares sessions of their project for a repository you have a project for too, those sessions also show in your sidebar's list: in your project, among your own sessions, by their activity, whatever the list's grouping. **Whose** in the list's head shows everyone's, only yours, or only one team's. You can leave a team's sessions out of your sidebar altogether ([below](#show-a-team’s-sessions-in-your-sidebar)). **Create my branch…** in the menu of one of their sessions starts a branch of your own from the repository's branch of that name, once your teammate has pushed it.
+When a teammate shares sessions of their project for a repository you have a project for too, those sessions also show in your sidebar's list: in your project, among your own sessions, by their activity, whatever the list's grouping. **Whose** in the list's head shows everyone's, only yours, or only one team's. You can leave a team's sessions out of your sidebar altogether ([below](#show-a-team’s-sessions-in-your-sidebar)).
 
 A teammate's session is the lightest row in the list: a grey status icon, a lighter name, and its owner's initial after it. Its card says whose it is and its status in words, such as "Alex Kim · working", "Priya Shah · waiting for Priya" or "Sam Lee · done", and while its subagents are hidden and some of them work, the row shows how many, in grey, with a grey spinner while one of them is running. The rows follow the sessions live, and a session leaves your sidebar as soon as it is no longer shared with you.
 
-Opening a teammate's row opens their session read-only (see below), highlighted in your sidebar while it is open. Their menus have none of the owner's actions (rename, delete, share, stop, archive), and **Open in** each of your teams that reads the session instead of a preview. Their rows have no tags or unseen marks, and can't be pinned or checked. When several of your teams can read a session, it opens in the team whose share is nearest to it.
+Opening a teammate's row opens their session read-only (see below), highlighted in your sidebar while it is open. Their menus have none of the owner's actions (rename, delete, share, stop), but **Open in** each of your teams that reads the session instead of a preview, **Copy link**, **Archive for me** (key **E**) and **Archive branch for me** ([Archiving with teams](/platform/archiving#archiving-with-teams)). Their rows have no tags or unseen marks, and can't be pinned or checked. When several of your teams can read a session, it opens in the team whose share is nearest to it.
 
 Sessions are matched by the project's remote repository, so only projects with a remote show teammates' sessions; the sessions of a project without a remote are on the team page only.
 
-A teammate's sessions follow their branch, not yours. When you archive your branch, their sessions on it stay in your list (**Unarchive my branch…** in their menu brings yours back). When a teammate archives their branch, or someone archives it for the team (see below), its sessions leave your list for the team archive: your project's **Archived and hidden** row counts them, and opens the project's [**Branches** page](/platform/workspace-chats#a-project’s-branches) (**Archived** instead while the project also has sessions you archived), which lists the branch under **Team archive** with whose it is and why it is there. You can't archive a teammate's branch in their project, but you can hide it: **Hide from my sidebar** in the menu of one of its sessions takes them out of your list, and the **Branches** page lists the branch under **Hidden by you**, where **Show in my sidebar** brings it back.
+A teammate's sessions follow their branch and your choices, not your branch. When you archive your branch, their sessions on it stay in your list (**Unarchive my branch…** in their menu brings yours back). When a teammate archives their own session or branch, it stays in your list, frozen: read-only and marked archived, until you or a team archive it. When a team archives it (see below), it leaves your list, unless you bring it back for yourself with **Unarchive for me**: such a row carries the team's archive icon. **Archive for me** and **Archive branch for me** put a teammate's work away for you alone. Your project's **Archived** row counts what is archived for you and opens **Archived**, and the project's [**Branches** page](/platform/workspace-chats#a-project’s-branches) lists the branches under **Archived for Acme** and **Archived for you**, each with **Unarchive for me**.
 
 ### Show a team's sessions in your sidebar
 
-Each of your teams has a switch of your own: **Show Acme's sessions in my sidebar**, on until you turn it off. Off, your sidebar leaves out the teammates' sessions you read only through Acme, and their counts with them: in your projects, in the list's head and in **Archived and hidden**. Nothing is archived or hidden for you: the sessions just aren't in your sidebar.
+Each of your teams has a switch of your own: **Show Acme's sessions in my sidebar**, on until you turn it off. Off, your sidebar leaves out the teammates' sessions you read only through Acme, and their counts with them: in your projects, in the list's head and in **Archived**. Nothing is archived or hidden for you: the sessions just aren't in your sidebar.
 
 - A session another of your teams reads too stays in your sidebar while that team's switch is on.
 - Choosing Acme in **Whose** still shows Acme's sessions; **Everyone** and **Mine** follow the switch.
@@ -109,14 +109,29 @@ Each of your teams has a switch of your own: **Show Acme's sessions in my sideba
 
 The switch is in three places: in the popover of a project's team chip in your sidebar, for each team whose members have sessions on the project's repository (a team you switched off stays on the chip, so you can turn it back on there); beside **Invite** on the team page, as **In my sidebar**; and on the **Teams** page, one per team. Only you see or change it: the team's admins can't, and nothing on the team's pages or in its integrations shows it. Your sidebar follows at once, on every device. `otti teams sidebar acme off` turns it off from a terminal ([otti](/cli/otti#share-with-a-team-and-show-work-items)).
 
-### Archive or remove a branch for the team
+### Archive or remove work for the team
 
-A team's admins, and the members whose work on a branch the team can read, can tidy up the team's view of that branch for everyone. Open the menu (**⋯**) of one of its sessions, on the team page or in your sidebar, where they are under **For everyone in Acme**, or the menu of the branch on the team page's **Archive** tab or on the branch's own page:
+Admins can tidy up the team's view for everyone, and so can the people whose work it is: a session's owner for a
+session, and the members whose work on a branch the team reads for a branch. Open the menu (**⋯**) of a session, on
+the team page or in your sidebar, where these are under **For everyone in Acme**, or the menu of a branch on the team
+page's **Archive** tab or on the branch's own page:
 
-- **Archive for Acme…** moves the branch into the team archive: on the team page, to its **Archive** tab, and in every member's project, under **Archived and hidden** on its **Branches** page. Nobody's own branch changes: members keep working on theirs, and their sessions stay readable in the archive. New work on the branch stays in the archive too, until someone brings it back with **Unarchive for Acme**. When your own shared work is on a branch archived for a team, the project's **Branches** page marks your branch with an archive icon that says so.
-- **Remove from Acme…** stops sharing the branch with the team: it revokes every member's share of their branch of that name and the shares of single sessions on it, whoever made them. The dialog lists them first, and members can share their work again later. A project share shares every branch of its project, so a branch it covers stays on the team page until that project share is removed on **Members and shares**; so do sessions on the branch that the team reads because the session that started them, on another branch, is shared. The dialog says when either is the case.
+- **Archive for Acme…** moves a session, with its sub-agents, to the team page's **Archive** tab and out of every
+  member's lists. **Archive branch for Acme…** does the same for every member's sessions on a branch, now and later.
+  Nobody's own work changes: the owner keeps the session in their list and can keep working in it, without being told,
+  and members keep working on their branches. Any member can bring one back to their own list with **Unarchive for
+  me**. New work stays in the archive too, until someone brings it back for everyone with **Unarchive for Acme**. When
+  your own shared work is on a branch archived for a team, the project's **Branches** page marks your branch with an
+  archive icon that says so.
+- **Remove from Acme…** stops sharing a session or a branch with the team: it revokes the team's shares of the
+  session (or of every member's branch of that name and the single sessions on it), whoever made them. The dialog
+  lists them first, and members can share their work again later. A project share shares every branch of its
+  project, and a branch share every session on its branch, so what they cover stays on the team page until that share
+  is removed; so do sessions the team reads because the session that started them is shared. The dialog says when
+  this is the case.
 
-Integrations hear about both: removing reports the revoked shares, and archiving and unarchiving are events of their own ([Team integrations](/cli/api-client#team-integrations)).
+Integrations hear about all of them: removing reports the revoked shares, and archiving and unarchiving are events of
+their own ([Team integrations](/cli/api-client#team-integrations)).
 
 ## Reading a shared session
 
@@ -168,7 +183,7 @@ The agent of a shared session is told which teams can read its conversation and 
 Issue trackers and other tools can follow what is shared with a team too. On the team's page, open **Integrations** (`https://octomerge.dev/t/<team>/integrations`). Admins manage two things there:
 
 - **API keys**: read-only credentials of the team. A key reads exactly what a member reads, through the [team API](/cli/api-client#team-integrations): shared sessions and branches with their status, work items, pull request and links, a conversation overview for summaries, and the team's event feed. It can't act on anything, and every request that would change something answers `403`. Each key is shown once, when it is created; the list shows when it was last used, and **Revoke** stops it at once. A key belongs to the team: it keeps working when the admin who created it leaves, until an admin revokes it.
-- **Webhooks**: URLs that receive every event of the team, signed with a secret: a session was shared, a share was revoked, a session's status changed, a session's work items or name changed, or a branch's pull request was opened or updated. Each webhook has a **delivery log** with every attempt and its response. A failed delivery is retried for about eleven hours; you can also deliver an event again, or send a test `ping`.
+- **Webhooks**: URLs that receive every event of the team, signed with a secret: a session was shared, a share was revoked, a session's status changed, a session's work items or name changed, a session or a branch was archived or unarchived for the team, or a branch's pull request was opened or updated. Each webhook has a **delivery log** with every attempt and its response. A failed delivery is retried for about eleven hours; you can also deliver an event again, or send a test `ping`.
 
 Members see the API and feed addresses on the same page. An integration that Octomerge can't reach, such as a tracker behind a firewall, follows the event feed instead of a webhook.
 

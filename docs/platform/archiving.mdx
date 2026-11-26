@@ -13,7 +13,7 @@ Archiving a session puts away the conversation: the session with all of its sub-
 
 | | While a session is archived |
 | --- | --- |
-| Your list | It is in no grouping, filter or **Pinned**. Its project's **Archived and hidden** counts it (the workspace chats' **Archived**). |
+| Your list | It is in no grouping, filter or **Pinned**. Its project's **Archived** counts it (the workspace chats' too). |
 | **All sessions** and a project's **Sessions** page | Left out, unless the **Filter** names **Archived**. |
 | Its transcript, tool results, images and files | Kept, unchanged. |
 | Its links | Still open it, read-only: commit trailers, pull requests, emails and team pages that point at it. |
@@ -23,7 +23,7 @@ Archiving a session puts away the conversation: the session with all of its sub-
 | Work in progress | Stopped first (**Stop and archive**, below). |
 | Its schedules | Paused. Unarchiving resumes them from their next occurrence; one that came due meanwhile is skipped. |
 | Pins and tags | It leaves **Pinned** and comes back unpinned; its tags are kept. |
-| Shares with teams | Kept: your teammates keep reading it. |
+| Shares with teams | Kept. Your archive is yours alone: your teammates keep it in their lists and on the team's page, **frozen** (read-only, marked archived), until the team archives it or they archive it for themselves ([Archiving with teams](#archiving-with-teams)). |
 | Search | `otti search` still finds it, marked archived. |
 
 Unarchiving brings it all back. The session returns to its place in your list by its own last activity: archiving and unarchiving aren't activity.
@@ -35,13 +35,13 @@ Unarchiving brings it all back. The session returns to its place in your list by
 - **All sessions** or a project's **Sessions** page: check sessions and select **Archive** in the bar at the bottom.
 - **Archived** suggests the sessions that are done and haven't been touched for 14 days: **Review…** lists them all checked, so that one click archives them after a look. Nothing is archived by itself.
 
-A session that is idle, done or asking you something is archived at once, and the message at the bottom of the screen offers **Undo** and **Show in Archived**. When it was the last live session of a branch that is merged (its pull request merged, or its work is in the project's primary branch), the message offers **Archive branch…** instead, to put the branch away too.
+A session that is idle, done or asking you something is archived at once, and the message at the bottom of the screen offers **Undo** and **Show in Archived**. When it was the last live session of a branch that is merged (its pull request merged, or its work is in the project's primary branch), the message offers **Archive branch…** instead, to put the branch away too. When a team reads the session, the message says **Archived for you**, names the teams that still list it, frozen, and offers **Also archive for Acme**, which archives it for that team too ([Archiving with teams](#archiving-with-teams)).
 
-A session that is still at work (running, queued or waiting, itself or one of its sub-agents, or with commands still running) asks first, because archiving stops that work: the dialog lists its turn, its sub-agents at work and its running processes, each given 10 seconds to shut down, the schedules that pause and the questions that stay open. **Stop and archive** stops it and archives it in one step. When you archive several sessions at once and some of them are at work, the dialog asks once, for all of them: nothing is archived until you confirm, and **Cancel** leaves all of them as they were.
+A session that is still at work (running, queued or waiting, itself or one of its sub-agents, or with commands still running) asks first, because archiving stops that work: the dialog lists its turn, its sub-agents at work and its running processes, each given 10 seconds to shut down, the schedules that pause and the questions that stay open. **Stop and archive** stops it and archives it in one step. When you archive several sessions at once and some of them are at work, the dialog asks once, for all of them: nothing is archived until you confirm, and **Cancel** leaves all of them as they were. When a team reads the work, the dialog has an unticked **Also archive it for Acme** for each such team.
 
 An archived session's page shows **Archived** beside its name and, where you would type, when it was archived and by whom, with **Unarchive**, which brings the box back with your draft. Its menu has **Unarchive session** in place of **Archive session**. While it is the chat you have open, the list keeps its row, dimmed, with the archive icon.
 
-**Archived**'s **Sessions** tab lists your archived sessions, the most recently archived first and grouped by when, each with when and by whom it was archived (you or an agent), when it was last active, its project and branch, its merged pull request or its sub-agents, and a question that still waits for you. Search them, show one project's, **Open** one to read it without unarchiving it, and **Unarchive** or **Delete…** one at a time or several selected. A project's **Archived and hidden** in the sidebar opens it showing that project's sessions.
+**Archived**'s **Sessions** tab lists your archived sessions, the most recently archived first and grouped by when, each with when and by whom it was archived (you or an agent), when it was last active, its project and branch, its merged pull request or its sub-agents, and a question that still waits for you. Search them, show one project's, **Open** one to read it without unarchiving it, and **Unarchive** or **Delete…** one at a time or several selected. A project's **Archived** row in the sidebar opens it showing that project's sessions. When you are in a team, it also lists your teammates' sessions that are archived for you ([below](#archiving-with-teams)), and a filter shows yours, yours and your teams', or one team's.
 
 A session on an archived branch can't be live: unarchiving it while its branch is archived asks to unarchive both (**Unarchive branch and session**). Archiving a branch leaves a session archived on its own as it is, and unarchiving the branch doesn't bring it back.
 
@@ -51,12 +51,49 @@ A session on an archived branch can't be live: unarchiving it while its branch i
 otti archive session 7f3c2a91                 # archive it, with its sub-agents
 otti archive session 7f3c2a91 --confirm       # one at work: stop it and archive it
 otti unarchive session 7f3c2a91
-otti get sessions --archived                  # what you archived; -p my-project for one project's
+otti get sessions --archived                  # what is archived for you; -p my-project for one project's
 ```
 
 A session at work is archived only with `--confirm`: without it, `archive session` says what archiving would stop and pause, and changes nothing. `otti session prompt` to an archived session is refused with how to unarchive it.
 
 Agents archive and unarchive sessions with `otti` like you, with the same refusals. An agent can't archive its own session or a session above it, and nothing an agent does wakes an archived session.
+
+## Archiving with teams
+
+A session your teams read has a place for each person and for each team: archiving it, by its owner, by a team or by
+a teammate for themselves, changes only that place.
+
+- **Your archive is yours.** When you archive your own shared session or branch, it leaves your lists only. Your
+  teams keep it on their page and in teammates' lists, **frozen**: read-only, marked archived, until the team archives
+  it or each teammate archives it for themselves. **Also archive for Acme**, in the message after you archive and as a
+  checkbox in the archive dialogs ("Unticked, they stay on Acme's page and in teammates' sidebars, read-only, until
+  Acme archives the branch"), archives it for the team too.
+- **Archive for Acme.** A team's admins and the session's owner archive a shared session for the team: **Archive for
+  Acme…** under **For everyone in Acme** in its menu, on the team page or in the sidebar. It moves to the team page's
+  **Archive** tab and out of every member's lists, with its sub-agents. Nothing stops, nobody is notified and the
+  owner's own list doesn't change: they can keep working in it, and new work in it stays in the archive (marked
+  **Active again**) until someone brings it back with **Unarchive for Acme**. Archiving a branch for the team works
+  the same way ([Teams](/platform/teams#archive-or-remove-work-for-the-team)).
+- **Archive for me.** In the menu of a teammate's session, **Archive for me** (key **E**) takes it out of your lists
+  only: nobody else's list changes and nobody is told. **Archive branch for me** does the same for every session of
+  that teammate's branch, now and later. **Unarchive for me** brings one back to your lists, also one a team
+  archived: it stays in the team's archive for everyone else, and its row carries the team's archive icon.
+- **Where it is for you.** A teammate's session is archived for you when you archived it for yourself, or when every
+  team you read it through archived it; one team that still lists it keeps it in your lists.
+
+**Archived**'s **Sessions** tab shows, beside your own (**Archived by you**), the teammates' sessions archived for you,
+under **Archived for you** (what you put away) and **Archived for Acme** (what the team put away), each with
+**Unarchive for me**. It suggests what to tidy up, never by itself: your own sessions a team archived ("Acme archived
+3 of your sessions. Archive them for you too?") and the sessions in your list whose owners archived them ("8 sessions
+in your list were archived by their owners. Archive them for you too?"), each with **Review…**.
+
+```bash
+otti archive session 7f3c2a91                 # a teammate's session: archived for you only
+otti unarchive session 7f3c2a91               # back in your lists
+otti archive session 7f3c2a91 --team acme     # archive it for the team (its admins and the session's owner)
+otti unarchive session 7f3c2a91 --team acme
+otti get sessions --archived                  # WHY says by-you, for-you or the team that archived it
+```
 
 ## Archive a branch
 
@@ -87,7 +124,7 @@ The project's primary branch is archived only with its project.
 
 **Archive branch…** is in the menu (**⋮**) of the branch's header, on the branch's own pages, and on the [branch page](/platform/workspace-chats#the-branch-page). When you archive the last live session of a merged branch, the message that confirms it offers **Archive branch…** too. To archive several branches at once, check them on the project's [Branches page](/platform/workspace-chats#a-project’s-branches) and select **Archive**. The dialog previews what archiving would do before you confirm; Octomerge never archives a branch by itself.
 
-Every page of an archived branch says so under its header, with **Unarchive**. The project's Branches page lists its archived branches under **Archived and hidden**, with when they were archived, **Unarchive** and delete; **Archived**'s **Branches** and **Projects** tabs (`/archived`, also from **All archived work…**) list the archived work of all your projects, and **Branches** suggests branches you might archive: merged ones first, then idle ones, with their pull request and the commits they have that aren't in the primary branch.
+Every page of an archived branch says so under its header, with **Unarchive**. The project's Branches page lists its archived branches under **Archived**, with when they were archived, **Unarchive** and delete; **Archived**'s **Branches** and **Projects** tabs (`/archived`, also from **All archived work…**) list the archived work of all your projects, and **Branches** suggests branches you might archive: merged ones first, then idle ones, with their pull request and the commits they have that aren't in the primary branch.
 
 ### Archive and unarchive a branch with otti
 
