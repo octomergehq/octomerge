@@ -72,7 +72,7 @@ The container reads its settings from its environment:
 | `OTTI_BROWSER_AUTO_UPDATE` | `0` keeps the image's `otti-browser`; `1` updates it. Unset: the choice saved on the volume, else on. |
 | `OTTI_BROWSER_SCREEN` | The virtual display's size, `1600x1000x24` by default. Chrome's windows open 1050 pixels wide on it, as on a laptop's screen. |
 
-Images of earlier releases read these settings as `R5D_BASE_URL`, `R5D_BROWSER_AUTO_UPDATE` and `R5D_BROWSER_SCREEN`. A container keeps working with those names until it moves to a newer image, which reads only the `OTTI_` names: rename them when you change its image.
+Images of earlier releases read these settings as `R5D_BASE_URL`, `R5D_BROWSER_AUTO_UPDATE` and `R5D_BROWSER_SCREEN`, and a container of one keeps working: its otti-browser updates itself and connects to the server its volume's sign-in is for. One that gives its credential as `R5D_TOKEN` or `R5D_API_KEY` instead of a saved sign-in stops signing in once it updates: move it to a newer image, with `OTTI_TOKEN` or `OTTI_API_KEY`. Newer images read only the `OTTI_` names: rename the settings when you change its image.
 
 `docker restart my-browser`, or `docker stop` then `docker start`, keeps everything, and so does a new container of the same or a newer image on the same volume:
 
