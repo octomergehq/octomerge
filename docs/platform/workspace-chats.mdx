@@ -358,6 +358,7 @@ So you can find the chats where you left a draft, a chat with your draft shows t
 Editing a draft, one of your earlier messages (its menu's **Edit**) or a queued message opens it in place as a small composer:
 
 - the attachment bar shows the files the message already uploaded, marked as uploaded, and the files you add (they upload when you save or send). Select a file to preview it; **×** on an uploaded file offers **Remove from this message** (the file stays in the conversation's artifacts folder) or **Delete file** from its worker, which happens right away: **Cancel** doesn't bring it back, and messages that already show the file can no longer preview it. Attach files with the paperclip, by dropping them on the editor or by pasting them;
+- for a draft or a queued message, the [context meter](#what-the-agent’s-context-holds) at the top right, as in the chat input. An earlier message has none: sending it starts a new branch from where the original was sent, and the meter measures the conversation's latest model request;
 - the text, with its file references as chips;
 - the model and effort, and the worker, the message is sent with;
 - **Cancel**, **Save** (a draft or a queued message) and **Send** (a draft or an earlier message). Ctrl/⌘+Enter sends (or saves a queued message); Escape cancels.
@@ -759,6 +760,7 @@ it, and **Notify me on completion** doesn't email you about it.
 
 The composer's context meter (top right, for example **42k /200k**) shows how
 much of the model's context window the agent's latest model request used.
+The editor of your draft or of a queued message shows it too.
 Hover it, or select it, to see what that request was made of, with an
 estimated token count for each part:
 
