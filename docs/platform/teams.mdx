@@ -89,7 +89,7 @@ Link it from a pull request description so reviewers can follow every session sh
 
 ## Teammates' sessions in your projects
 
-When a teammate shares sessions of their project for a repository you have a project for too, those sessions also show in your sidebar's list: in your project, among your own sessions, by their activity, whatever the list's grouping. **Whose** in the list's head shows everyone's, only yours, or only one team's. **Create my branch…** in the menu of one of their sessions starts a branch of your own from the repository's branch of that name, once your teammate has pushed it.
+When a teammate shares sessions of their project for a repository you have a project for too, those sessions also show in your sidebar's list: in your project, among your own sessions, by their activity, whatever the list's grouping. **Whose** in the list's head shows everyone's, only yours, or only one team's. You can leave a team's sessions out of your sidebar altogether ([below](#show-a-team’s-sessions-in-your-sidebar)). **Create my branch…** in the menu of one of their sessions starts a branch of your own from the repository's branch of that name, once your teammate has pushed it.
 
 A teammate's session is the lightest row in the list: a grey status icon, a lighter name, and its owner's initial after it. Its card says whose it is and its status in words, such as "Alex Kim · working", "Priya Shah · waiting for Priya" or "Sam Lee · done", and while its subagents are hidden and some of them work, the row shows how many, in grey, with a grey spinner while one of them is running. The rows follow the sessions live, and a session leaves your sidebar as soon as it is no longer shared with you.
 
@@ -98,6 +98,16 @@ Opening a teammate's row opens their session read-only (see below), highlighted 
 Sessions are matched by the project's remote repository, so only projects with a remote show teammates' sessions; the sessions of a project without a remote are on the team page only.
 
 A teammate's sessions follow their branch, not yours. When you archive your branch, their sessions on it stay in your list (**Unarchive my branch…** in their menu brings yours back). When a teammate archives their branch, or someone archives it for the team (see below), its sessions leave your list for the team archive: your project's **Archived and hidden** row counts them, and opens the project's [**Branches** page](/platform/workspace-chats#a-project’s-branches) (**Archived** instead while the project also has sessions you archived), which lists the branch under **Team archive** with whose it is and why it is there. You can't archive a teammate's branch in their project, but you can hide it: **Hide from my sidebar** in the menu of one of its sessions takes them out of your list, and the **Branches** page lists the branch under **Hidden by you**, where **Show in my sidebar** brings it back.
+
+### Show a team's sessions in your sidebar
+
+Each of your teams has a switch of your own: **Show Acme's sessions in my sidebar**, on until you turn it off. Off, your sidebar leaves out the teammates' sessions you read only through Acme, and their counts with them: in your projects, in the list's head and in **Archived and hidden**. Nothing is archived or hidden for you: the sessions just aren't in your sidebar.
+
+- A session another of your teams reads too stays in your sidebar while that team's switch is on.
+- Choosing Acme in **Whose** still shows Acme's sessions; **Everyone** and **Mine** follow the switch.
+- Your own sessions don't change, and neither do the team page, **All sessions** and a project's **Sessions** page (which list teammates' sessions under **Whose**), links and mentions.
+
+The switch is in three places: in the popover of a project's team chip in your sidebar, for each team whose members have sessions on the project's repository (a team you switched off stays on the chip, so you can turn it back on there); beside **Invite** on the team page, as **In my sidebar**; and on the **Teams** page, one per team. Only you see or change it: the team's admins can't, and nothing on the team's pages or in its integrations shows it. Your sidebar follows at once, on every device. `otti teams sidebar acme off` turns it off from a terminal ([otti](/cli/otti#share-with-a-team-and-show-work-items)).
 
 ### Archive or remove a branch for the team
 
