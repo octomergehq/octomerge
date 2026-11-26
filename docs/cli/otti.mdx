@@ -245,7 +245,7 @@ A session without a worker takes a prompt only with `--move-to`. A session whose
 A message that mixes them takes the kind that asks the most. The recipient's agent reads the kind with the sender above the message, and the chat labels the message with it, such as **Agent report**. The kind also decides what a subagent's agent keeps word for word when its context is compacted: the latest directions, questions and answers from the agent that started it, while reports are shortened and notifications left out ([long conversations](/platform/workspace-chats#long-conversations)). A message without `--kind` counts as before: one from the agent that started the subagent as a direction, any other agent's as a report. Your own messages are always kept, whatever their kind.
 
 ```bash
-r5dctl session prompt --kind direction SESSION_ID "Use the staging database from now on"
+otti session prompt --kind direction SESSION_ID "Use the staging database from now on"
 ```
 
 ```bash
