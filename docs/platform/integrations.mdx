@@ -44,7 +44,7 @@ The app reads the issue when you open the link, so the snapshot is always curren
 
 ### Follow the work on GitHub
 
-While a session is shared with the team, the issue or pull request it works on has a comment from the app with its status: starting, running, waiting for input, finished, failed or stopped. A session that isn't shared with the installation's team gets no comment. The comment is edited as the status changes, and links the read-only session page and the branch's team page for the team's members. When the share is revoked, the comment says so and stops changing.
+While a session is shared with the team, the issue or pull request it works on has a comment from the app with its status: not started, running, waiting for input, finished, failed or stopped. A session that isn't shared with the installation's team gets no comment. The comment is edited as the status changes, and links the read-only session page and the branch's team page for the team's members. When the share is revoked, the comment says so and stops changing.
 
 The app finds the sessions by their work items' URLs, so this also works for a session that wasn't started from the app: an agent can show an issue on its session with `otti session work-items add --url https://github.com/acme/api/issues/42 --label acme/api#42 …` ([work items](/platform/launch-links#work-items-on-sessions)), and once the session is shared with the team, the issue gets its comment.
 

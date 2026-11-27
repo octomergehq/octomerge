@@ -174,11 +174,11 @@ Each session has its `status`, `workItems`, `repository`, `branchName`, `owner`,
 
 | Status | Meaning |
 | --- | --- |
-| `provisioning` | A launched session that hasn't started yet. |
+| `provisioning` | No longer reported: older events can carry it, for a launched session that hadn't started yet. A launched session is now `idle` until its first message runs. |
 | `running` | The agent works. Also while it waits for a timer, a subagent or a model provider, or pauses for maintenance or recovery. |
 | `waiting_for_input` | The agent's run ended while a question, a request for environment values or an MCP server's request waits for its owner's answer. An agent that asks and goes on working, or waits for a timer, is `running`. |
 | `completed` | The last run completed. |
-| `failed` | The launch failed, a model request failed, or an interrupted run couldn't be recovered automatically. |
+| `failed` | A model request failed, or an interrupted run couldn't be recovered automatically. |
 | `stopped` | Its owner stopped it, or its run was interrupted. |
 | `idle` | Nothing ran yet. |
 
