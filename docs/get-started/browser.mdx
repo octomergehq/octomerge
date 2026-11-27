@@ -114,7 +114,7 @@ The choice is saved for this environment and state directory, so later starts wi
 
 For a manual update:
 
-1. Press **Ctrl+C** in the terminal running `otti-browser`. Wait for the **Disconnected** message. The client finishes any browser action already running, then leaves Chrome open.
+1. Press **Ctrl+C** in the terminal running `otti-browser`. Wait for the **Disconnected** message. The client finishes any browser action already running, then leaves Chrome open. If a download or an agent's [performance recording](#performance-profiling) is still in progress, the terminal says so, and the client waits for it first: as long as it takes, at most 2 seconds for a download and 20 for a recording. The client exits right after **Disconnected**, so you can start it again at once.
 2. Run the install again, which gets Octomerge's current release:
 
    ```bash
@@ -256,4 +256,4 @@ When a page is slow, ask the agent to profile it in the tab you already use, sig
 - a **CPU profile** (`.cpuprofile`) samples the page's JavaScript;
 - a **performance trace** (`.json`) also records layout, painting, input and long tasks, measures how long each click or key press took to show its result, and can record a page that has stopped responding.
 
-Both open in Chrome DevTools' **Performance** panel (**Load profile**). A recording stops by itself after at most five minutes. Only one trace can run in the browser at a time, DevTools' own Performance recording included. Recordings include the tab's script addresses, function names and timings, with web address parameters hidden and no screenshots, request contents, headers or cookies. Another tab of the same site can appear when Chrome runs both in one process. Profiling slows the page slightly while it records.
+Both open in Chrome DevTools' **Performance** panel (**Load profile**). A recording stops by itself after at most five minutes. When the client stops or updates itself while a recording runs, it stops the recording and saves it first, and its terminal says so, so the agent can still get the result once the client is back. Only one trace can run in the browser at a time, DevTools' own Performance recording included. Recordings include the tab's script addresses, function names and timings, with web address parameters hidden and no screenshots, request contents, headers or cookies. Another tab of the same site can appear when Chrome runs both in one process. Profiling slows the page slightly while it records.
