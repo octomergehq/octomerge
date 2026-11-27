@@ -122,11 +122,11 @@ A remote's file starts `otti-worker start --remote`. `cloud-init schema --config
 
 ## Terraform and OpenTofu
 
-The file is one `main.tf` for Terraform or OpenTofu: the provider, the server with what the cloud needs around it (on Azure a resource group of its own, `otti-<label>`, with a network and a public address, on Scaleway a public address), and the cloud-init document above as its user data. Its variables:
+The file is one `main.tf` for Terraform or OpenTofu: the provider, the server with what the cloud needs around it (on Azure a resource group of its own with a network and a public address, on Scaleway a public address), and the cloud-init document above as its user data. Its variables:
 
 | Variable | What |
 | --- | --- |
-| `label` | The server's name at the cloud: the worker's label, in the letters every cloud accepts, with `otti-` before a label that doesn't start with a letter or is shorter than three characters. The worker connects with the label its token is for, whatever the server is called. |
+| `label` | The server's name at the cloud: the worker's label, in the letters every cloud accepts. The worker connects with the label its token is for, whatever the server is called. |
 | `region` | The region, zone or location you chose. |
 | `size` | The size you chose. On AWS, Google Cloud and Azure an Arm size gets the Arm image. |
 | `project` | Google Cloud only: your project's ID. |
