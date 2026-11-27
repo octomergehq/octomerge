@@ -16,12 +16,14 @@ The page writes the file around the token, in your browser: the token never goes
 ## What the server does on first boot
 
 1. It installs git, Docker (Ubuntu's `docker.io`, with Buildx and Compose), and Node.js 24 with npm from NodeSource's signed package repository.
-2. It adds the user `r5d`, with passwordless `sudo` and the `docker` group: the server is the worker's, so agents install what they need and build and run containers there.
-3. It installs Bun, at the version Octomerge pins and checked against its published checksum, into `/home/r5d/.bun`.
-4. As `r5d`, it installs the CLIs at your environment's version, with the same command **Settings → Workers** shows, then enrolls them with the token (`otti-worker auth --enroll`).
+2. It adds the user `otti`, with passwordless `sudo` and the `docker` group: the server is the worker's, so agents install what they need and build and run containers there.
+3. It installs Bun, at the version Octomerge pins and checked against its published checksum, into `/home/otti/.bun`.
+4. As `otti`, it installs the CLIs at your environment's version, with the same command **Settings → Workers** shows, then enrolls them with the token (`otti-worker auth --enroll`).
 5. It starts the worker as the systemd service `otti-worker`, which starts again on every boot. The service is the one in [Run the worker as a service](/get-started/worker-service#linux-systemd): the worker's [life vest](/get-started/add-worker#the-life-vest) resumes it when a signal stops it and starts it again when it exits or hangs, so you don't have to log in to the server to bring it back. systemd starts it again after any exit but a refused sign-in (exit code 78), and gives the worker 90 seconds to stop.
 
 The worker connects out to Octomerge, so the server needs no inbound port. It shows under **Your workers** a few minutes after the server starts. On the server, `/var/log/cloud-init-output.log` shows the first boot and `journalctl -u otti-worker` the worker.
+
+A server set up from an earlier file keeps the names that file gave it: the user `r5d`, with its home `/home/r5d`, and `/var/lib/r5d-setup`. Nothing depends on them, so there is no need to change them.
 
 ## The token
 
@@ -84,7 +86,7 @@ ssh_pwauth: false
 
 users:
   - default
-  - name: r5d
+  - name: otti
     shell: /bin/bash
     lock_passwd: true
     sudo: "ALL=(ALL) NOPASSWD:ALL"
@@ -93,27 +95,27 @@ write_files:
   - path: /etc/systemd/system/otti-worker.service
     content: |
       [Service]
-      User=r5d
-      Environment=PATH=/home/r5d/.bun/bin:/usr/local/bin:/usr/bin:/bin
-      ExecStart=/home/r5d/.bun/bin/otti-worker start --label <label> --base-url <origin>
+      User=otti
+      Environment=PATH=/home/otti/.bun/bin:/usr/local/bin:/usr/bin:/bin
+      ExecStart=/home/otti/.bun/bin/otti-worker start --label <label> --base-url <origin>
       Restart=always
       RestartPreventExitStatus=78
       TimeoutStopSec=90
       …
-  - path: /var/lib/r5d-setup/enroll-token
+  - path: /var/lib/otti-setup/enroll-token
     permissions: "0600"
     content: "r5de_…"
-  - path: /var/lib/r5d-setup/first-boot.sh
+  - path: /var/lib/otti-setup/first-boot.sh
     permissions: "0700"
     content: |
       # Bun, the CLIs, the enrollment, then the service:
       …
-      retry as_r5d bun install --global --backend=copyfile @octomerge/otti-worker@<version> @octomerge/otti@<version> --registry https://npm.octomerge.dev
-      retry as_r5d otti-worker auth --enroll "$(cat "$token_file")" --base-url "$origin"
+      retry as_otti bun install --global --backend=copyfile @octomerge/otti-worker@<version> @octomerge/otti@<version> --registry https://npm.octomerge.dev
+      retry as_otti otti-worker auth --enroll "$(cat "$token_file")" --base-url "$origin"
       systemctl enable --now --no-block otti-worker.service
 
 runcmd:
-  - [bash, /var/lib/r5d-setup/first-boot.sh]
+  - [bash, /var/lib/otti-setup/first-boot.sh]
 ```
 
 A remote's file starts `otti-worker start --remote`. `cloud-init schema --config-file user-data.yaml` checks a file before you use it.
@@ -173,9 +175,11 @@ sudo journalctl -u otti-worker -n 50         # the worker's log
 - **The token was refused** (expired, used or revoked): create a new token for the same label, then on the server enroll and start the worker by hand:
 
   ```bash
-  sudo -u r5d -H /home/r5d/.bun/bin/otti-worker auth --enroll r5de_… --base-url <origin>
+  sudo -u otti -H /home/otti/.bun/bin/otti-worker auth --enroll r5de_… --base-url <origin>
   sudo systemctl enable --now otti-worker
   ```
+
+  A server set up from an earlier file keeps the user `r5d`: there, run `sudo -u r5d -H /home/r5d/.bun/bin/otti-worker auth --enroll …` instead.
 
 - **The cloud refused the size or region:** not every region offers every size. Choose another in Settings, or change `-var size=…`.
 - **Nothing in the logs:** the server may not run cloud-init with this user data. Check that it runs Ubuntu 24.04 and that the file was pasted where the table above says.

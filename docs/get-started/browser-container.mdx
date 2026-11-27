@@ -42,7 +42,7 @@ docker run --rm -it -v my-browser-home:/home/r5d ghcr.io/octomergehq/otti-browse
   otti-browser auth --base-url https://octomerge.dev --pair <token>
 ```
 
-Then approve it on the page that showed the command: pick the code your terminal shows ([Approving on the page](/cli/otti#approving-on-the-page)). The sign-in asks for **Browser** access, which lets the machine connect a browser and nothing else. It is saved on the volume (`~/.config/r5d`).
+Then approve it on the page that showed the command: pick the code your terminal shows ([Approving on the page](/cli/otti#approving-on-the-page)). The sign-in asks for **Browser** access, which lets the machine connect a browser and nothing else. It is saved on the volume, in `~/.config/otti/config.json` (`~/.config/r5d/r5dctl/config.json` on a volume that an earlier image signed in).
 
 ## Start it
 

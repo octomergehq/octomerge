@@ -13,14 +13,14 @@ description: "Keep a worker running in the background and across reboots with sy
    otti-worker auth
    ```
 
-   The service starts with that sign-in (`~/.config/r5d/r5dctl/config.json`, or the file `--config` names). Run `start` once in the terminal too, to see the worker connect, then stop it with **Ctrl+C**.
+   The service starts with that sign-in: the one in `~/.config/otti/config.json` (`~/.config/r5d/r5dctl/config.json` on a machine an earlier release signed in), or in the file `--config` names. Run `start` once in the terminal too, to see the worker connect, then stop it with **Ctrl+C**.
 2. Find where `otti-worker`, `bun` and `node` are: `command -v otti-worker bun node`. `otti-worker` is in Bun's directory for commands, `~/.bun/bin` (`bun pm bin -g`). A service does not read your shell's startup files, so the service names `otti-worker` by its full path, and its `PATH` must hold Bun's directory for commands, the directory of `bun`, which runs the worker, and those of `node` and `npm`, which run its launcher and its updates. **Update CLIs** also looks for `otti-worker` on that `PATH`.
 3. To let agents build and run containers, run the service as a user who can use Docker (see [Docker](/get-started/add-worker#docker), and [below](#docker)).
 
 What the service manager needs to know about the worker:
 
 - **It updates itself.** The installed `otti-worker` is the worker's launcher: it starts the version the worker updated to, also after a restart, so the service needs no edit for an update. Installing another version with Bun changes what the next start runs.
-- **Exit codes.** A missing or refused sign-in exits with **78**: no credential for the server, or one that was revoked (`auth logout` with `otti`, `otti-worker` or `otti-browser` on the machine, or **Settings → CLI & API**), lost the access a worker needs, or names a label another sign-in's worker holds. Starting again does not help until you sign in again, so don't restart on 78. Every other failure, such as a server that cannot be reached at start, exits with 1 and is worth a retry. Without Bun on `PATH` (or in `~/.bun/bin`), `otti-worker` exits with 127 and says how to install it.
+- **Exit codes.** A missing or refused sign-in exits with **78**: no credential for the server, or one that was revoked (`auth logout` with `otti`, `otti-worker` or `otti-browser` on the machine, or **Settings → CLI & API**), lost the access a worker needs, or names a label another sign-in's worker holds. It also exits with 78 when its state needs you, for example when the worker's state is in two places or a move of its root didn't finish ([Where the worker keeps its state](/get-started/add-worker#where-the-worker-keeps-its-state)). Starting again does not help until you have fixed it, so don't restart on 78. Every other failure, such as a server that cannot be reached at start, exits with 1 and is worth a retry. Without Bun on `PATH` (or in `~/.bun/bin`), `otti-worker` exits with 127 and says how to install it.
 - **Stopping.** On a stop the worker ends its commands and terminals, then exits; give it a minute and a half before the service manager kills it (the examples below do).
 - **Restart after any exit.** The worker's life vest restarts the worker, but it stops like any process on a stray `SIGTERM`: an agent's `killall bun` or `pkill -u` stops it cleanly, with exit code 0. So the examples restart it after any exit but a stop by the service manager and a refused sign-in.
 - **Killed outright.** A worker killed outright (`kill -9`, the out-of-memory killer, a power cut, a stop that outlasts the service manager's wait, or its life vest after it hung) cannot release its workspace's lock. The lock names the worker's process, so the next start sees that it no longer runs, moves the lock aside and carries on; its log says so in one line, and the commands that were running are listed as ended, or with an unknown outcome when nothing recorded how they ended. A lock that an older worker release left doesn't say which process held it: unless the machine restarted since, the start refuses with `workspace_lock_unverified`, exits with 1 and shows the reason in **Settings → Workers**. If no other worker runs with the same `--root` and label, add `--archive-workspace-lock` to the service's `otti-worker start` once (or run that start in a terminal, which asks) and restart the service. Another worker that still holds the lock is named (`authority_busy`), and the service starts once that one stops. A remote holds no workspace, so it has no such lock.
@@ -79,7 +79,7 @@ Agents find `docker` in `/usr/bin`, where Linux packages put it ([Docker](/get-s
 
 ## macOS: launchd
 
-Save this as `~/Library/LaunchAgents/dev.r5d.worker.plist`, with your label, home directory and paths (`command -v otti-worker` shows where the installed CLI is; `/opt/homebrew/bin` holds Homebrew's Bun and Node.js):
+Save this as `~/Library/LaunchAgents/dev.octomerge.worker.plist`, with your label, home directory and paths (`command -v otti-worker` shows where the installed CLI is; `/opt/homebrew/bin` holds Homebrew's Bun and Node.js):
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -87,7 +87,7 @@ Save this as `~/Library/LaunchAgents/dev.r5d.worker.plist`, with your label, hom
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>dev.r5d.worker</string>
+  <string>dev.octomerge.worker</string>
   <key>ProgramArguments</key>
   <array>
     <string>/Users/alice/.bun/bin/otti-worker</string>
@@ -122,10 +122,12 @@ Save this as `~/Library/LaunchAgents/dev.r5d.worker.plist`, with your label, hom
 Then:
 
 ```bash
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.r5d.worker.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.octomerge.worker.plist
 tail -f ~/Library/Logs/otti-worker.log                # its log
-launchctl bootout gui/$(id -u)/dev.r5d.worker         # stop it and unload it
+launchctl bootout gui/$(id -u)/dev.octomerge.worker   # stop it and unload it
 ```
+
+An agent set up with the earlier label, `dev.r5d.worker`, keeps it: there is no need to change it. Use its label in the commands above.
 
 launchd records no times in the log file, so each line the worker writes there starts with the time it was written, in UTC ([The worker's log](/get-started/add-worker#the-worker’s-log)).
 
@@ -133,4 +135,13 @@ The agent starts when you log in. launchd has no counterpart of systemd's `Resta
 
 The agent runs as you, so the worker can use the Docker Desktop or OrbStack you run. Agents find `docker` in `/usr/local/bin`, which the `PATH` above includes: let Docker Desktop install its command-line tools for the system (**Settings → Advanced**), or OrbStack install its tools there ([Docker](/get-started/add-worker#docker)).
 
-`otti-browser` can run the same way on a Mac: a second agent, with its own label (`dev.r5d.browser`), log file and the installed `otti-browser start` with the `--base-url` **Settings → Browser** shows. A missing or refused sign-in ends it with 78 too.
+`otti-browser` can run the same way on a Mac: a second agent, with its own label (`dev.octomerge.browser`; one set up with the earlier label, `dev.r5d.browser`, keeps it), log file and the installed `otti-browser start` with the `--base-url` **Settings → Browser** shows. A missing or refused sign-in ends it with 78 too.
+
+## Moving the worker root
+
+To [move the worker's state](/get-started/add-worker#moving-the-worker-root) to another directory, keep the service from starting until the move is done, not only stopped: started while the move runs, or after a move that stopped part way, it could find nothing at the old path, and an `otti-worker` installed with an earlier release would then start a new worker there, with an empty workspace, which takes over the label. Run the move as the service's user:
+
+- **systemd:** `sudo systemctl disable --now otti-worker`, then the move. Change the lines of the unit and its drop-ins that the move prints, such as `--root`, `--config` or `WorkingDirectory=`, run `sudo systemctl daemon-reload`, then `sudo systemctl enable --now otti-worker`. For a user service, run the same commands as `systemctl --user`, without `sudo`.
+- **launchd:** `launchctl disable gui/$(id -u)/dev.octomerge.worker` and `launchctl bootout gui/$(id -u)/dev.octomerge.worker` (with your agent's label), then the move. `bootout` alone stops the agent only until your next login, when launchd loads it again and starts it; `disable` keeps it off until you enable it. Change the `ProgramArguments` and `WorkingDirectory` lines the move prints, then `launchctl enable gui/$(id -u)/dev.octomerge.worker` and `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.octomerge.worker.plist`.
+
+A service that doesn't name the root, as in the examples above, needs no change for a move to `~/.local/share/otti`. After a move to another directory, add `--root` with that directory to its `otti-worker start`. A move back goes the same way: disable the service, move, put back what you changed, and enable it again.
