@@ -703,15 +703,22 @@ asks the same model for a summary of the work so far, starting with the task
 as it stands now, then continues with a fresh context. That context starts
 from:
 
-- the latest messages from you and the answers you gave in the question
-  panel, word for word (long ones shortened, with a pointer to the full
-  message), and at most three recent messages from other agents, shortened.
-  A subagent also keeps the latest directions, questions and answers from the
-  chat that started it, four at most; that chat's reports are shortened with
-  the other agents' messages, and no agent's notification is kept (agents
-  give their messages these kinds, which the chat shows, such as **Agent
-  report**). Your original request isn't repeated: the summary says what the
-  task has become;
+- messages word for word (long ones shortened, with a pointer to the full
+  message): your latest messages and the answers you gave in the question
+  panel, and the messages the model chose to keep when it wrote the summary.
+  The model picks them from a numbered list of the messages it saw, choosing
+  those whose exact words still matter, such as rules you set, requirements,
+  decisions that still apply and open questions, and cites them in the summary
+  by number, such as [M12]. Octomerge copies them from the conversation, so
+  they are exact, and a message the model keeps choosing stays word for word
+  through later compactions. A subagent also keeps the latest direction,
+  question or answer from the chat that started it. No agent's notification
+  is kept (agents give their messages kinds, which the chat shows, such as
+  **Agent report**). Your original request is kept only when the model
+  chooses it; the summary says what the task has become. If the model names
+  no messages to keep, the fresh context keeps your latest messages and
+  answers, a subagent's latest directions from the chat that started it, and
+  a few recent messages from other agents, shortened;
 - a list of the images the agent had in view, such as screenshots and files
   it read. They aren't attached to the fresh context, and the agent reads
   again any it still needs. Images you attached to the messages it quotes stay
