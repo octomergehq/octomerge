@@ -1,9 +1,23 @@
 ---
 title: "Usage and limits"
-description: "What your account holds and runs against its limits: your workspace's files, storage and checkouts, your conversations, your archive, each project's history, and your agents running at once."
+description: "What your account holds and runs against its limits: the storage your workspace and conversations share, your workspace's files and checkouts, your conversations, your archive, each project's history, and your agents running at once."
 ---
 
 **Settings → Usage** shows what your account holds and runs against its limits, with the share of each limit in use. It updates by itself while it is open. A limit comes from your plan, from an administrator, or from Octomerge's defaults, and the page says which. The Standard plan and a team's [Team plan](/platform/teams#the-team-plan) give the defaults below; the Pro plan gives more.
+
+## Storage
+
+On a plan, your storage holds your [workspace](#workspace) and your [conversations](#conversations) together: 10 GiB on the Standard plan and for each member of a team's Team plan, 50 GiB on the Pro plan. An administrator may set another limit for your account. **Storage** shows what each of them holds of it, and where the limit comes from.
+
+From 80% of your storage the page warns you. Once your workspace and your conversations fill it:
+
+- Agents take no new work: new messages, new sessions, sub-agents and scheduled sessions are refused, saying what holds your storage and what frees it. A response that is being written when your storage fills up finishes, and so does work already under way, such as a sub-agent finishing its task.
+- Your workspace can't grow: a worker with new files stops for review, and new branches can't be created, as when your workspace is full.
+- Reading, deleting and archiving keep working, and nothing is deleted for you.
+
+To free space, delete conversations you no longer need (the largest are listed under [Conversations](#conversations)), archive or delete branches you no longer need, or remove files from your workspace. What you delete leaves your storage at once, and agents run again as soon as it is under its limit.
+
+Where neither a plan nor an administrator sets your limit, your workspace holds it alone, and your conversations count toward no limit.
 
 ## Workspace
 
@@ -15,7 +29,7 @@ Your workspace is the files your workers synchronize: every branch's checkout, a
 | Storage: the size of those files | 10 GiB | 50 GiB |
 | Checkouts: one per branch | 5,000 | 5,000 |
 
-Storage counts a file once for each place it is in: two branches that hold the same file count it twice. Sizes are binary (1 GiB is 1,024 MiB).
+On a plan, the size of your files counts toward the [storage](#storage) your workspace shares with your conversations, and the page shows it there. Storage counts a file once for each place it is in: two branches that hold the same file count it twice. Sizes are binary (1 GiB is 1,024 MiB).
 
 From 80% of a limit the page warns you. Only growth past a limit is refused: once your workspace is full, a worker with new files stops for review (a workspace remediation chat explains what it holds back, and the worker publishes by itself once there is room again), and new branches can't be created, until the workspace is under its limit again. Editing and deleting files, and archiving, keep working.
 
@@ -27,7 +41,7 @@ Under **What uses your workspace**, each project lists what its branches hold to
 
 ## Conversations
 
-**Conversations** shows what your conversations hold: their messages, tool calls and results, and the images and files stored for their models, at their full size, and the share of each. A conversation counts in full whatever its state: one you archived, and one whose history waits in [slower storage](/platform/persistence) because nobody opened it for a while. A sub-agent is a conversation of its own, and so is a fork, which holds its own copy of the history it was forked from. Records Octomerge keeps of each run and tool operation, and the [search index](/cli/otti#search-conversations), don't count. What a conversation adds counts within seconds.
+**Conversations** shows what your conversations hold: their messages, tool calls and results, and the images and files stored for their models, at their full size, and the share of each. On a plan, they count toward the [storage](#storage) they share with your workspace. A conversation counts in full whatever its state: one you archived, and one whose history waits in [slower storage](/platform/persistence) because nobody opened it for a while. A sub-agent is a conversation of its own, and so is a fork, which holds its own copy of the history it was forked from. Records Octomerge keeps of each run and tool operation, and the [search index](/cli/otti#search-conversations), don't count. What a conversation adds counts within seconds.
 
 Your largest conversations are listed below the total, largest first, with where each one is and when it was last active. Open one from its name, or delete it from its **⋯** menu: deleting a conversation erases its messages, tool results, images and files within minutes, and its size leaves the total at once. Its sub-agents stay, and so do files its agent saved on your workers ([Delete session…](/platform/workspace-chats)).
 

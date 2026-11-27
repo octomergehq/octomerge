@@ -113,7 +113,7 @@ otti get sessions --archived                  # WHY says by-you, for-you or the 
 | Its claims | Released. |
 | Its shares with teams | Kept: team members keep reading its conversations. |
 | Its name | Reserved: no new branch can take it while it is archived. |
-| Your workspace limits | Its files no longer count toward them (200,000 files and 10 GiB; 1,000,000 files and 50 GiB on the Pro plan). They count toward your archive quota instead: 50 GiB of archived files, 250 GiB on the Pro plan (by file size). |
+| Your workspace limits | Its files no longer count toward them (200,000 files, 1,000,000 on the Pro plan), nor toward the [storage](/platform/usage#storage) your workspace shares with your conversations (10 GiB, 50 GiB on the Pro plan). They count toward your archive quota instead: 50 GiB of archived files, 250 GiB on the Pro plan (by file size). |
 
 The archive keeps the branch's files and commits as Octomerge last synchronized them from your workers. It doesn't wait for your workers, so it takes seconds. A worker synchronizes a change, a commit included, within seconds of making it; to be sure a change made a moment ago is included, synchronize first ([`otti workspace sync`](/cli/otti#workspace-status-and-synchronization)). Whatever a worker changed in the branch and hasn't synchronized is lost when it deletes the checkout: right away for a connected worker, when it reconnects for an offline one. The preview names the offline workers.
 
