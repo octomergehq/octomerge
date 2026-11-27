@@ -23,6 +23,8 @@ Fix what the reason names, if anything, then choose **Retry import**. The import
 
 If adding an SSH or HTTPS project gets no answer, for example because your connection dropped, the project may have been added anyway: add it again with the same name and remote, and Octomerge continues with that project instead of saying the name is taken.
 
+A project without a remote can be added while its first commit can't be stored yet, for example because your synchronized workspace is at its file limit. The project then waits for its first commit, which creates its `main` branch: New project's notice says why, with **Retry**, which stores the first commit (it never adds the project again), and **Open project**. Opening the project's `main` or its **Repository** settings tries the first commit again, and while it still fails says why, with **Retry first commit**. Make room first if the reason asks for it.
+
 ## SSH remotes
 
 Enter the repository's SSH URL, either `git@gitlab.com:group/repo.git` or `ssh://git@git.example.com:2222/group/repo.git`. Once you have connected GitHub repositories, `github.com` repositories use the GitHub option instead; until then, and on an installation that doesn't offer GitHub, they are SSH remotes like any other host's.
@@ -175,6 +177,7 @@ The project's **Repository** settings show the remote, the key it uses with its 
 - **Remove remote**: the project keeps its branches and history and has no remote afterwards. Octomerge deletes the project's deploy key; remove it on the host too. Deleting the project also deletes its key.
 - **Add a remote** to a project without one: a GitHub repository (where your installation offers GitHub), an SSH remote or an HTTPS remote. The project keeps its history; Octomerge only records the remote.
 - **Retry import**: when the repository's import failed or stopped before it finished ([If an import fails](#if-an-import-fails)).
+- **Retry first commit**: when a project without a remote still waits for its first commit ([If an import fails](#if-an-import-fails)).
 
 For an HTTPS remote they show which credential it uses, the project's own or your account's for the host, and when it was saved and last used. **Replace credentials** checks the new ones before switching to them while the remote works; **Use account credential instead** deletes the project's own token. Removing the remote deletes the project's token: revoke it on the host too if nothing else uses it.
 
