@@ -14,11 +14,13 @@ Account files apply across your projects and workers. They synchronize with the 
 
 ## Write instructions
 
-Use **Settings → Instructions** to view and edit account instructions. For a branch, choose **Settings** in the branch's header (on a phone, in its menu), or **Branch settings** in the menu of one of its sessions in the sidebar, then **Instructions & skills**, to edit its root `AGENTS.md`, view nested instruction files, and see available account and project skills. Viewing and saving work even when no worker is online.
+Use **Settings → Instructions** to view, edit and delete account instructions. For a branch, choose **Settings** in the branch's header (on a phone, in its menu), or **Branch settings** in the menu of one of its sessions in the sidebar, then **Instructions & skills**, to edit its root `AGENTS.md`, view nested instruction files, and see available account and project skills. Viewing and saving work even when no worker is online.
 
 Keep `AGENTS.md` focused on standing instructions, such as test commands, coding conventions, and project boundaries. More-specific instruction files override broader ones for the paths they cover: nested files override the project root, which overrides account instructions. Your explicit request takes precedence over all of them. Agents are told to read nested `AGENTS.md` files before working in those directories.
 
 Account instructions have a 100,000-character limit. Long project instruction files are bounded in the agent's initial instructions, with a notice telling the agent to read the rest.
+
+To remove your account instructions, choose **Delete** in **Settings → Instructions** and confirm. Agents receive no account instructions from their next model request, every worker deletes its copy of the file, and the page says you have no account `AGENTS.md` yet. Delete removes the version the page shows: if somebody, or an agent, changed the file since the page loaded it, nothing is deleted and the page shows the current version. An empty `AGENTS.md` gives agents nothing either, but it stays a file until you delete it.
 
 To see how much of the agent's context your instructions and skills use, or to leave them out of one conversation, hover the composer's context meter: see [What the agent's context holds](/platform/workspace-chats#what-the-agent’s-context-holds).
 
@@ -27,10 +29,10 @@ You can also use the [CLI](/cli/otti#account-instructions-and-credentials):
 ```bash
 otti account instructions get
 otti account instructions set --file AGENTS.md
-printf '' | otti account instructions set --stdin
+otti account instructions delete
 ```
 
-These commands read and update the canonical account file, not a local project file. Empty input clears its content.
+These commands read and update the canonical account file, not a local project file. Empty input to `set` saves an empty file; `delete` removes the file.
 
 ## Create a skill
 
