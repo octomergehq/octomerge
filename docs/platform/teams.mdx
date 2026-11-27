@@ -3,7 +3,7 @@ title: "Teams"
 description: "Share sessions, branches or whole projects read-only with your team, mention a session so your agent reads it, link a branch's team page from a pull request, and connect issue trackers."
 ---
 
-A team lets teammates follow agent work in Octomerge. You share a session, every session on a branch, or every session of a project **read-only** with a team. Its members read the conversation live, with its status, work items and pull request, and can [mention it](#mention-a-session) so their own agent reads it. They can't send messages, answer the agent's questions, stop or fork a session, or reach your workers.
+A team lets teammates follow agent work in Octomerge. You share a session, every session on a branch, or every session of a project **read-only** with a team. Its members read the conversation live, with its status, work items and pull request, and can [mention it](#mention-a-session) so their own agent reads it. They can't send messages, answer the agent's questions, stop or fork a session, or reach your workers: the conversation's files they open come to them through Octomerge ([Files of a shared session](#files-of-a-shared-session)).
 
 ## Create a team and invite members
 
@@ -40,7 +40,11 @@ Open the menu (**⋯**) of a chat in the sidebar's list, where **Share…** is u
 
 A subagent you [detach from the chat that started it](/platform/workspace-chats#order-paging-and-subagents) is no longer one of its subagents. A team that could read it only as part of that chat keeps reading it: the detach gives it a share of its own with that team, which you can revoke like any other.
 
-The whole transcript becomes readable to the team's members, including tool output such as command results and file contents, and what the agent was sent: its system prompt (your instructions) and its tool definitions, which `otti` shows them ([Reading it with otti](#reading-it-with-otti)). What the agent looked up is tool output too, such as the names and descriptions of your environment variables, never their values. Share only what the team may read. The models the session ran on show by the display names you gave them in your model settings, such as **Claude Opus 5.5 · High**, as they do in your own chat. Your [tags](/platform/workspace-chats#tags) and which chats are unseen for you stay private: team members never see them, and their reading a shared chat doesn't mark it seen for you.
+The whole transcript becomes readable to the team's members, including tool output such as command results and file contents, and what the agent was sent: its system prompt (your instructions) and its tool definitions, which `otti` shows them ([Reading it with otti](#reading-it-with-otti)). What the agent looked up is tool output too, such as the names and descriptions of your environment variables, never their values. Share only what the team may read.
+
+So do the conversation's own files: the files its messages link (as links or images), the files attached to its messages, and the downloads and page exports its browser saved, when they are in the artifacts folder of the session or of one of its subagents the team reads, in its checkout and synchronized by the workspace (never ignored files, such as `.env` or `node_modules/`), in `$OTTI_ROOT/plans/`, or among the session's memory notes. A link to any other file, such as one in `/tmp`, your home folder or another project, isn't shared. Each file is shared as it was when the message linked it: Octomerge records its size and checksum at that moment, and teammates get exactly those bytes, never a later version. **Files…** in the chat's menu lists the chat's files: there **Stop sharing** stops sharing one, and **Share file** shares one the rule leaves out, by copying it, as it is then, into the conversation's artifacts folder.
+
+The models the session ran on show by the display names you gave them in your model settings, such as **Claude Opus 5.5 · High**, as they do in your own chat. The page doesn't name your workers: the turn dividers show the model and effort only, and its rows, notes and status leave the worker out. What the conversation recorded still shows as it is, including tool output and the commands the agent ran, which may name them. Your [tags](/platform/workspace-chats#tags) and which chats are unseen for you stay private: team members never see them, and their reading a shared chat doesn't mark it seen for you.
 
 A shared chat shows **Shared** in its top bar (on phones, **Share…** in the chat menu says who can read it). Point at it to see which teams can read the chat and how it is shared; click it to manage sharing. In the sidebar, an open project's chip names the team that reads it or has sessions in it, such as "Acme", and a session's card says which teams it is shared with. Select the chip to see which team reads what, to open a team, or to manage sharing.
 
@@ -141,13 +145,28 @@ their own ([Team integrations](/cli/api-client#team-integrations)).
 
 ## Reading a shared session
 
-A shared session opens at `https://octomerge.dev/t/<team>/s/<session>`. It updates live, and you can search it and browse its branches, its parent session and its subagents. There is no message box, and nothing on the page changes the session or reaches its owner's workers: interactive app views aren't shown, and questions the agent asks are shown for information only.
+A shared session opens at `https://octomerge.dev/t/<team>/s/<session>`. It updates live, and you can search it and browse its branches, its parent session and its subagents. There is no message box, and nothing on the page changes the session: interactive app views aren't shown, and questions the agent asks are shown for information only. Opening one of its files is the only thing that may read its owner's worker, through Octomerge ([below](#files-of-a-shared-session)).
 
 Each session has one driver, its owner, whose name is over their messages. Where your message box would be, a line says so: "Alex Kim drives this session. You follow it live." To use its work, point your agent at it: **Copy link** copies the session's link, and pasted into a message in any chat of yours, New chat included, it becomes a mention ([Mention a session](#mention-a-session)), so your agent reads the session. You can't continue a teammate's session itself: a session of yours wouldn't have their worker or their files.
 
 Its header is a branch's header without the branch's views ([A branch's header and pages](/platform/workspace-chats#a-branch’s-header-and-pages)): below the session's name, the project, the branch, which opens its team page, and whose session it is; then the branch's pull request and the session's links. **Read-only**, where a chat of yours shows **Shared**, says who shared it, with which team and how.
 
-Images show as the agent's model received them, from the copies Octomerge keeps with the conversation: in the transcript, and under **Viewed images…** in the top bar's menu. An image Octomerge didn't keep, such as one from before Octomerge kept these copies, stays on its owner's worker and shows as not shared.
+### Files of a shared session
+
+The session's files open as they do in your own chat: select a file link, an image, an attachment, or **Preview** on a download, and the file shows in a dialog, with pictures, text, Markdown and code, recordings and videos, and **Download** for the whole file. The plan the session shows is above the line at the bottom. **Files…** in the top bar's menu lists the session's files you can open, newest first, and the images the agent's model saw.
+
+You get the file exactly as it was when the message linked it. When nothing has those bytes any more, the file says why:
+
+| You see | Why |
+| --- | --- |
+| **Not shared** | The file is outside the conversation's own files, its owner stopped sharing it, or the message is from before Octomerge recorded files. |
+| **Changed since it was linked** | The file changed after the message linked it, and nothing kept the version it linked. A later message that links the new version opens it. |
+| **Deleted** | The file no longer exists. |
+| **Available when Alex Kim's worker is online** | Only its owner's worker has the file, and that worker is offline. |
+
+Octomerge reads a file from its file cache, from the synchronized workspace (files of the checkout, plans and memory notes), or from its owner's worker, and never tells you which worker. The file cache keeps copies so that files open while their owner's worker is offline: files of up to 25 MiB that a shared conversation links, and files of up to 1 GiB that someone opened. A copy goes after 30 days without being opened, the least recently opened first once an owner's cached files pass 2 GiB, and when no conversation names the file any more. The cache doesn't count toward anyone's storage. Your browser keeps files it showed, by their checksum, as it keeps images.
+
+Images show as the agent's model received them, from the copies Octomerge keeps with the conversation, in the transcript and in **Files…**. An image the agent only read, and Octomerge didn't keep, isn't shared.
 
 To return to your original chat, choose **Open source session** in the header (on a phone, in **Read-only**), or at the bottom of the page, where the line says "You drive this session." It appears when you have access to the source session. The shared view itself stays read-only.
 
@@ -164,7 +183,11 @@ otti -s SESSION_ID conversation -f                  # follow it live
 otti conversation inspect-node SESSION_ID NODE_ID   # a node from Copy reference in a message's menu
 otti conversation inspect-work SESSION_ID WORK_ID --summary
 otti sessions children SESSION_ID
+otti conversation files SESSION_ID                  # the session's files you can open
+otti conversation file SESSION_ID PATH_OR_FILE_ID   # one of them, saved and checked
 ```
+
+`conversation file` saves exactly the bytes the message linked: in an agent's shell into its own artifacts folder, otherwise into the current folder, and checks their checksum. It reads files as the page does, so a file that isn't shared or that nothing has any more says why.
 
 Before the output, a line on stderr says whose session it is and the team you read it through, such as "Alex Kim (@alex) shares this session read-only with team Acme (acme)", with its team page; `--json` returns it as `shared`. When several of your teams can read the session, otti reads it through the team whose share is nearest to it, as your sidebar does. Reading changes nothing in the session and reaches none of its owner's workers: `inspect-work` gives a command's outcome only when the conversation records it. Each command checks again that a share still covers the session, so once it is revoked the commands answer `Conversation not found`.
 
@@ -188,7 +211,7 @@ The agent of a shared session is told which teams can read its conversation and 
 
 Issue trackers and other tools can follow what is shared with a team too. On the team's page, open **Integrations** (`https://octomerge.dev/t/<team>/integrations`). Admins manage two things there:
 
-- **API keys**: read-only credentials of the team. A key reads exactly what a member reads, through the [team API](/cli/api-client#team-integrations): shared sessions and branches with their status, work items, pull request and links, a conversation overview for summaries, and the team's event feed. It can't act on anything, and every request that would change something answers `403`. Each key is shown once, when it is created; the list shows when it was last used, and **Revoke** stops it at once. A key belongs to the team: it keeps working when the admin who created it leaves, until an admin revokes it.
+- **API keys**: read-only credentials of the team. A key reads exactly what a member reads, through the [team API](/cli/api-client#team-integrations): shared sessions and branches with their status, work items, pull request and links, a conversation overview for summaries, the shared sessions' files, and the team's event feed. It can't act on anything, and every request that would change something answers `403`. Each key is shown once, when it is created; the list shows when it was last used, and **Revoke** stops it at once. A key belongs to the team: it keeps working when the admin who created it leaves, until an admin revokes it.
 - **Webhooks**: URLs that receive every event of the team, signed with a secret: a session was shared, a share was revoked, a session's status changed, a session's work items or name changed, a session or a branch was archived or unarchived for the team, or a branch's pull request was opened or updated. Each webhook has a **delivery log** with every attempt and its response. A failed delivery is retried for about eleven hours; you can also deliver an event again, or send a test `ping`.
 
 Members see the API and feed addresses on the same page. An integration that Octomerge can't reach, such as a tracker behind a firewall, follows the event feed instead of a webhook.
