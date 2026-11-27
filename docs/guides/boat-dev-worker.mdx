@@ -33,7 +33,7 @@ While the worker is offline, chats on it pause with **Paused until worker '…' 
 ## Create the sandbox
 
 1. In **Settings → Workers → Enrollment tokens**, enter a label for the worker, such as `boat-1`, choose **Worker** and create the token. In the setup checklist, choose **A boat.dev sandbox** under **Where will your agents run?** instead.
-2. Choose **boat.dev** and copy the setup script, `r5d-boat-setup.sh`. The token in it works once, within an hour, so create the sandbox within that hour.
+2. Choose **boat.dev** and copy the setup script, `otti-boat-setup.sh`. The token in it works once, within an hour, so create the sandbox within that hour.
 3. In boat's dashboard, open **Sandboxes → Advanced create** (the button beside **New**):
    - choose a size; `default` (4 vCPU, 8 GB) suits most work;
    - keep **Auto-stop after** at 1 hour, or set a longer time;
@@ -43,10 +43,12 @@ While the worker is offline, chats on it pause with **Paused until worker '…' 
    With the boat CLI, download the script instead and run, in its directory:
 
    ```bash
-   boat new --no-env --name "Octomerge boat-1" --setup-file r5d-boat-setup.sh
+   boat new --no-env --name "Octomerge boat-1" --setup-file otti-boat-setup.sh
    ```
 
 4. The worker shows under **Your workers** within about a minute. To follow the setup, `boat info <sandbox>` shows whether it succeeded, and `boat ssh <sandbox> journalctl -u otti-worker -f` the worker's log.
+
+A sandbox created with an earlier script, `r5d-boat-setup.sh`, keeps the names that script gave it. Nothing depends on them, so it needs no change.
 
 ## Start and stop it
 
@@ -185,6 +187,6 @@ Delete the sandbox with **Delete permanently** in its menu in boat's dashboard, 
 
 ## If something goes wrong
 
-- **The worker doesn't connect after you create the sandbox.** `boat info <sandbox>` shows the setup's status and error. A token works once, within an hour: create a new token, copy the new script into the sandbox and run it there (`bash r5d-boat-setup.sh` in `boat ssh <sandbox>`). Running the script again finishes what a failed setup left.
+- **The worker doesn't connect after you create the sandbox.** `boat info <sandbox>` shows the setup's status and error. A token works once, within an hour: create a new token, copy the new script into the sandbox and run it there (`bash otti-boat-setup.sh` in `boat ssh <sandbox>`). Running the script again finishes what a failed setup left.
 - **The worker doesn't connect after you start the sandbox.** `boat ssh <sandbox> journalctl -u otti-worker -n 50` shows why; `systemctl status otti-worker` whether it runs.
 - **The sandbox stopped while agents worked.** Its auto-stop time came. Start it again: the chats continue. Add the keep-alive skill, or give the sandbox a longer auto-stop time in boat's dashboard (**Stops in** on its row).
