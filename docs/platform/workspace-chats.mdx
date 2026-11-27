@@ -844,10 +844,15 @@ subagents' questions are emailed too. The email lists what is still
 unanswered a minute after it was asked (the questions with their options, or
 the names of the environment values), names the project, branch and
 conversation, and links to the conversation, where you answer. Replying to the
-email does not reach the agent. If it is answered within that minute, by you or
-by another agent, no email is sent. A conversation sends you at most one such
-email every 10 minutes; what it asks meanwhile goes in the next one, unless it
-was answered by then.
+email does not reach the agent. If a request is answered within that minute,
+by you or by another agent, no email is sent. A conversation sends you at most
+one such email every 10 minutes; what it asks meanwhile goes in the next one,
+unless it was answered by then.
+The questions, their options and the descriptions of environment values read
+as the chat shows them, without Markdown syntax. A link the agent wrote isn't
+a link in the email: its text is followed by its web or email address, so you
+see where it leads, and a link to one of the conversation's files reads as its
+text.
 These emails are on by default. To stop them, including the ones not sent yet,
 turn off **When an agent asks me something** under **Settings →
 Notifications**.
