@@ -59,10 +59,12 @@ You can run the same lookup yourself: `otti -s SESSION_ID get skills` lists a ch
 
 ## Notes
 
-Notes are what your agents keep for later conversations: durable facts and procedures that outlast one chat, such as how a project deploys, which servers and environments it uses, or the names of the credentials it needs. Each note is a Markdown file about one topic:
+Notes are what your agents keep for later conversations that no repository should hold: durable facts and procedures that outlast one chat. Each note is a Markdown file about one topic:
 
-- **Account notes**, in `$OTTI_ROOT/notes/account/`, hold what applies to all of your projects, such as your servers, clusters and shared services.
-- **Project notes**, in `$OTTI_ROOT/notes/projects/<project>/`, hold what a project needs but its repository shouldn't, such as the deployment steps of a public repository. Every branch and chat of the project shares them.
+- **Account notes**, in `$OTTI_ROOT/notes/account/`, hold what applies across your projects and belongs to no repository, such as which project documents your shared infrastructure, or services and accounts no repository describes.
+- **Project notes**, in `$OTTI_ROOT/notes/projects/<project>/`, hold what a project's agents need but its repository must not, such as a public repository's private deployment details: its hosts, environments and the names of the credentials it uses. Every branch and chat of the project shares them.
+
+**Repository first.** What belongs in a repository goes in the repository, not in notes. A private repository documents its own deployment, infrastructure and conventions in its docs or `AGENTS.md`, and shared infrastructure is documented in the repository that manages it. Agents follow this: they put such knowledge in the repository (or propose the change to you), check whether a repository is public before deciding something can't go there, write a note only for what no repository should hold, and propose moving a note that belongs in a repository. A note can also just say where the knowledge lives.
 
 Notes are kept outside every checkout, so they never reach a repository, and they synchronize with the rest of your account workspace. Unlike instructions, which say how you want agents to work, notes record what is true, and anything true can go out of date. So every note says when it was last updated: it starts with front matter whose `updated` field is a date and time in UTC.
 
@@ -73,10 +75,10 @@ updated: 2026-11-27T14:05:00Z
 
 # Deployment
 
-The service deploys from main with `make deploy`, which needs the DEPLOY_TOKEN secret.
+This public repository deploys to the host demo-staging with `make deploy`, which needs the DEPLOY_TOKEN secret.
 ```
 
-Before they start a task, agents read the account's notes and their project's that bear on it. Your request, `AGENTS.md` and what they find in the project take precedence over a note: the older a note, the more they check it, and they confirm what it says before an action that is hard to undo. When an agent learns something a later conversation would need, or finds a note wrong or out of date, it adds, corrects or deletes the note, sets its `updated` time, and says so in its reply. Agents don't record a task's progress in notes (that is the chat's [session memory](/platform/workspace-chats#session-working-memory)), nor what the repository already documents. Never put secrets in notes; name the environment variable instead.
+Before they start a task, agents read the account's notes and their project's that bear on it. Your request, `AGENTS.md` and what they find in the project take precedence over a note: the older a note, the more they check it, and they confirm what it says before an action that is hard to undo. When an agent learns something a later conversation would need and no repository should hold, or finds a note wrong or out of date, it adds, corrects or deletes the note, sets its `updated` time, and says so in its reply. Agents don't record a task's progress in notes (that is the chat's [session memory](/platform/workspace-chats#session-working-memory)), nor what a repository documents or should document. Never put secrets in notes; name the environment variable instead.
 
 Use **Settings → Notes** to read and edit your account notes, and a project's **Settings → Notes** for its own. Each note shows when it was last updated. A note without a date, or not updated in 90 days, is marked so you can check it: open it to correct it, choose **Mark as up to date** in its menu when it still holds, or **Delete** it. **New note** creates one from a title. Saving a note there sets its `updated` time, and, like other files here, saves check the version you opened and work when no worker is online.
 
