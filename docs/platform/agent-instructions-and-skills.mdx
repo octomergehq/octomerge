@@ -1,16 +1,16 @@
 ---
-title: "AGENTS.md and skills"
-description: "Give agents standing instructions and reusable procedures across your account or in one project."
+title: "AGENTS.md, skills and notes"
+description: "Give agents standing instructions, reusable procedures and dated notes across your account or in one project."
 ---
 
 ## Choose a scope
 
-| Scope | Instructions | Skills |
-| --- | --- | --- |
-| Account | `$OTTI_ROOT/AGENTS.md` | `$OTTI_ROOT/skills/<name>/SKILL.md` |
-| Project | `AGENTS.md` at the checkout root | `.agents/skills/<name>/SKILL.md` |
+| Scope | Instructions | Skills | Notes |
+| --- | --- | --- | --- |
+| Account | `$OTTI_ROOT/AGENTS.md` | `$OTTI_ROOT/skills/<name>/SKILL.md` | `$OTTI_ROOT/notes/account/<name>.md` |
+| Project | `AGENTS.md` at the checkout root | `.agents/skills/<name>/SKILL.md` | `$OTTI_ROOT/notes/projects/<project>/<name>.md` |
 
-Account files apply across your projects and workers. They synchronize with the rest of your account workspace, without a project commit. Project files belong to the project's Git repository: edits are ordinary uncommitted changes on that branch until you commit them. Existing project skills in `.claude/skills/` are also discovered; create new ones in `.agents/skills/`.
+Account files apply across your projects and workers. They synchronize with the rest of your account workspace, without a project commit. Project files belong to the project's Git repository: edits are ordinary uncommitted changes on that branch until you commit them. Existing project skills in `.claude/skills/` are also discovered; create new ones in `.agents/skills/`. Notes are account files at both scopes: a project's notes are outside its checkouts and never reach its repository (see [Notes](#notes)).
 
 ## Write instructions
 
@@ -57,6 +57,31 @@ Agents look skills up instead of carrying a list of them: before a task, an agen
 
 You can run the same lookup yourself: `otti -s SESSION_ID get skills` lists a chat's skills, `otti -p PROJECT -b BRANCH get skills` a branch's, and `otti get skills` your account's.
 
+## Notes
+
+Notes are what your agents keep for later conversations: durable facts and procedures that outlast one chat, such as how a project deploys, which servers and environments it uses, or the names of the credentials it needs. Each note is a Markdown file about one topic:
+
+- **Account notes**, in `$OTTI_ROOT/notes/account/`, hold what applies to all of your projects, such as your servers, clusters and shared services.
+- **Project notes**, in `$OTTI_ROOT/notes/projects/<project>/`, hold what a project needs but its repository shouldn't, such as the deployment steps of a public repository. Every branch and chat of the project shares them.
+
+Notes are kept outside every checkout, so they never reach a repository, and they synchronize with the rest of your account workspace. Unlike instructions, which say how you want agents to work, notes record what is true, and anything true can go out of date. So every note says when it was last updated: it starts with front matter whose `updated` field is a date and time in UTC.
+
+```markdown
+---
+updated: 2026-11-27T14:05:00Z
+---
+
+# Deployment
+
+The service deploys from main with `make deploy`, which needs the DEPLOY_TOKEN secret.
+```
+
+Before they start a task, agents read the account's notes and their project's that bear on it. Your request, `AGENTS.md` and what they find in the project take precedence over a note: the older a note, the more they check it, and they confirm what it says before an action that is hard to undo. When an agent learns something a later conversation would need, or finds a note wrong or out of date, it adds, corrects or deletes the note, sets its `updated` time, and says so in its reply. Agents don't record a task's progress in notes (that is the chat's [session memory](/platform/workspace-chats#session-working-memory)), nor what the repository already documents. Never put secrets in notes; name the environment variable instead.
+
+Use **Settings → Notes** to read and edit your account notes, and a project's **Settings → Notes** for its own. Each note shows when it was last updated. A note without a date, or not updated in 90 days, is marked so you can check it: open it to correct it, choose **Mark as up to date** in its menu when it still holds, or **Delete** it. **New note** creates one from a title. Saving a note there sets its `updated` time, and, like other files here, saves check the version you opened and work when no worker is online.
+
+Deleting a project deletes its notes with it, so a new project with the same name starts without them. A chat's context panel lists the notes guidance as **Notes**; turning it off leaves the notes in place but out of the agent's instructions.
+
 ## Saves, synchronization, and conflicts
 
 A save in the UI or CLI reaches agents on their next model request for `AGENTS.md`, and the next time they list skills for a skill. An edit made on a worker reaches the other workers and Octomerge within seconds, once the worker has synchronized it; until then an agent can read the local file directly.
@@ -65,7 +90,7 @@ Saves check the version you opened, and **Save** answers once the file is saved.
 
 Every worker takes a save in within seconds, like any other change of the workspace. A worker that edited the same file and had not synchronized that edit yet merges the two line by line: edits of different lines are both kept, and edits of the same lines, or of lines next to each other, are a conflict, which stops that worker for a remediation that keeps both. Deleting a skill deletes its folder on every worker: the files a worker had synchronized go. A worker that was offline keeps what it did there meanwhile: a file it changed stops it for a conflict remediation, and a file it added is synchronized again.
 
-New account files outside project checkouts count toward the 5 MiB of new content a worker publishes without a review. Keep large assets elsewhere. Do not put secrets in instructions or skills; refer to configured account environment-variable names instead. Skills describe procedures, not additional permissions.
+New account files outside project checkouts count toward the 5 MiB of new content a worker publishes without a review. Keep large assets elsewhere. Do not put secrets in instructions, skills or notes; refer to configured account environment-variable names instead. Skills describe procedures, not additional permissions.
 
 Existing account instructions are moved into `AGENTS.md` during the installation upgrade. If that file already has different content, it is kept and the old instructions are preserved as `AGENTS.account-instructions.md` for you to merge.
 
