@@ -77,6 +77,16 @@ A user service runs in your own systemd instance (`user@<uid>.service`), which k
 
 Agents find `docker` in `/usr/bin`, where Linux packages put it ([Docker](/get-started/add-worker#docker)).
 
+### Package upgrades
+
+On Debian and Ubuntu, needrestart restarts the services that use a library a package upgrade replaced, also after an unattended upgrade. Agents' commands run in the worker's service, so a library that any of them loaded is enough for needrestart to restart the worker, and the restart ends every command the worker runs: the agents are told, and start again what they still need. To restart the worker yourself instead, when it suits you, keep needrestart from restarting it:
+
+```bash
+echo '$nrconf{override_rc}{qr(^otti-worker\.service$)} = 0;' | sudo tee /etc/needrestart/conf.d/otti-worker.conf
+```
+
+needrestart then lists the worker among the restarts it defers.
+
 ## macOS: launchd
 
 Save this as `~/Library/LaunchAgents/dev.r5d.worker.plist`, with your label, home directory and paths (`command -v otti-worker` shows where the installed CLI is; `/opt/homebrew/bin` holds Homebrew's Bun and Node.js):
