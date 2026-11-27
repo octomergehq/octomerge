@@ -206,7 +206,7 @@ Narrow a search with `-p PROJECT` (a slug or ID), `-b BRANCH`, `-s SESSION_ID`, 
 
 Each hit names when it happened, what it is (a message and who wrote it, a tool call or an error, with the tool), its session's project, branch, name and ID, a snippet, and how to open it: `otti conversation inspect-node SESSION_ID NODE_ID`, also for a session a team shares with you, whose hits name its owner and team page too. `--json` returns the hits with their `sessionId`, `nodeId`, `kind`, `snippet` and the match's offsets in it, and `nextCursor`. A conversation's newest messages reach the search index within seconds; when some of yours have not yet, the output says how many.
 
-Records also say who asked for them: `describe branch` names who created the branch (an agent session, you, or a launch link), `describe branch-deletion` and `describe branch` who asked to delete it (`describe branch-deletion` also once the deletion completed), and `workspace status` who started each worker operation in progress and each worker's latest sync.
+Records also say who asked for them: `describe branch` names who created the branch (an agent session or you, a launch link's new branch included; some older branches name the launch link), `describe branch-deletion` and `describe branch` who asked to delete it (`describe branch-deletion` also once the deletion completed), and `workspace status` who started each worker operation in progress and each worker's latest sync.
 
 ## Start and continue a conversation
 

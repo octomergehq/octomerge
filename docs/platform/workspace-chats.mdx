@@ -589,13 +589,14 @@ project checkouts and account files: 10 GiB of files and 200,000 files, or
 50 GiB and 1,000,000 files on the Pro plan. `otti workspace status` shows what it holds against
 yours. A change that would take it past either is refused, and says how much
 the workspace would hold: a new branch or project fails with that reason (in
-the sidebar, and in a session started from a launch link), and a worker that
+the sidebar, and on the message in New Chat's queue that was to create it, a
+launch link's included), and a worker that
 would publish it stops for an **Unsafe File Remediation**, whose agent excludes
 only content no project needs and otherwise asks you to make room. Archive or
 delete branches you no longer need: their files leave the workspace at once (an
 archived branch's stay readable on Octomerge and come back when you unarchive it;
 see [Archiving](/platform/archiving)), and creating the branch again, or
-opening its launch link again, then succeeds. A stopped worker doesn't wait for
+**Retry** on that message, then succeeds. A stopped worker doesn't wait for
 its remediation: once the workspace has room for what it holds back (branches
 archived or deleted, or larger limits), it publishes by itself within a minute,
 its remediation chat closes with the reason, and the paused chats continue. The

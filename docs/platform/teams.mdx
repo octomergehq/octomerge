@@ -46,7 +46,7 @@ A shared chat shows **Shared** in its top bar (on phones, **Share…** in the ch
 
 The share dialog lists every share of a session, including the branch or project shares and the shares of the session that started it, and **Revoke** stops any of them. Revoking takes effect at once. Team admins can also remove shares from the team's **Members and shares** page.
 
-A [launch link](/platform/launch-links) can ask to share the session it starts; the dialog preselects the team when you are a member of it. When the branch or project the session starts in is already shared with a team, the dialog shows that share instead and adds none. Until its first message is sent, no team can read a launched session, even on a shared branch or in a shared project, and the sidebar marks no sharing on it.
+A [launch link](/platform/launch-links) can ask to share the session it starts; the dialog preselects the team when you are a member of it. When the branch or project the session starts in is already shared with a team, the dialog shows that share instead and adds none. The session is created with its share once its branch exists, right before its first message is sent, so the team reads it from the start; a launch that fails before then leaves no session.
 
 ### Share from otti
 
