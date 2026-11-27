@@ -766,7 +766,8 @@ Hover it, or select it, to see what that request was made of, with an
 estimated token count for each part:
 
 - **System prompt**: Octomerge's instructions to the agent, in sections such as the
-  base prompt, platform guidance, session memory, this conversation's project and
+  base prompt, platform guidance, session memory, where your account's and the
+  project's [notes](/platform/agent-instructions-and-skills#notes) are, this conversation's project and
   branch, and how the agent looks up what changes while it works: your
   workers, the models, your environment's names and descriptions, the teams
   the chat is shared with.
@@ -894,7 +895,8 @@ child handoffs, and verification status.
 The directory remains available after a context reset or resume. Agents update
 notes at meaningful milestones and read them when needed; their contents are
 not automatically added to every model request. Each session has its own folder,
-separate from durable project or user memory.
+separate from your account's and projects' [notes](/platform/agent-instructions-and-skills#notes),
+where agents keep what later conversations need.
 
 The folder exists from the start of every chat, including subagents, forks and
 issue implementations, on whichever worker the chat runs. An empty folder is not
