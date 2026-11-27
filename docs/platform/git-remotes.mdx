@@ -12,6 +12,17 @@ A project has at most one remote, its `origin`. When you start a project on **Ne
 
 Each project name is unique in your account, and you cannot add the same repository twice, however its URL is spelled.
 
+## If an import fails
+
+Octomerge imports the repository when you add the project (for an SSH remote, once **Check access** can read it). If the import doesn't finish, the project's setup says why, on **New project** and in the project's **Repository** settings:
+
+- **Import failed**: the host refused something that won't change by itself, such as credentials or a key without access, a repository that isn't there or a certificate Octomerge can't verify. The reason says what to fix.
+- **Import interrupted**: the import stopped before it finished, for example because the host or the network didn't answer.
+
+Fix what the reason names, if anything, then choose **Retry import**. The import starts again, and the project keeps its name, remote and credentials.
+
+If adding an SSH or HTTPS project gets no answer, for example because your connection dropped, the project may have been added anyway: add it again with the same name and remote, and Octomerge continues with that project instead of saying the name is taken.
+
 ## SSH remotes
 
 Enter the repository's SSH URL, either `git@gitlab.com:group/repo.git` or `ssh://git@git.example.com:2222/group/repo.git`. Once you have connected GitHub repositories, `github.com` repositories use the GitHub option instead; until then, and on an installation that doesn't offer GitHub, they are SSH remotes like any other host's.
@@ -34,7 +45,7 @@ If a host later presents a different key, Pull, Push and imports fail with a **h
 
 ### Check access
 
-**Check access** tests read access, and write access with a dry run that changes nothing on the host. It names whatever is missing, for example a deploy key without write access. Once read access works, the same check imports the repository and then shows the project ready, or why the import failed; an empty repository starts with a first commit. Until then the project waits, and you can check again from the project's settings.
+**Check access** tests read access, and write access with a dry run that changes nothing on the host. It names whatever is missing, for example a deploy key without write access. Once read access works, the same check imports the repository and then shows the project ready, or why the import failed ([Retry import](#if-an-import-fails) tries it again); an empty repository starts with a first commit. Until then the project waits, and you can check again from the project's settings.
 
 ### SSH host aliases
 
@@ -163,6 +174,7 @@ The project's **Repository** settings show the remote, the key it uses with its 
 - **Use account key** or **Use a deploy key instead**: switch between the project's own key and your account key for the host. Switching to the account key first checks that it can read the repository.
 - **Remove remote**: the project keeps its branches and history and has no remote afterwards. Octomerge deletes the project's deploy key; remove it on the host too. Deleting the project also deletes its key.
 - **Add a remote** to a project without one: a GitHub repository (where your installation offers GitHub), an SSH remote or an HTTPS remote. The project keeps its history; Octomerge only records the remote.
+- **Retry import**: when the repository's import failed or stopped before it finished ([If an import fails](#if-an-import-fails)).
 
 For an HTTPS remote they show which credential it uses, the project's own or your account's for the host, and when it was saved and last used. **Replace credentials** checks the new ones before switching to them while the remote works; **Use account credential instead** deletes the project's own token. Removing the remote deletes the project's token: revoke it on the host too if nothing else uses it.
 
