@@ -47,6 +47,7 @@
               "platform/archiving",
               "platform/usage",
               "platform/open-llm-router",
+              "platform/your-agents",
               "platform/claims",
               "platform/agent-instructions-and-skills",
               "platform/launch-links",
