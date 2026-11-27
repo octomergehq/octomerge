@@ -510,6 +510,7 @@ Agents use these too: a browser tool takes `browser`, a label from this list, to
 ```bash
 otti account instructions get
 otti account instructions set --file AGENTS.md
+otti account instructions delete
 otti account env list
 otti account env set REGION --description "Default region" --value eu-north-1
 otti account env set SERVICE_TOKEN --description "Service access" --file ./token.txt
@@ -519,9 +520,9 @@ otti account env set SIGN_IN_CODE --description "One-time sign-in code" --stdin 
 otti account env set SERVICE_TOKEN --expires-at 2027-01-31
 ```
 
-Account instructions live in the canonical `$OTTI_ROOT/AGENTS.md` file. `get` writes the exact content without adding a newline; `--json` returns `{ content, updatedAt }`. `set --file PATH` and `set --stdin` preserve UTF-8 input, including whitespace; empty input clears the file. The limit is 100,000 characters. Both commands work with no worker online, regardless of project, branch, or session flags.
+Account instructions live in the canonical `$OTTI_ROOT/AGENTS.md` file. `get` writes the exact content without adding a newline, and nothing when there is no file; `--json` returns `{ content, updatedAt, exists }`, where `exists` is false when there is no file. `set --file PATH` and `set --stdin` preserve UTF-8 input, including whitespace; empty input saves an empty file, which gives agents nothing. `delete` deletes the file, so agents receive no account instructions; when there is no file, it succeeds and says so (`--json`: `deleted: false`). The limit is 100,000 characters. These commands work with no worker online, regardless of project, branch, or session flags.
 
-Saving reads the current file's hash and saves over exactly that version, in the request: the command answers once the file is saved. If the file changed in between, the save is refused and nothing is written. A lost answer is asked for again with the same request ID, which answers that save's outcome and never saves twice; if the outcome stays unconfirmed, the CLI prints the request ID. Saves affect running agents on their next model request and reach workers within seconds; a worker that edited the file and had not synchronized that edit yet merges the two. See [AGENTS.md and skills](/platform/agent-instructions-and-skills) for scopes, editing, and conflicts.
+Saving reads the current file's hash and saves over exactly that version, in the request: the command answers once the file is saved. If the file changed in between, the save is refused and nothing is written. `delete` works the same way: it deletes exactly the version it read, and a version saved in between is kept. A lost answer is asked for again with the same request ID, which answers that save's or deletion's outcome and never applies it twice; if the outcome stays unconfirmed, the CLI prints the request ID. Saves affect running agents on their next model request and reach workers within seconds; a worker that edited the file and had not synchronized that edit yet merges the two. See [AGENTS.md and skills](/platform/agent-instructions-and-skills) for scopes, editing, and conflicts.
 
 Account entries apply across your projects and workers. `env` entries become environment variables; `secrets` entries become protected files, with the variable containing the file path. Lists return metadata, not stored account secret values. Agents use `account env list` and `account secrets list` to find the names and descriptions of your entries when a task needs a credential, so write a description that says what an entry is for; adding or editing an entry doesn't change what running agents were sent. New commands receive the latest credential snapshot; running commands keep the snapshot they started with. Revocation prevents future delivery but cannot erase copies already held by a process.
 
