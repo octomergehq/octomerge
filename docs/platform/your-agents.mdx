@@ -13,7 +13,7 @@ Claude Code, Codex and Antigravity are made by Anthropic, OpenAI and Google, whi
 
 ## How it works
 
-- Otti Connect connects your computer to Octomerge by itself, over HTTPS: the computer needs no worker. It tells Octomerge which agents are installed there and whether each is signed in, then waits for your chats' turns.
+- Otti Connect connects your computer to Octomerge by itself, over HTTPS: the computer doesn't have to be one of your workers. It tells Octomerge which agents are installed there and whether each is signed in, then waits for your chats' turns.
 - When you send a message to one of your agents, Octomerge hands the turn to your first connected computer that has that agent ([Which computer a chat uses](#which-computer-a-chat-uses)). Otti Connect runs the agent there, with the agent's own sign-in, and carries the turn between the agent and the chat: your messages one way; the agent's answer, its thinking and its tool calls the other.
 - On your computer, the agent's own file and shell tools are off, and it works in an empty folder of its own. It works with Octomerge's tools instead: `shell`, `read`, `write`, `edit`, `grep`, `find` and `ls` run on the chat's worker, in its checkout, as they do for every agent, and the chat shows each call. It gets Octomerge's other tools too, such as questions to you, plans, web research and your [MCP servers](/get-started/mcp-servers).
 - The agent gets your account's and project's instructions and skills from Octomerge, as every agent does ([AGENTS.md and skills](/platform/agent-instructions-and-skills)).
@@ -26,6 +26,8 @@ So the chat's files can be on any worker, such as a VPS, a container or another 
 - A computer with macOS or Linux. On Windows, run Otti Connect in WSL, where it works as on Linux.
 - Node.js 18 or newer, with npm: they run Otti Connect and install the agents.
 - For each agent you want to use, an account with its maker that the agent signs in with: Claude for Claude Code, ChatGPT for Codex, Google for Antigravity.
+- A worker for your chats, where the agents' commands and file edits run, as for every agent ([Connect a worker](/get-started/add-worker)). It can be the same computer.
+- On octomerge.dev, a plan: agents run with one, your own agents too ([Signing up](/#signing-up)). Without one you can still connect your computer and see your agents in **Settings → Your agents** and in the model menu.
 
 ## Connect a computer
 
@@ -40,7 +42,7 @@ So the chat's files can be on any worker, such as a VPS, a container or another 
 
     **Settings → Your agents** shows the same command under **Connect a computer**. For an installation other than octomerge.dev, it adds `--base-url` with that installation's address. With `@latest`, running the command again runs the newest release of Otti Connect.
 
-    On its first start, Otti Connect installs the versions of Claude Code, Codex and Antigravity that Octomerge has tested, in a folder of its own, `~/.otti-connect/agents`: about 470 MB to download. This takes a few minutes, and it shows its progress. Later starts use them. Copies of the agents you installed yourself stay as they are, and both use the same sign-ins.
+    On its first start, Otti Connect installs the versions of Claude Code, Codex and Antigravity that Octomerge has tested, in a folder of its own, `~/.otti-connect/agents`: about 470 MB to download, 1.2 GB on disk. This takes a few minutes, and it shows its progress. Later starts use them. Copies of the agents you installed yourself stay as they are, and both use the same sign-ins.
 
   </Step>
   <Step title="Approve the code">
@@ -148,7 +150,7 @@ Choose one of your agents in the model menu at the bottom of the composer, under
 - Images you attach to a message reach the agent with it.
 - Its commands and file edits show in the chat as calls of Octomerge's tools, on the chat's worker.
 
-If the computer goes away during a turn, because Otti Connect stopped or the computer slept or lost its network, the chat says so, for example "Codex could not finish the turn: Otti Connect on your agent host home-server stopped during the turn. Send a message to go on." Your next message carries on, on your next connected computer with that agent. An agent's session stays on the computer that ran it, so a turn on another computer starts a new session there, given the conversation so far. When none of your computers with the agent is connected, the chat says so and names the command that starts Otti Connect.
+If the computer goes away during a turn, because Otti Connect stopped or the computer slept or lost its network, the chat says so, for example "Codex could not finish the turn: Otti Connect on your agent host home-server stopped during the turn. Send a message to go on." Your next message carries on, on your next connected computer with that agent. An agent's session stays on the computer that ran it, so a turn on another computer starts a new session there, given the conversation so far. When none of your computers with the agent is connected, or the agent is turned off on them, the chat says so: start Otti Connect on one of them (**Settings → Your agents** shows the command), or turn the agent on there, then send the message again.
 
 Your plan's usage limits apply as they do in the agent's own terminal: when the agent reaches one, it says so in the chat.
 
@@ -177,15 +179,18 @@ In the Docker image, `otti-connect` is on the `PATH`: `docker exec otti-connect 
 
 | Command | |
 | --- | --- |
-| `otti-connect`, `otti-connect start` | Signs the computer in if it isn't, installs the tested agents, connects the computer and runs its turns until you stop it |
+| `otti-connect`, `otti-connect start` | Installs the tested agents it lacks, signs the computer in if it isn't, connects it and runs its turns until you stop it |
 | `otti-connect status` | The agents on this computer, with their versions and sign-ins, without connecting |
+| `otti-connect install` | Installs the tested agents, without connecting |
 | `otti-connect logout` | Forgets this computer's sign-in and revokes it in Octomerge: the computer leaves **Settings → Your agents** by itself |
+| `otti-connect --version` | Otti Connect's version, and the version of the connector protocol it speaks |
 
 | Option | |
 | --- | --- |
 | `--label <name>` | The computer's name when it first connects: letters, digits, dots, hyphens and underscores. Default: `$OTTI_CONNECT_LABEL`, else the host name. Afterwards, rename it in **Settings → Your agents** |
 | `--base-url <address>` | The Octomerge installation to connect to. Default: `$OTTI_CONNECT_BASE_URL`, else the one the computer signed in to, else `https://octomerge.dev` |
-| `--config-dir <folder>` | Where Otti Connect keeps its sign-in and the agents. Default: `~/.otti-connect` |
+| `--config-dir <folder>` | Where Otti Connect keeps its sign-in, and the agents unless `--agents-dir` names another folder. Default: `~/.otti-connect` |
+| `--agents-dir <folder>` | Where the agents are installed. Default: `$OTTI_CONNECT_AGENTS_DIR`, else `agents` in the config folder |
 | `--no-open` | Doesn't open the approval page in the browser |
 
 ## Good to know
@@ -204,4 +209,4 @@ Each agent's own terms apply when you use it through Otti Connect, and you're re
 - Codex: OpenAI's [Terms of Use](https://openai.com/policies/terms-of-use/)
 - Antigravity: the [Google Antigravity Additional Terms of Service](https://antigravity.google/terms)
 
-Otti Connect is open source, under the Apache License 2.0. Its source, and its record of what each agent's terms allow, with sources, will be published.
+Otti Connect is open source, under the Apache License 2.0: its source is at [github.com/octomergehq/otti-connect](https://github.com/octomergehq/otti-connect), with [its record of what each agent's terms allow](https://github.com/octomergehq/otti-connect/blob/main/TERMS.md), with sources, and the connector protocol any connector can speak.
