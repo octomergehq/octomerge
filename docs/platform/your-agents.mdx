@@ -7,10 +7,6 @@ Bring the coding agents you already use to Octomerge: **Claude Code**, **Codex**
 
 **Otti Connect** brings them in: an open-source connector, built by Octomerge and the community, that you run on the computer where the agents are signed in. A computer that runs it is one of your **agent hosts**: the laptop you work on, or a computer that is always on, such as a home server ([in Docker](#run-it-in-docker-on-an-always-on-computer)).
 
-<Note>
-Claude Code, Codex and Antigravity are made by Anthropic, OpenAI and Google, which aren't affiliated with Octomerge or Otti Connect and don't endorse them. Each agent's own terms apply when you use it through Otti Connect ([Terms](#terms)).
-</Note>
-
 ## How it works
 
 - Otti Connect connects your computer to Octomerge by itself, over HTTPS: the computer doesn't have to be one of your workers. It tells Octomerge which agents are installed there and whether each is signed in, then waits for your chats' turns.
@@ -123,7 +119,7 @@ docker run -d --name otti-connect --hostname home-server \
 
 ## Manage your agent hosts
 
-**Settings → Your agents** lists your agent hosts and their agents, and updates by itself.
+**Settings → Your agents** lists your agent hosts and their agents, and updates by itself. Its first lines say what else a chat needs: a project, a worker and, on octomerge.dev, a plan, each linked to where you set it up.
 
 - **Agent hosts**: each computer with its name, **Connected** or **Offline** (with when it was last seen), its system and its Otti Connect version. Under it, each agent with its version and its sign-in: **Signed in** with Claude, ChatGPT or Google, with the models it offers; **Not signed in**, with the command that signs it in on that computer; or **Not installed**.
 - **A switch per agent** offers it from that computer. Turn it off to leave the agent out there: an agent turned off on every computer leaves the model menu.
@@ -142,7 +138,7 @@ Otti Connect updates the agents together with itself: each release runs the agen
 
 ## In a chat
 
-Choose one of your agents in the model menu at the bottom of the composer, under **Your agents**: for example **Claude Code · Sonnet**, **Codex** or **Antigravity**. The effort you choose goes to the agent. Then work with it as with any model:
+Choose one of your agents in the model menu at the bottom of the composer, under **Your agents**: for example **Claude Code · Sonnet**, **Codex** or **Antigravity**. The agents signed in on your computers come first. When **Your agents** is your default connection, your default model is its first model, unless you choose another in **Settings → Models**. The effort you choose goes to the agent. Then work with it as with any model:
 
 - The agent continues its own session from turn to turn, and keeps its own context, as it does in its own terminal.
 - A message you **Steer** while it works reaches it during its turn; one you **Queue** waits for the turn to end, as with any model.
@@ -199,14 +195,6 @@ In the Docker image, `otti-connect` is on the `PATH`: `docker exec otti-connect 
 - The agent's computer has to stay on and connected while the agent works, even when the chat's files are on an always-on worker: a laptop that goes to sleep ends the turn it was running. For agents that keep working while your laptop sleeps, use an [always-on computer](#run-it-in-docker-on-an-always-on-computer).
 - Antigravity takes only so many tools from one connection, so Octomerge offers it the shell, file and conversation tools first, and leaves out some of the browser tools.
 
-## Terms
+## Open source
 
-Claude Code, Codex and Antigravity are made by Anthropic, OpenAI and Google, which aren't affiliated with Octomerge or Otti Connect and don't endorse them. Their names are their makers' trademarks, used here only to say which agents Otti Connect runs. Otti Connect runs each agent's own program, unmodified, as its maker publishes it, on your computer, with the sign-in you made there.
-
-Each agent's own terms apply when you use it through Otti Connect, and you're responsible for following them. Its maker decides how it may be used through other products, and those rules change: read them before you use an agent this way.
-
-- Claude Code: Anthropic's [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance) page for Claude Code
-- Codex: OpenAI's [Terms of Use](https://openai.com/policies/terms-of-use/)
-- Antigravity: the [Google Antigravity Additional Terms of Service](https://antigravity.google/terms)
-
-Otti Connect is open source, under the Apache License 2.0: its source is at [github.com/octomergehq/otti-connect](https://github.com/octomergehq/otti-connect), with [its record of what each agent's terms allow](https://github.com/octomergehq/otti-connect/blob/main/TERMS.md), with sources, and the connector protocol any connector can speak.
+Otti Connect is open source, under the Apache License 2.0: its source is at [github.com/octomergehq/otti-connect](https://github.com/octomergehq/otti-connect), with [how it runs your agents](https://github.com/octomergehq/otti-connect/blob/main/HOW-IT-RUNS.md) and the connector protocol any connector can speak.
